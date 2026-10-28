@@ -1,0 +1,12 @@
+node_modules/
+dist/
+web-dist/
+.env*
+.dev.vars*
+*.pem
+*.jks
+*.keystore
+.wrangler/
+.sites-runtime/
+android/local.properties
+**/build/
