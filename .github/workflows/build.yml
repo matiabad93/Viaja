@@ -1,0 +1,78 @@
+name: Viaja web and Android
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx tsc --noEmit && npm run test:core
+      - run: npm run build:demo
+      - run: npx wrangler pages functions build functions --outdir functions-build --compatibility-date 2026-05-15
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Viaja-Web
+          path: web-dist/
+      - run: VIAJA_NATIVE=true npm run build:demo
+      - run: npm ci --prefix mobile --ignore-scripts --no-audit --no-fund
+      - run: node scripts/restore-gradle-wrapper.mjs
+      - run: npx cap sync android
+        working-directory: mobile
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+        working-directory: mobile/android
+      - run: |
+          mkdir -p artifacts
+          cp mobile/android/app/build/outputs/apk/debug/app-debug.apk artifacts/Viaja.apk
+          sha256sum artifacts/Viaja.apk > artifacts/Viaja.apk.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Viaja-Android
+          path: artifacts/
+          retention-days: 30
+  android-smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Viaja-Android
+          path: artifacts
+      - run: |
+          sudo chmod 666 /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: |
+            adb install artifacts/Viaja.apk
+            adb shell am start -W -n com.matiabad.viaja/.MainActivity
+            sleep 5
+            adb shell pidof com.matiabad.viaja
+            adb shell screencap -p /sdcard/viaja.png
+            adb pull /sdcard/viaja.png artifacts/viaja-android.png
+            adb logcat -d -s AndroidRuntime:E > artifacts/android-runtime.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Viaja-Android-smoke
+          path: artifacts/

@@ -1,0 +1,29 @@
+// @ts-ignore Native Node test runner requires explicit extension
+import {paris,colmar,barcelona,roma,lisboa} from './builtin-photos.ts';
+const clean=(s:unknown)=>String(s||'').replace(/<[^>]*>/g,'').replace(/&[^;]+;/g,' ').slice(0,500);
+async function remote(url:string){const r=await fetch(url,{headers:{'User-Agent':'Viaja/1.0 (travel photo attribution; contact via site owner)'},signal:AbortSignal.timeout(12000)});if(!r.ok)throw Error('El proveedor no respondió.');return r.json() as Promise<any>}
+export async function destinationsAPI(request:Request){
+ const u=new URL(request.url);if(!['/api/cities','/api/photos'].includes(u.pathname))return null;
+ if(request.method!=='GET')return Response.json({error:'Método no permitido'},{status:405});
+ const name=(u.searchParams.get('q')||'').trim();if(name.length<2||name.length>120)return Response.json({error:'Ingresá entre 2 y 120 caracteres.'},{status:400});
+ try{
+ if(u.pathname==='/api/cities'){
+ const data=await remote('https://geocoding-api.open-meteo.com/v1/search?'+new URLSearchParams({name,count:'10',language:'es',format:'json'}));
+ return Response.json({cities:(data.results||[]).filter((c:any)=>String(c.feature_code).startsWith('PPL')).map((c:any)=>({id:c.id,name:c.name,country:c.country||'',region:c.admin1||'',latitude:c.latitude,longitude:c.longitude,timezone:c.timezone})),attribution:'Open-Meteo · GeoNames'},{headers:{'Cache-Control':'public, max-age=86400'}});
+ }
+ const builtin=({paris,colmar,barcelona,roma,lisboa} as Record<string,typeof paris>)[name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()];
+ const month=Number((u.searchParams.get('date')||'').slice(5,7)),lat=Number(u.searchParams.get('lat')||'0');
+ const seasons=['winter','spring','summer','autumn'];const season=month>=1&&month<=12?seasons[(Math.floor(month%12/3)+(lat<0?2:0))%4]:'';
+ const search=async(term:string)=>{
+ const data=await remote('https://commons.wikimedia.org/w/api.php?'+new URLSearchParams({action:'query',format:'json',generator:'search',gsrsearch:term+' filetype:bitmap -map -logo -portrait -diagram',gsrnamespace:'6',gsrlimit:'20',prop:'imageinfo',iiprop:'url|extmetadata|size',iiurlwidth:'1200'}));
+ return Object.values(data.query?.pages||{}).sort((a:any,b:any)=>(a.index||0)-(b.index||0)).flatMap((p:any)=>{const i=p.imageinfo?.[0],m=i?.extmetadata;if(!i?.thumburl||!m?.LicenseShortName?.value||i.width<700||i.height<400||i.width/i.height>3||i.height/i.width>2)return [];return [{url:i.thumburl,source:i.descriptionurl,title:clean(p.title.replace(/^File:/,'')),author:clean(m.Artist?.value),license:clean(m.LicenseShortName?.value)}]});
+ };
+ const country=(u.searchParams.get('country')||'').slice(0,80).replace(/[^\p{L}\s]/gu,'');
+ const query='"'+name.replace(/["\\]/g,'')+'" '+country;
+ const results=await Promise.allSettled([builtin?Promise.resolve(builtin):search(query),season?search(query+' '+season):Promise.resolve([])]);
+ const general=builtin||(results[0].status==='fulfilled'?results[0].value:[]),seasonal=results[1].status==='fulfilled'?results[1].value:[];
+ if(!general.length&&!seasonal.length)throw Error('No encontramos fotos disponibles para este destino.');
+ const seen=new Set();const photos=[...seasonal,...general].filter(p=>{if(seen.has(p.source))return false;seen.add(p.source);return true}).slice(0,10);
+ return Response.json({photos,season,seasonalCount:Math.min(seasonal.length,10),note:'Fotos de archivo del destino. La estación es un criterio de búsqueda, no una garantía del aspecto en las fechas de tu viaje.',fetchedAt:new Date().toISOString()},{headers:{'Cache-Control':'public, max-age=86400'}});
+ }catch{return Response.json({error:'No pudimos consultar el proveedor. Podés reintentar; tus datos siguen guardados.'},{status:502})}
+}

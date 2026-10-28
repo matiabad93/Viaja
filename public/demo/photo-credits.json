@@ -1,0 +1,52 @@
+[
+  {
+    "city": "Colmar",
+    "cover": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a3/20241002_Petite_Venise_Colmar_03.jpg/1280px-20241002_Petite_Venise_Colmar_03.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "source": "https://commons.wikimedia.org/wiki/File:20241002_Petite_Venise_Colmar_03.jpg",
+      "title": "File:20241002 Petite Venise Colmar 03.jpg",
+      "author": "Flocci Nivis",
+      "license": "CC BY 4.0"
+    }
+  },
+  {
+    "city": "Paris",
+    "cover": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9b/Eiffel_Tower_and_Seine_River%2C_Paris_September_2015.jpg/1280px-Eiffel_Tower_and_Seine_River%2C_Paris_September_2015.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "source": "https://commons.wikimedia.org/wiki/File:Eiffel_Tower_and_Seine_River,_Paris_September_2015.jpg",
+      "title": "File:Eiffel Tower and Seine River, Paris September 2015.jpg",
+      "author": "VarockAndRoll",
+      "license": "CC BY-SA 2.0"
+    }
+  },
+  {
+    "city": "Barcelona",
+    "cover": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e5/View_from_Hotel_Ohla%2C_Barcelona%2C_Spain_%2831183960414%29.jpg/1280px-View_from_Hotel_Ohla%2C_Barcelona%2C_Spain_%2831183960414%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "source": "https://commons.wikimedia.org/wiki/File:View_from_Hotel_Ohla,_Barcelona,_Spain_(31183960414).jpg",
+      "title": "File:View from Hotel Ohla, Barcelona, Spain (31183960414).jpg",
+      "author": "Gary Ullah from UK",
+      "license": "CC BY 2.0"
+    }
+  },
+  {
+    "city": "Roma",
+    "cover": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5b/Colosseum_of_Rome%2C_Italy.jpg/1280px-Colosseum_of_Rome%2C_Italy.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "source": "https://commons.wikimedia.org/wiki/File:Colosseum_of_Rome,_Italy.jpg",
+      "title": "File:Colosseum of Rome, Italy.jpg",
+      "author": "Wilfredor",
+      "license": "CC0"
+    }
+  },
+  {
+    "city": "Lisboa",
+    "cover": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/4/43/Lisboa837.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+      "source": "https://commons.wikimedia.org/wiki/File:Lisboa837.png",
+      "title": "File:Lisboa837.png",
+      "author": "Lacobrigo",
+      "license": "CC BY-SA 4.0"
+    }
+  }
+]
