@@ -1,0 +1,10 @@
+name: Import verified Viaja source
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo 'Source transfer preparation; build workflow follows when upload is complete.'
