@@ -134,3 +134,32 @@ body{font-size:15px;line-height:1.5}button,a,input,textarea,select{-webkit-tap-h
 .calendar-flexible>button>span{flex:1;font-weight:600}
 .calendar-flexible small{font-size:11px;color:#5e765f}
 @media(max-width:650px){.calendar-slot{left:72px;right:8px;width:calc(100% - 80px);padding:9px}.calendar-slot>span{font-size:15px}.calendar-hour>span{width:51px}.calendar-grid{background:linear-gradient(90deg,#f2f5ed 0 60px,#fff 60px)}}
+
+
+/* Time scale is 1.1px/minute: slot boundaries match the hour lines exactly. */
+.calendar-grid{overflow:visible;border-radius:15px}
+.calendar-slot{box-sizing:border-box;min-height:0;overflow:hidden;padding:6px 12px;gap:2px}
+.calendar-slot strong{font-size:10px;line-height:1.3}
+.calendar-slot>span{font-size:14px;line-height:1.3}
+.calendar-slot small{line-height:1.25}
+.calendar-slot-overlap{opacity:.91}
+.calendar-hour:first-child{transform:none}
+.calendar-hour:last-of-type{transform:translateY(-100%)}
+/* Embedded, interactive map using open-source tiles. */
+.viaja-map-section{display:grid;gap:16px;margin:20px 0}
+.viaja-map-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.viaja-map-toolbar>label{font-size:12px;font-weight:700;color:#234b3d;display:flex;align-items:center;gap:9px}
+.viaja-map-toolbar select{background:#fff;border:1px solid #cfdbcd;border-radius:9px;padding:11px;color:#234b3d}
+.viaja-map-toolbar a.secondary{min-height:45px}
+.viaja-osm-map{height:min(66vh,480px);min-height:300px;width:100%;border:1px solid #cddacb;border-radius:16px;overflow:hidden;background:#dce8dd;z-index:0}
+.viaja-map-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.viaja-map-stop{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #dce6da;border-radius:12px;padding:13px 15px;min-width:0}
+.viaja-map-stop-number{height:29px;width:29px;flex-shrink:0;display:grid;place-items:center;border-radius:50%;background:#e3eadc;color:#235544;font-size:12px;font-weight:800}
+.viaja-map-stop>div{flex:1;min-width:0}
+.viaja-map-stop strong{display:block;font-size:13px;overflow-wrap:anywhere}
+.viaja-map-stop small{display:block;color:#687d6f;font-size:11px;margin-top:4px;overflow-wrap:anywhere}
+.viaja-map-stop>a{padding:7px;color:#36684f}
+.viaja-map-attribution{font-size:11px;line-height:1.6;color:#617668}
+.viaja-map-attribution a{text-decoration:underline}
+.viaja-map-section .subtle{display:flex;align-items:flex-start;gap:7px}
+@media(max-width:650px){.viaja-map-list{grid-template-columns:1fr}.viaja-map-toolbar{align-items:stretch}.viaja-map-toolbar>.primary,.viaja-map-toolbar>a.secondary{width:100%}.viaja-osm-map{height:360px}.calendar-slot>span{font-size:13px}}
