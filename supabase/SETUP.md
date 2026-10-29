@@ -32,3 +32,28 @@ These are **public client configuration**, but you should still configure them i
 Official docs:
 - https://supabase.com/docs/guides/database/postgres/row-level-security
 - https://supabase.com/docs/guides/auth/redirect-urls
+
+## Preview de autenticación para pruebas (29-10-2026)
+
+La rama de desarrollo está publicada por Cloudflare Pages en:
+
+- **Preview estable de rama:** https://feat-v1-production-release-p.viaja.pages.dev/
+- **Despliegue verificado:** GitHub Checks → Cloudflare Pages, commit `979ee0e`.
+
+**Antes de registrar usuarios de prueba:** en Supabase → Authentication → URL Configuration → Redirect URLs, añadir exactamente:
+
+```text
+https://feat-v1-production-release-p.viaja.pages.dev/**
+```
+
+Mantener la Site URL en `https://viaja.pages.dev`. No usar una regla global para todos los subdominios de `pages.dev`. Esta URL de preview es pública: registrar solo cuentas de prueba propias hasta validar seguridad y el envío de correo. Para registro/recuperación, usar el correo recibido y regresar a la preview, no a la producción demo.
+
+**Checklist manual de staging (sin suponer éxito):**
+1. Crear cuenta de prueba; recibir y abrir el correo de confirmación; verificar inicio de sesión.
+2. Crear un viaje, marcar una actividad, añadir un gasto; cerrar sesión y entrar desde otro navegador o equipo.
+3. Confirmar que el viaje y sus cambios persisten; verificar que sin sesión no se ven datos privados.
+4. Recuperar contraseña y comprobar que vuelve a la preview correcta.
+5. Confirmar que dos usuarios distintos no comparten viajes y que no pueden modificar el viaje del otro; registrar los resultados.
+6. Verificar importación de datos locales de forma voluntaria y sin pérdidas.
+
+**Limitaciones actuales:** estos flujos de navegador aún no han sido ejecutados de punta a punta. `ai_usage` es privado de servidor. `/api/plan` sigue deshabilitado; no publicar como 1.0.0 todavía.
