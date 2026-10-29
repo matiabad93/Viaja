@@ -15,3 +15,24 @@ body{font-size:15px;line-height:1.5}button,a,input,textarea,select{-webkit-tap-h
 @media(max-width:700px){.topbar{backdrop-filter:none;-webkit-backdrop-filter:none}.topbar nav{position:fixed;bottom:0;top:auto}}
 .city-combobox{position:relative;flex:1;min-width:0}.city-combobox input{width:100%}.city-results{position:absolute;left:0;right:0;top:calc(100% + 8px);background:white;border:1px solid #dce3db;border-radius:14px;box-shadow:0 12px 32px #173d3026;z-index:25;padding:8px;max-height:340px;overflow:auto}.city-results [role=option]{padding:12px;cursor:pointer;border-radius:8px;display:grid;gap:4px}.city-results [role=option]:hover,.city-results [aria-selected=true]{background:#e7efe4}.city-results small,.city-results p{font-size:12px;color:#536657;padding:5px}.destination-gallery{margin-top:24px}.photo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.photo-grid figure{margin:0;min-width:0}.photo-grid img{width:100%;height:180px;object-fit:cover;border-radius:12px}.photo-grid figcaption{font-size:11px;color:#536657;line-height:1.5;max-height:55px;overflow:auto}.profile{font-size:12px;min-width:48px}.inputicon:has(.city-combobox){overflow:visible}@media(max-width:600px){.photo-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.photo-grid img{height:140px}.city-results{left:-30px}.destination-gallery{padding:16px}}
 .activity-check{display:flex;align-items:center;gap:12px;cursor:pointer}.activity-check input{width:24px;height:24px;accent-color:#1c4b3e;flex-shrink:0}.activity-check h3{margin:0}.activity-completed{background:#edf3e9;border-color:#b6cfad}.activity-completed h3{text-decoration:line-through;color:#52705a}.hour-agenda{max-height:65vh;overflow:auto;padding:8px;border-left:3px solid #c9d6bd}.hour-agenda .activity-card{margin-bottom:12px}.activity-card>p{font-size:12px;overflow-wrap:anywhere}
+
+/* Viaja account modal — responsive and keyboard accessible */
+.viaja-account{position:relative;z-index:60;max-width:240px}
+.viaja-account-trigger{display:flex;align-items:center;gap:7px;padding:10px 12px;border-radius:999px;border:1px solid #cbd8d1;background:#fff;color:#173f35;font-size:12px;font-weight:700;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.viaja-account-trigger svg{flex-shrink:0}
+.viaja-account-backdrop{position:fixed;inset:0;z-index:300;background:rgba(11,30,24,.58);display:flex;align-items:center;justify-content:center;padding:20px}
+.viaja-account-dialog{position:relative;background:#fff;color:#173f35;padding:30px;border-radius:20px;width:min(440px,100%);box-shadow:0 24px 90px rgba(0,0,0,.24);max-height:85dvh;overflow-y:auto;text-align:left}
+.viaja-account-dialog h2{font-size:25px;margin:0 38px 8px 0;color:#173f35}
+.viaja-account-close{position:absolute;right:18px;top:17px;border:0;background:#eff3ed;border-radius:50%;height:34px;width:34px;display:grid;place-items:center}
+.viaja-account-subtitle{font-size:13px;line-height:1.6;color:#607167;margin-bottom:22px;overflow-wrap:anywhere}
+.viaja-account-dialog form{display:grid;gap:15px}
+.viaja-account-dialog form label{display:grid;gap:7px;font-size:12px;font-weight:700}
+.viaja-account-dialog form input{width:100%;padding:12px;border:1px solid #c5d2c9;border-radius:9px;font-size:15px;background:#fff;color:#173f35}
+.viaja-account-submit,.viaja-account-action{display:flex;align-items:center;justify-content:center;gap:10px;border:0;background:#194b3d;color:white;padding:13px;border-radius:10px;font-weight:700;cursor:pointer;width:100%}
+.viaja-account-action{margin-bottom:11px;background:#ecf3ed;color:#173f35;border:1px solid #cbd8cf}
+.viaja-account-links{display:flex;gap:11px;flex-wrap:wrap;margin-top:18px}
+.viaja-account-links button{border:0;padding:4px 0;background:transparent;text-decoration:underline;color:#24594d;font-size:12px}
+.viaja-account-notice{padding:12px;border-radius:9px;margin-top:15px;font-size:13px;background:#eaf2e7;color:#224f38;overflow-wrap:anywhere}
+.viaja-account-help{font-size:12px;color:#627a6d;line-height:1.6;margin-top:15px}
+.viaja-account-dialog button:focus-visible{outline:3px solid #51a895;outline-offset:3px}
+@media(max-width:720px){.viaja-account{max-width:135px}.viaja-account-trigger{font-size:11px;padding:9px}.viaja-account-dialog{padding:25px 20px}}
