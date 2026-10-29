@@ -4,6 +4,7 @@ import {geminiFreePlanner,FREE_GEMINI_MODEL} from './gemini-planner';
 
 export type ViajaAIEnv={
  GEMINI_API_KEY?:string;
+ GEMINI_KEY_ROTATED?:string;
  VIAJA_AI_PROVIDER?:string;
  OPENAI_API_KEY?:string;
  OPENAI_MODEL?:string;
@@ -25,7 +26,10 @@ const provider=(env:ViajaAIEnv):AIProvider=>{
 const providerLabel=(env:ViajaAIEnv)=>provider(env)==='gemini'?'Gemini':provider(env)==='openai'?'OpenAI':null;
 const configured=(env:ViajaAIEnv)=>{
  const selected=provider(env);
- return env.VIAJA_AI_ENABLED==='true'&&selected!=='unsupported'&&Boolean((selected==='gemini'?env.GEMINI_API_KEY:env.OPENAI_API_KEY)&&env.SUPABASE_SECRET_KEY&&publicKey(env));
+ const providerReady=selected==='gemini'
+  ? Boolean(env.GEMINI_API_KEY&&env.GEMINI_KEY_ROTATED==='true')
+  : selected==='openai' ? Boolean(env.OPENAI_API_KEY) : false;
+ return env.VIAJA_AI_ENABLED==='true'&&selected!=='unsupported'&&providerReady&&Boolean(env.SUPABASE_SECRET_KEY&&publicKey(env));
 };
 
 type SupabaseUser={id:string;email?:string;role?:string;is_anonymous?:boolean};
