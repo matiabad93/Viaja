@@ -94,3 +94,43 @@ body{font-size:15px;line-height:1.5}button,a,input,textarea,select{-webkit-tap-h
 /* Product decision: Gmail (Google OAuth) + Facebook only. */
 .viaja-social-list{grid-template-columns:repeat(2,minmax(0,1fr))}
 .viaja-social-explainer{margin:9px 0 0;text-align:center;color:#62796d;font-size:11px;line-height:1.5}
+
+
+/* Branded destructive-action confirmation */
+.viaja-confirm-backdrop{position:fixed;inset:0;z-index:999;background:rgba(10,30,23,.65);display:flex;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(3px)}
+.viaja-confirm-dialog{position:relative;width:min(440px,100%);padding:30px;border-radius:20px;background:#fff;color:#173f35;box-shadow:0 24px 80px rgba(0,0,0,.28);text-align:left}
+.viaja-confirm-icon{width:48px;height:48px;background:#fbece4;color:#a33e31;border-radius:15px;display:grid;place-items:center;margin-bottom:18px}
+.viaja-confirm-dialog h2{font:26px Georgia,serif;line-height:1.25;margin:0 30px 13px 0}
+.viaja-confirm-dialog p{color:#65776b;line-height:1.6;font-size:13px;margin:0}
+.viaja-confirm-close{position:absolute;top:16px;right:16px;background:#eef2eb;border-radius:50%;width:34px;height:34px;display:grid;place-items:center}
+.viaja-confirm-actions{margin-top:28px;display:flex;gap:12px;justify-content:flex-end}
+.viaja-confirm-actions button{min-width:128px;min-height:44px;justify-content:center;border-radius:10px;font-weight:700;font-size:12px}
+.viaja-danger-button{background:#a63d30;color:#fff;padding:12px 16px}
+.viaja-danger-button:hover{background:#873327}
+.viaja-confirm-actions button:disabled{opacity:.6;cursor:wait}
+@media(max-width:440px){.viaja-confirm-dialog{padding:22px}.viaja-confirm-actions{flex-direction:column-reverse}.viaja-confirm-actions button{width:100%}}
+/* Calendar is a true time-oriented layout, distinct from itinerary cards */
+.calendar-timeline{margin:20px 0 28px}
+.calendar-intro{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px;padding:18px 20px;background:#e9f0e5;border-radius:14px;color:#194538}
+.calendar-intro svg{flex-shrink:0;margin-top:4px}
+.calendar-intro h3{font:23px Georgia,serif;margin:0 0 7px}
+.calendar-intro p{font-size:12px;line-height:1.6;color:#5c705f}
+.calendar-grid{position:relative;background:linear-gradient(90deg,#f2f5ed 0 80px,#fff 80px);border-radius:15px;border:1px solid #dce5d8;overflow:hidden}
+.calendar-hour{position:absolute;left:0;right:0;display:flex;align-items:center;gap:10px;font-size:11px;color:#617266;transform:translateY(-50%);pointer-events:none}
+.calendar-hour>span{width:65px;flex-shrink:0;text-align:right}
+.calendar-hour>i{height:1px;background:#e6ece3;flex:1}
+.calendar-slot{position:absolute;left:96px;right:15px;width:calc(100% - 111px);z-index:1;background:#e5eee2;border-left:4px solid #376d53;border-radius:10px;padding:12px 15px;text-align:left;display:flex;flex-direction:column;gap:4px;overflow:auto}
+.calendar-slot:hover{background:#d7e8d4;z-index:4;box-shadow:0 3px 12px #173f3526}
+.calendar-slot strong{font-size:11px;color:#41654d}
+.calendar-slot>span{font:18px Georgia,serif;color:#183d30;overflow-wrap:anywhere}
+.calendar-slot small{font-size:11px;color:#5a7060}
+.calendar-slot-overlap{background:#fff0e4;border-left-color:#b96b35;z-index:2}
+.calendar-slot-overlap em{display:flex;gap:4px;align-items:center;font-size:10px;font-style:normal;color:#a14f2f}
+.calendar-slot-done{opacity:.6}
+.calendar-empty{display:flex;align-items:center;gap:16px;color:#617266}
+.calendar-flexible{margin-top:20px}
+.calendar-flexible>p{font-size:12px;color:#687a6e;margin:0 0 20px}
+.calendar-flexible>button{width:100%;display:flex;align-items:center;gap:12px;border-top:1px solid #e3e9df;padding:14px 4px;text-align:left}
+.calendar-flexible>button>span{flex:1;font-weight:600}
+.calendar-flexible small{font-size:11px;color:#5e765f}
+@media(max-width:650px){.calendar-slot{left:72px;right:8px;width:calc(100% - 80px);padding:9px}.calendar-slot>span{font-size:15px}.calendar-hour>span{width:51px}.calendar-grid{background:linear-gradient(90deg,#f2f5ed 0 60px,#fff 60px)}}
