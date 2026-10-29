@@ -90,3 +90,7 @@ body{font-size:15px;line-height:1.5}button,a,input,textarea,select{-webkit-tap-h
 .viaja-social-separator{position:relative;display:flex;align-items:center;gap:11px;margin-top:18px;color:#63796e;font-size:11px;white-space:nowrap}
 .viaja-social-separator::before,.viaja-social-separator::after{content:"";height:1px;flex:1;background:#dce6dd}
 @media(max-width:360px){.viaja-social-list{gap:6px}.viaja-social-provider{font-size:11px;padding:9px 2px}}
+
+/* Product decision: Gmail (Google OAuth) + Facebook only. */
+.viaja-social-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+.viaja-social-explainer{margin:9px 0 0;text-align:center;color:#62796d;font-size:11px;line-height:1.5}
