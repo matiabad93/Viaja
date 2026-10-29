@@ -20,6 +20,7 @@ jobs:
       - run: pnpm exec tsc --noEmit
       - run: pnpm run test:core
       - run: node --experimental-strip-types tests/social-auth.test.mts
+      - run: node --experimental-strip-types tests/gemini-adapter.test.mts
       - run: pnpm run build:demo
       - name: Require actual production output
         run: test -f web-dist/index.html
