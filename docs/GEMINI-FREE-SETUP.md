@@ -46,3 +46,19 @@ Docs:
 - https://ai.google.dev/gemini-api/docs/pricing
 - https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-lite
 - https://ai.google.dev/gemini-api/docs/structured-output
+
+## 5. Comprobación de despliegue Preview (29-10-2026)
+Después de configurar las seis variables en **Preview**, activar un nuevo despliegue de la rama de pruebas para que las Functions reciban las variables y secretos actualizados. La web pública en `main` permanece sin cambios.
+
+- Confirmar GitHub Actions y Cloudflare Pages con el último commit de esta rama.
+- Abrir `https://feat-v1-production-release-p.viaja.pages.dev/` e iniciar sesión con la cuenta Google configurada.
+- Verificar que la pantalla diga `Gemini disponible · ideas sin búsqueda web` (si aparece como deshabilitada, revisar variables y redeploy).
+- Elegir viaje de 2 días, completar presupuesto y origen, generar ideas. Probar preferentemente con un destino ficticio de ensayo.
+- Confirmar que el resultado se titula `PROPUESTA CON GEMINI — SIN INVESTIGACIÓN WEB NI FUENTES VERIFICADAS`, y que incluye días y actividades.
+- Confirmar en Supabase que `public.ai_usage` registra una petición reservada/finalizada y `public.trips` un viaje actualizado. No leer ni exponer identidades o secretos.
+- Si devuelve 503 `AI_NOT_CONFIGURED`: revisar `VIAJA_AI_ENABLED=true`, `VIAJA_AI_PROVIDER=gemini`, `GEMINI_API_KEY`, `SUPABASE_SECRET_KEY`, `SUPABASE_PUBLISHABLE_KEY` en Preview, luego volver a desplegar.
+- Si devuelve 429: revisar los límites de Gemini en AI Studio y los límites del usuario en Supabase.
+- Si devuelve 502: revisar logs de Pages Functions (sin imprimir secretos) y validar el formato JSON/respuesta del modelo.
+- No configurar ninguna de estas claves para el frontend usando el prefijo `VITE_`.
+
+**No confundir publicar la build con probar una llamada real a Gemini**. Una compilación exitosa no demuestra que la clave y el modelo estén habilitados para el proyecto.
