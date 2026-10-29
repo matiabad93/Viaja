@@ -4,6 +4,7 @@
  * No third-party SDK is needed to bundle this client.
  */
 import type {Plan} from './travel';
+import {buildSocialAuthorizationUrl,parseSocialProviderSettings,unavailableSocialProviders,type SocialProvider,type SocialAvailability} from './social-auth';
 
 declare const __VIAJA_SUPABASE_URL__: string;
 declare const __VIAJA_SUPABASE_PUBLIC_KEY__: string;
@@ -100,6 +101,23 @@ export async function accessToken():Promise<string|null> {
   if(!current)return null;
   if(current.expires_at<=Math.floor(Date.now()/1000)+90)await refresh();
   return current?.access_token||null;
+}
+/** Read only published provider availability; never assume an OAuth provider works. */
+export async function getSocialProviderAvailability():Promise<SocialAvailability> {
+ if(!cloudReady)return {...unavailableSocialProviders};
+ try{
+  const settings=await api<unknown>('/auth/v1/settings',{method:'GET'});
+  return parseSocialProviderSettings(settings);
+ }catch {
+  return {...unavailableSocialProviders};
+ }
+}
+/** Browser redirect to Supabase's OAuth endpoint. Supabase handles identity verification. */
+export function beginSocialSignIn(provider:SocialProvider) {
+ ensureConfigured();
+ if(!browser())throw Error('El acceso social está disponible desde el navegador.');
+ const target=buildSocialAuthorizationUrl(url,provider,window.location.origin+'/');
+ window.location.assign(target);
 }
 export async function register(email:string,password:string) {
   const data=await api('/auth/v1/signup'+authRedirect(),{method:'POST',body:JSON.stringify({email,password})});
