@@ -1,51 +1,54 @@
-# Viaja 1.0.0 — IA pública con límites (STAGING)
+# Viaja — Configuración segura de IA en Cloudflare Pages
 
-Estado (29/10/2026): **código y cuotas preparados, IA NO activada, pruebas reales de OpenAI pendientes**.
+Esta guía aplica a **Preview** del proyecto Pages `viaja`. No habilites producción desde esta guía.
 
-## Qué existe
-- Cloudflare Pages Function `/api/plan` ahora entra por `server/ai-gateway.ts`, que valida identidad mediante Supabase Auth `/auth/v1/user`, origen, JSON, tamaño y parámetros del viaje.
-- El servidor usa `server/planner.ts` existente para crear itinerarios y consultar fuentes web de OpenAI; las cabeceras de identidad antiguas se sustituyen **solo después** de validar criptográficamente el token en Supabase.
-- Supabase: migración `202610290002_ai_quotas.sql` aplicada al proyecto `viaja-production`. Funciones `viaja_reserve_ai_request` y `viaja_finalize_ai_request` solo invocables desde backend con rol privilegiado.
-- Cupo inicial: **2 generaciones por usuario en 24 horas móviles, 40 globales por 24 horas, mínimo 5 minutos entre peticiones**. Tanto las fallidas como las exitosas cuentan por defecto: es intencional para proteger costes. `/api/plan` falla cerrado si la cuota no puede verificarse.
-- `/api/status` solo anuncia IA disponible si están todas las variables configuradas y el usuario autenticado.
+## Estado del proveedor
 
-## Configurar en Cloudflare Pages (solo después de revisar el límite de gasto)
-Cloudflare Dashboard → Workers & Pages → `viaja` → Settings → Variables and Secrets → **Preview environment**:
+Viaja usa Gemini cuando `VIAJA_AI_PROVIDER` está ausente o vale `gemini`. Un proveedor desconocido falla cerrado. OpenAI solo se usa si se selecciona explícitamente `VIAJA_AI_PROVIDER=openai`; no es el fallback.
 
-| Nombre | Tipo | Valor |
+La integración Gemini incluida usa `gemini-3.1-flash-lite` mediante Gemini API `generateContent`, con salida JSON estructurada. La generación crea ideas de itinerario y **no consulta web, mapas, horarios ni reservas en tiempo real**. Debe mostrarse como contenido tentativo sin fuentes verificadas.
+
+Google publica actualmente el modelo como estable y con tarifa Free Tier para entrada/salida de texto; el grounding de Google Search/Maps no está disponible en Free Tier para este modelo. Consultá las páginas oficiales antes de cambiar el modelo o el plan:
+- https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-lite
+- https://ai.google.dev/gemini-api/docs/pricing
+- https://ai.google.dev/gemini-api/docs/rate-limits
+
+El nivel efectivo y sus límites pueden depender del proyecto de AI Studio. No asumas que una API key está limitada al nivel gratuito si el proyecto tiene facturación habilitada.
+
+## Variables de ejecución de Pages Functions
+
+Cloudflare Dashboard → Workers & Pages → `viaja` → Settings → Variables and Secrets → **Preview**. Configurá estas variables de runtime; las variables `VITE_*` de compilación no sustituyen los bindings de Pages Functions.
+
+| Nombre | Tipo | Valor esperado |
 |---|---|---|
-| `VIAJA_AI_ENABLED` | Texto | `true` **solo tras confirmar el resto** |
-| `OPENAI_API_KEY` | **Secret** | Clave nueva de OpenAI Platform, creada para Viaja |
-| `SUPABASE_URL` | Texto | `https://ovagewbmrirzrlvbvtbw.supabase.co` |
-| `SUPABASE_PUBLISHABLE_KEY` | Texto | La clave pública `sb_publishable_...` del proyecto `viaja-production` |
-| `SUPABASE_SECRET_KEY` | **Secret** | La clave `sb_secret_...` de Supabase. No usarla en `VITE_` ni en Git. |
-| `OPENAI_MODEL` | Texto opcional | `gpt-4.1-mini` (valor predeterminado en el gateway) |
+| `VIAJA_AI_ENABLED` | Text | `true` solo después de validar todas las variables |
+| `VIAJA_AI_PROVIDER` | Text | `gemini` |
+| `GEMINI_API_KEY` | Secret | Una clave nueva de Google AI Studio, después de revocar la expuesta |
+| `SUPABASE_URL` | Text | `https://ovagewbmrirzrlvbvtbw.supabase.co` |
+| `SUPABASE_PUBLISHABLE_KEY` | Text | Clave publicable del proyecto `viaja-production` |
+| `SUPABASE_SECRET_KEY` | Secret | Clave secreta del proyecto, solo para Functions |
 
-**Importante:** comprobar que Cloudflare distingue `Preview` de `Production`: configurar primero **Preview** para probar `https://feat-v1-production-release-p.viaja.pages.dev/`. Mantener `VIAJA_AI_ENABLED` sin configurar o `false` en producción. Redeploy de la rama tras configurar secretos.
+No cargues la clave Gemini en el frontend ni en una variable `VITE_*`. No imprimas valores secretos en logs. No configures `OPENAI_API_KEY` ni selecciones OpenAI para probar Gemini.
 
-### Costes / límites
-El límite de 2 usuario/40 global es de **peticiones**, no de gasto en USD. Cada solicitud puede usar varios pasos de búsqueda y tokens. Configurar también límites y alertas de presupuesto en OpenAI Platform; revisar consumos reales después de cada prueba. No interpretar el límite de Supabase como un presupuesto monetario infalible.
+## Activación segura en Preview
 
-No hace falta una suscripción ChatGPT para la integración: la facturación de API es independiente del plan ChatGPT.
+1. Rotá en Google AI Studio la clave que pudo quedar visible; guardá la nueva clave directamente como Secret `GEMINI_API_KEY` en el entorno **Preview**.
+2. Configurá `SUPABASE_SECRET_KEY` como Secret y los valores públicos de Supabase como Text.
+3. Configurá `VIAJA_AI_PROVIDER=gemini`.
+4. Revisá el proyecto de AI Studio y confirmá que permanece sin facturación asociada si el requisito es no incurrir en cargos.
+5. Habilitá `VIAJA_AI_ENABLED=true` en **Preview**. No copies esta configuración a Production.
+6. Desplegá/reintentá el último deployment de la rama de Preview.
+7. En una sesión autenticada de la app, consultá `/api/status`: debe devolver `ready:true`, `provider:"Gemini"` y `mode:"ideas_without_search"`. Sin sesión, `ready:false` es lo esperado.
+8. Probá una generación real; verificá respuesta, actividad en `ai_usage` y el viaje recuperado desde Supabase.
 
-## Pruebas imprescindibles antes de activar en producción
-1. Invitado sin sesión: `/api/plan` nunca puede llamar OpenAI y devuelve 401 cuando está configurado.
-2. Petición válida pero con token expirado o inventado: 401, ningún consumo.
-3. Sesión Gmail real: crea un viaje con IA, devuelve itinerario, fuentes y gasto aproximado desde OpenAI Platform.
-4. Usuario repetidor: segunda generación dentro de 5 minutos da 429, al cabo de 5 minutos puede usar su segundo cupo, la tercera en 24 horas da 429.
-5. Datos inválidos/muy grandes/origen distinto: 400/413/403 sin consumo.
-6. Verificar que secretos nunca lleguen a frontend, logs, cachés o archivos del repositorio.
-7. Pruebas de carga/concurrencia (cuota SQL transaccional), sesión de dos usuarios y RLS de viajes.
-8. Simular errores OpenAI, cuotas globales, falta de conectividad y persistencia del borrador.
-9. Revisar que las citas y URLs sean reales; no asegurar disponibilidad de vuelos/hoteles ni precios no comprobados.
+La respuesta de `/api/status` no muestra secretos. `configuration_incomplete` indica que falta al menos una variable requerida o que la IA está deshabilitada; el endpoint no identifica cuál para evitar revelar configuración privada.
 
-## Limitaciones / pendientes
-- La salida JSON del planificador se valida pero aún no se ha probado con una llamada de API real; si falla el esquema, ajustar `text.format` a JSON Schema estricta y hacer test completo.
-- Aún no hay límites globales en **dólares** ni comprobación de coste por modelo/token en `ai_usage`; hay cuota de peticiones y límites configurables de OpenAI.
-- Los mapas con rutas internas, persistencia de favoritos/guías, pruebas E2E de dispositivos y textos legales siguen fuera de este PR.
-- No fusionar a `main` ni etiquetar `v1.0.0` hasta terminar las pruebas.
+## Límites y seguridad de uso
 
-Referencias:
-- https://supabase.com/docs/guides/getting-started/api-keys
-- https://developers.openai.com/api/docs/guides/tools-web-search
-- https://developers.cloudflare.com/pages/functions/bindings/
+El gateway requiere token de Supabase Auth, valida el usuario y reserva cuota transaccional antes de llamar al proveedor. Los límites iniciales son 2 solicitudes por usuario cada 24 horas, 40 globales cada 24 horas y 5 minutos entre solicitudes. Los intentos fallidos también consumen la reserva para prevenir abuso. Estos topes son de peticiones, no un presupuesto monetario.
+
+Gemini devuelve ideas sin búsqueda. La aplicación debe advertir que ubicaciones, precios, horarios y disponibilidad requieren verificación independiente. Si Gemini responde 429/4xx o falla la validación del JSON, el borrador del viaje debe conservarse y no deben presentarse resultados simulados.
+
+## Privacidad
+
+La clave Gemini y la clave secreta de Supabase se mantienen solo en bindings Secret de Pages Functions. Las solicitudes de planificación requieren un token válido de Supabase Auth. No subas secretos a GitHub, al bundle del cliente o a capturas.
