@@ -6,19 +6,41 @@ import {mapBounds,mapRouteUrl,mapStops,pointValid} from '../lib/map-helpers.ts';
 
 type Coordinate={lat:number;lon:number};
 type DisplayPoint={id:string;title:string;time:string;coordinate:Coordinate};
-type MapInterface={setView:(at:[number,number],zoom:number)=>MapInterface;fitBounds:(bounds:[[number,number],[number,number]],options?:Record<string,unknown>)=>void;remove:()=>void};
+type MapInterface={setView:(at:[number,number],zoom:number)=>MapInterface;fitBounds:(bounds:[[number,number],[number,number]],options?:Record<string,unknown>)=>void;invalidateSize:(options?:{pan?:boolean;debounceMoveend?:boolean})=>MapInterface;remove:()=>void};
 type LeafletApi={map:(node:HTMLElement)=>MapInterface;tileLayer:(url:string,config:Record<string,unknown>)=>{addTo:(map:MapInterface)=>unknown};marker:(at:[number,number])=>{addTo:(map:MapInterface)=>{bindPopup:(label:string)=>unknown}}};
 declare global {interface Window {L?:LeafletApi}}
 const MAX_STOPS=6;
 let leafletPromise:Promise<LeafletApi>|null=null;
 function ensureLeaflet():Promise<LeafletApi>{
- if(window.L)return Promise.resolve(window.L);
  if(leafletPromise)return leafletPromise;
  leafletPromise=new Promise<LeafletApi>((resolve,reject)=>{
-  if(!document.getElementById('viaja-leaflet-css')){const css=document.createElement('link');css.id='viaja-leaflet-css';css.rel='stylesheet';css.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';css.integrity='sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoF3JH5SQr4K35A=';css.crossOrigin='anonymous';document.head.appendChild(css)}
-  const script=document.createElement('script');script.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';script.integrity='sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';script.crossOrigin='anonymous';script.onload=()=>window.L?resolve(window.L):reject(Error('Biblioteca de mapas no disponible'));script.onerror=()=>reject(Error('No se pudo cargar el mapa'));document.head.appendChild(script)
+  // Leaflet must have its CSS loaded before the map is initialized.
+  // Otherwise tile panes can have the wrong layout, notably in mobile Safari.
+  const loadScript=()=>{
+   if(window.L){resolve(window.L);return}
+   const script=document.createElement('script');
+   script.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+   script.integrity='sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+   script.crossOrigin='anonymous';
+   script.onload=()=>window.L?resolve(window.L):reject(Error('Biblioteca de mapas no disponible'));
+   script.onerror=()=>reject(Error('No se pudo cargar el mapa'));
+   document.head.appendChild(script);
+  };
+  let css=document.getElementById('viaja-leaflet-css') as HTMLLinkElement|null;
+  if(css?.sheet){loadScript();return}
+  if(!css){
+   css=document.createElement('link');
+   css.id='viaja-leaflet-css';
+   css.rel='stylesheet';
+   css.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+   css.integrity='sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoF3JH5SQr4K35A=';
+   css.crossOrigin='anonymous';
+  }
+  css.addEventListener('load',loadScript,{once:true});
+  css.addEventListener('error',()=>reject(Error('No se pudieron cargar los estilos del mapa')),{once:true});
+  if(!css.parentNode)document.head.appendChild(css);
  }).catch(error=>{leafletPromise=null;throw error});
- return leafletPromise!;
+ return leafletPromise;
 }
 const safeText=(s:string)=>s.replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]||ch));
 const wait=(ms:number)=>new Promise<void>(resolve=>setTimeout(resolve,ms));
@@ -64,6 +86,17 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
  useEffect(()=>{generation.current++;setPoints([]);setMissing([]);setError('');return()=>{generation.current++}},[trip.destination,activities]);
  useEffect(()=>{
   let cancelled=false;
+  let observer:ResizeObserver|undefined;
+  let frame=0,settledFrame=0;
+  const refreshSize=()=>{
+   cancelAnimationFrame(frame);
+   cancelAnimationFrame(settledFrame);
+   frame=requestAnimationFrame(()=>{
+    settledFrame=requestAnimationFrame(()=>{
+     if(!cancelled)map.current?.invalidateSize({pan:false,debounceMoveend:true});
+    });
+   });
+  };
   if(!element.current)return;
   (async()=>{
    try{
@@ -75,9 +108,28 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
     setMapReady(true);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>',maxZoom:19}).addTo(m);
     if(!fallback){const center=readCache(trip.destination);if(center)m.setView([center.lat,center.lon],12)}
+    // A tab opening, font/layout reflow or iPhone viewport change can
+    // resize the container after Leaflet cached its original dimensions.
+    if(typeof ResizeObserver!=='undefined'){
+     observer=new ResizeObserver(refreshSize);
+     observer.observe(element.current);
+    }
+    window.addEventListener('resize',refreshSize);
+    window.addEventListener('pageshow',refreshSize);
+    refreshSize();
    }catch(e){if(!cancelled)setError('No pudimos cargar OpenStreetMap. Podés abrir igualmente las ubicaciones con Google Maps.')}
   })();
-  return()=>{cancelled=true;setMapReady(false);map.current?.remove();map.current=null};
+  return()=>{
+   cancelled=true;
+   observer?.disconnect();
+   cancelAnimationFrame(frame);
+   cancelAnimationFrame(settledFrame);
+   window.removeEventListener('resize',refreshSize);
+   window.removeEventListener('pageshow',refreshSize);
+   setMapReady(false);
+   map.current?.remove();
+   map.current=null;
+  };
  },[trip.destination,fallback?.lat,fallback?.lon]);
  useEffect(()=>{
   if(!mapReady||!points.length||!map.current||!window.L)return;
