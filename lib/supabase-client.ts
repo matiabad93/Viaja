@@ -10,6 +10,7 @@ declare const __VIAJA_SUPABASE_PUBLIC_KEY__: string;
 const url = typeof __VIAJA_SUPABASE_URL__ === 'string' ? __VIAJA_SUPABASE_URL__.replace(/\/+$/,'') : '';
 const key = typeof __VIAJA_SUPABASE_PUBLIC_KEY__ === 'string' ? __VIAJA_SUPABASE_PUBLIC_KEY__ : '';
 const storageKey = 'viaja-auth-session-v1';
+const authRedirect=()=>browser()?'?redirect_to='+encodeURIComponent(window.location.origin+'/'):'';
 export const cloudReady = Boolean(url && /^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(url) && key);
 export type ViajaUser = {id:string;email?:string};
 export type ViajaSession = {access_token:string;refresh_token:string;expires_at:number;user:ViajaUser};
@@ -69,6 +70,8 @@ async function refresh():Promise<ViajaSession|null> {
 export async function restoreAuth():Promise<ViajaSession|null> {
   if(!browser()||!cloudReady)return null;
   const hash=new URLSearchParams(window.location.hash.replace(/^#/,''));
+  const callbackError=hash.get('error_description')||hash.get('error');
+  if(callbackError){window.history.replaceState({},'',window.location.pathname+window.location.search);throw Error(callbackError.slice(0,220));}
   if(hash.get('access_token')&&hash.get('refresh_token')) {
     try {
       const token=hash.get('access_token')!,refreshToken=hash.get('refresh_token')!;
@@ -99,7 +102,7 @@ export async function accessToken():Promise<string|null> {
   return current?.access_token||null;
 }
 export async function register(email:string,password:string) {
-  const data=await api('/auth/v1/signup',{method:'POST',body:JSON.stringify({email,password})});
+  const data=await api('/auth/v1/signup'+authRedirect(),{method:'POST',body:JSON.stringify({email,password})});
   if(data.access_token)acceptSession(data);
   return Boolean(data.access_token);
 }
@@ -113,7 +116,7 @@ export async function logOut() {
   if(token)try {await api('/auth/v1/logout',{method:'POST'},token);}catch {}
 }
 export async function sendRecovery(email:string) {
-  await api('/auth/v1/recover',{method:'POST',body:JSON.stringify({email})});
+  await api('/auth/v1/recover'+authRedirect(),{method:'POST',body:JSON.stringify({email})});
 }
 export function recoveryPending():boolean {
   return browser()&&window.sessionStorage.getItem('viaja-password-recovery')==='1';
