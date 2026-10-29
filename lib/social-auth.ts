@@ -1,13 +1,13 @@
 /**
  * Supported Viaja 1.0.0 social sign-in methods.
  *
- * These are only entry points to Supabase Auth. No Google, Apple or Meta
+ * These are only entry points to Supabase Auth. No Google or Meta
  * OAuth secrets are ever stored in the frontend.
  */
-export const socialProviders=['google','apple','facebook'] as const;
+export const socialProviders=['google','facebook'] as const;
 export type SocialProvider=(typeof socialProviders)[number];
 export type SocialAvailability=Record<SocialProvider,boolean>;
-export const unavailableSocialProviders:SocialAvailability={google:false,apple:false,facebook:false};
+export const unavailableSocialProviders:SocialAvailability={google:false,facebook:false};
 
 export function parseSocialProviderSettings(settings:unknown):SocialAvailability{
  const external=settings&&typeof settings==='object'&&'external' in settings
@@ -15,7 +15,6 @@ export function parseSocialProviderSettings(settings:unknown):SocialAvailability
  const enabled=external&&typeof external==='object'?external as Record<string,unknown>:{};
  return {
   google:enabled.google===true,
-  apple:enabled.apple===true,
   facebook:enabled.facebook===true
  };
 }
