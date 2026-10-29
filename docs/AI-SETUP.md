@@ -24,6 +24,7 @@ Cloudflare Dashboard → Workers & Pages → `viaja` → Settings → Variables 
 | `VIAJA_AI_ENABLED` | Text | `true` solo después de validar todas las variables |
 | `VIAJA_AI_PROVIDER` | Text | `gemini` |
 | `GEMINI_API_KEY` | Secret | Una clave nueva de Google AI Studio, después de revocar la expuesta |
+| `GEMINI_KEY_ROTATED` | Text | `true` únicamente después de completar y verificar la rotación |
 | `SUPABASE_URL` | Text | `https://ovagewbmrirzrlvbvtbw.supabase.co` |
 | `SUPABASE_PUBLISHABLE_KEY` | Text | Clave publicable del proyecto `viaja-production` |
 | `SUPABASE_SECRET_KEY` | Secret | Clave secreta del proyecto, solo para Functions |
@@ -32,11 +33,11 @@ No cargues la clave Gemini en el frontend ni en una variable `VITE_*`. No imprim
 
 ## Activación segura en Preview
 
-1. Rotá en Google AI Studio la clave que pudo quedar visible; guardá la nueva clave directamente como Secret `GEMINI_API_KEY` en el entorno **Preview**.
+1. Revocá en Google AI Studio la clave que pudo quedar visible y creá una nueva. Guardala directamente como Secret `GEMINI_API_KEY` en **Preview**; no la reutilices ni la copies al repositorio.
 2. Configurá `SUPABASE_SECRET_KEY` como Secret y los valores públicos de Supabase como Text.
 3. Configurá `VIAJA_AI_PROVIDER=gemini`.
 4. Revisá el proyecto de AI Studio y confirmá que permanece sin facturación asociada si el requisito es no incurrir en cargos.
-5. Habilitá `VIAJA_AI_ENABLED=true` en **Preview**. No copies esta configuración a Production.
+5. Solo después de verificar la rotación, configura `GEMINI_KEY_ROTATED=true` y `VIAJA_AI_ENABLED=true` en **Preview**. El gateway falla cerrado mientras falte la confirmación de rotación. No copies esta configuración a Production.
 6. Desplegá/reintentá el último deployment de la rama de Preview.
 7. En una sesión autenticada de la app, consultá `/api/status`: debe devolver `ready:true`, `provider:"Gemini"` y `mode:"ideas_without_search"`. Sin sesión, `ready:false` es lo esperado.
 8. Probá una generación real; verificá respuesta, actividad en `ai_usage` y el viaje recuperado desde Supabase.
