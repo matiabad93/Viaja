@@ -1,54 +1,20 @@
 'use client';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {MapPin,Navigation,ExternalLink,LoaderCircle,AlertCircle} from 'lucide-react';
+import type * as Leaflet from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import type {Activity,Trip} from '../lib/travel.ts';
 import {mapBounds,mapRouteUrl,mapStops,pointValid} from '../lib/map-helpers.ts';
 
 type Coordinate={lat:number;lon:number};
 type DisplayPoint={id:string;title:string;time:string;coordinate:Coordinate};
-type MapInterface={setView:(at:[number,number],zoom:number)=>MapInterface;fitBounds:(bounds:[[number,number],[number,number]],options?:Record<string,unknown>)=>void;invalidateSize:(options?:{pan?:boolean;debounceMoveend?:boolean})=>MapInterface;remove:()=>void};
-type LeafletApi={map:(node:HTMLElement)=>MapInterface;tileLayer:(url:string,config:Record<string,unknown>)=>{addTo:(map:MapInterface)=>unknown};marker:(at:[number,number])=>{addTo:(map:MapInterface)=>{bindPopup:(label:string)=>unknown}}};
-declare global {interface Window {L?:LeafletApi}}
+type MapInterface=Leaflet.Map;
+type LeafletApi=typeof import('leaflet');
 const MAX_STOPS=6;
 let leafletPromise:Promise<LeafletApi>|null=null;
-const leafletCDNs=[
- {css:'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',js:'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'},
- {css:'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css',js:'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js'}
-];
-function loadStyles(url:string):Promise<void>{
- return new Promise((resolve,reject)=>{
-  const previous=document.getElementById('viaja-leaflet-css') as HTMLLinkElement|null;
-  if(previous?.sheet){resolve();return}
-  previous?.remove();
-  const link=document.createElement('link');
-  link.id='viaja-leaflet-css';link.rel='stylesheet';link.href=url;
-  link.integrity='sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
-  link.crossOrigin='anonymous';
-  link.onload=()=>resolve();
-  link.onerror=()=>{link.remove();reject(Error('No se pudieron cargar los estilos del mapa'))};
-  document.head.appendChild(link);
- });
-}
-function loadLeafletScript(url:string):Promise<LeafletApi>{
- return new Promise((resolve,reject)=>{
-  if(window.L){resolve(window.L);return}
-  const script=document.createElement('script');
-  script.src=url;
-  script.integrity='sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
-  script.crossOrigin='anonymous';
-  script.onload=()=>window.L?resolve(window.L):reject(Error('La biblioteca del mapa no se inicializó'));
-  script.onerror=()=>{script.remove();reject(Error('No se pudo cargar la biblioteca del mapa'))};
-  document.head.appendChild(script);
- });
-}
 function ensureLeaflet():Promise<LeafletApi>{
  if(leafletPromise)return leafletPromise;
- leafletPromise=(async()=>{
-  for(const cdn of leafletCDNs){
-   try{await loadStyles(cdn.css);return await loadLeafletScript(cdn.js)}catch{}
-  }
-  throw Error('No se pudo descargar Leaflet desde los proveedores de respaldo');
- })().catch(e=>{leafletPromise=null;throw e});
+ leafletPromise=import('leaflet').then(module=>module.default).catch(e=>{leafletPromise=null;throw e});
  return leafletPromise;
 }
 const safeText=(s:string)=>s.replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]||ch));
@@ -69,7 +35,7 @@ async function lookup(query:string):Promise<Coordinate|null>{
  const value={lat,lon};cache(query,value);return value;
 }
 export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
- const element=useRef<HTMLDivElement>(null),map=useRef<MapInterface|null>(null),generation=useRef(0);
+ const element=useRef<HTMLDivElement>(null),map=useRef<MapInterface|null>(null),leaflet=useRef<LeafletApi|null>(null),generation=useRef(0);
  const [mapReady,setMapReady]=useState(false),[points,setPoints]=useState<DisplayPoint[]>([]),[missing,setMissing]=useState<string[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(''),[loadError,setLoadError]=useState(''),[loadAttempt,setLoadAttempt]=useState(0),[mode,setMode]=useState<'walking'|'driving'|'transit'>('walking');
  const stops=mapStops(activities,trip.destination);
  const fallback=trip.city&&pointValid(trip.city.latitude,trip.city.longitude)?{lat:trip.city.latitude,lon:trip.city.longitude}:null;
@@ -111,6 +77,7 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
   (async()=>{
    try{
     const L=await ensureLeaflet();if(cancelled||!element.current)return;
+    leaflet.current=L;
     if(map.current){map.current.remove();map.current=null}
     const initial=fallback?[fallback.lat,fallback.lon] as [number,number]:[45,9] as [number,number];
     const m=L.map(element.current).setView(initial,fallback?11:4);
@@ -142,9 +109,9 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
   };
  },[trip.destination,fallback?.lat,fallback?.lon,loadAttempt]);
  useEffect(()=>{
-  if(!mapReady||!points.length||!map.current||!window.L)return;
+  if(!mapReady||!points.length||!map.current||!leaflet.current)return;
   // Refresh the map when pin collection changes.
-  const L=window.L,m=map.current;
+  const L=leaflet.current,m=map.current;
   // Leave the existing map for tiles, recreate only marker overlays via layer group if available.
   for(const p of points)L.marker([p.coordinate.lat,p.coordinate.lon]).addTo(m).bindPopup('<strong>'+safeText(p.title)+'</strong><div>'+safeText(p.time)+'</div>');
   m.fitBounds(mapBounds(points.map(p=>[p.coordinate.lat,p.coordinate.lon])),{padding:[35,35],maxZoom:14});
