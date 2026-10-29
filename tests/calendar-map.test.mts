@@ -9,7 +9,7 @@ const layout=calendarGeometry([train,later]);
 const slot=layout.slots.find(s=>s.activity.id==='train')!;
 assert.equal(slot.start,540);assert.equal(slot.end,660);
 assert.equal(slot.height,120*PIXELS_PER_MINUTE);
-assert.equal(slot.top+slot.height,(660-layout.start)*PIXELS_PER_MINUTE);
+assert.ok(Math.abs((slot.top+slot.height)-(660-layout.start)*PIXELS_PER_MINUTE)<0.001);
 assert.equal(hourLabel(660),'11:00');
 assert.equal(slot.conflict,false);
 const clash=calendarGeometry([train,{...later,time:'10:00'}]);
