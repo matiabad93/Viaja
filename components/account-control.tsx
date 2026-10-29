@@ -1,5 +1,6 @@
 'use client';
-import {useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
+import {createPortal} from 'react-dom';
 import {cloudReady,logIn,register,logOut,sendRecovery,changePassword,recoveryPending,importLocalTrips,type ViajaSession} from '../lib/supabase-client';
 import {UserRound,LogOut,CloudUpload,X,LoaderCircle} from 'lucide-react';
 
@@ -13,6 +14,26 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
  const [importing,setImporting]=useState(false);
  const [confirmImport,setConfirmImport]=useState(false);
  const busy=working||importing;
+ const triggerRef=useRef<HTMLButtonElement>(null);
+ const dialogRef=useRef<HTMLElement>(null);
+ const closeDialog=()=>{setOpen(false);triggerRef.current?.focus()};
+ useEffect(()=>{
+  if(!open)return;
+  const originalOverflow=document.body.style.overflow;
+  document.body.style.overflow='hidden';
+  dialogRef.current?.querySelector<HTMLInputElement>('input')?.focus();
+  const onKeyDown=(event:KeyboardEvent)=>{
+   if(event.key==='Escape'){event.preventDefault();closeDialog();return;}
+   if(event.key!=='Tab'||!dialogRef.current)return;
+   const focusables=Array.from(dialogRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])')).filter(el=>el.getClientRects().length>0);
+   if(!focusables.length)return;
+   const first=focusables[0],last=focusables[focusables.length-1];
+   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  };
+  document.addEventListener('keydown',onKeyDown);
+  return ()=>{document.body.style.overflow=originalOverflow;document.removeEventListener('keydown',onKeyDown)};
+ },[open]);
  const run=async(e:React.FormEvent)=>{
   e.preventDefault();if(busy)return;
   setWorking(true);setNotice('');
@@ -51,12 +72,12 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
  }
  if(!cloudReady)return <span className="profile" title="Conexión de cuentas pendiente de configurar en Cloudflare">Cuentas pendientes</span>;
  return <div className="viaja-account">
-  <button type="button" className="viaja-account-trigger" onClick={()=>{setMode(recoveryPending()?'password':'login');setOpen(v=>!v);setNotice('');}} aria-expanded={open} aria-label={session?'Opciones de mi cuenta':'Iniciar sesión o registrarse'}>
+  <button ref={triggerRef} type="button" className="viaja-account-trigger" onClick={()=>{setMode(recoveryPending()?'password':'login');setOpen(v=>!v);setNotice('');}} aria-expanded={open} aria-label={session?'Opciones de mi cuenta':'Iniciar sesión o registrarse'}>
    <UserRound size={16}/> {session?(session.user.email||'Mi cuenta'):'Entrar / Registrarme'}
   </button>
-  {open&&<div className="viaja-account-backdrop" role="presentation" onMouseDown={(e)=>{if(e.target===e.currentTarget)setOpen(false)}}>
-   <section className="viaja-account-dialog" role="dialog" aria-modal="true" aria-label={session?'Mi cuenta':'Acceder a Viaja'}>
-    <button className="viaja-account-close" type="button" onClick={()=>setOpen(false)} aria-label="Cerrar"><X size={20}/></button>
+  {open&&typeof document!=='undefined'&&createPortal(<div className="viaja-account-backdrop" role="presentation" onMouseDown={(e)=>{if(e.target===e.currentTarget)closeDialog()}}>
+   <section ref={dialogRef} className="viaja-account-dialog" role="dialog" aria-modal="true" aria-label={session?'Mi cuenta':'Acceder a Viaja'}>
+    <button className="viaja-account-close" type="button" onClick={closeDialog} aria-label="Cerrar"><X size={20}/></button>
     {session?<><h2>Mi cuenta</h2><p className="viaja-account-subtitle">Sesión iniciada como <strong>{session.user.email||'usuario'}</strong>. Tus viajes se guardan en Supabase.</p>
       <button type="button" className="viaja-account-action" disabled={busy} onClick={importTrips}><CloudUpload size={17}/> Importar viajes anteriores de este dispositivo</button>
       {confirmImport&&<p className="viaja-account-help">Se conservará la copia local. Tocá «Importar» nuevamente para confirmar.</p>}
@@ -78,6 +99,6 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
     {notice&&<p className="viaja-account-notice" role="status">{notice}</p>}
     <p className="viaja-account-help">No compartas tu contraseña. La cuenta pertenece a Viaja y utiliza Supabase Auth.</p>
    </section>
-  </div>}
+  </div>,document.body)}
  </div>;
 }
