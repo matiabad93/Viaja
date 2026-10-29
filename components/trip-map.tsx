@@ -22,7 +22,7 @@ function loadStyles(url:string):Promise<void>{
   previous?.remove();
   const link=document.createElement('link');
   link.id='viaja-leaflet-css';link.rel='stylesheet';link.href=url;
-  link.integrity='sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoF3JH5SQr4K35A=';
+  link.integrity='sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
   link.crossOrigin='anonymous';
   link.onload=()=>resolve();
   link.onerror=()=>{link.remove();reject(Error('No se pudieron cargar los estilos del mapa'))};
