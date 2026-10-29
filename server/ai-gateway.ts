@@ -1,7 +1,10 @@
 import {destinationsAPI} from './destinations';
 import {plannerAPI,validateTrip} from './planner';
+import {geminiFreePlanner,FREE_GEMINI_MODEL} from './gemini-planner';
 
 export type ViajaAIEnv={
+ GEMINI_API_KEY?:string;
+ VIAJA_AI_PROVIDER?:string;
  OPENAI_API_KEY?:string;
  OPENAI_MODEL?:string;
  VIAJA_AI_ENABLED?:string;
@@ -12,7 +15,8 @@ export type ViajaAIEnv={
 const response=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const baseUrl=(env:ViajaAIEnv)=>env.SUPABASE_URL||'https://ovagewbmrirzrlvbvtbw.supabase.co';
 const publicKey=(env:ViajaAIEnv)=>env.SUPABASE_PUBLISHABLE_KEY||'';
-const configured=(env:ViajaAIEnv)=>env.VIAJA_AI_ENABLED==='true'&&Boolean(env.OPENAI_API_KEY&&env.SUPABASE_SECRET_KEY&&publicKey(env));
+const provider=(env:ViajaAIEnv)=>env.VIAJA_AI_PROVIDER==='gemini'?'gemini':'openai';
+const configured=(env:ViajaAIEnv)=>env.VIAJA_AI_ENABLED==='true'&&Boolean((provider(env)==='gemini'?env.GEMINI_API_KEY:env.OPENAI_API_KEY)&&env.SUPABASE_SECRET_KEY&&publicKey(env));
 
 type SupabaseUser={id:string;email?:string;role?:string;is_anonymous?:boolean};
 async function resolveUser(request:Request,env:ViajaAIEnv):Promise<SupabaseUser|null>{
@@ -49,9 +53,9 @@ export async function secureAIGateway(request:Request,env:ViajaAIEnv):Promise<Re
  if(path!=='/api/status'&&path!=='/api/plan')return response({error:'No encontrado'},404);
  if(path==='/api/status'){
   if(request.method!=='GET')return response({error:'Método no permitido'},405);
-  if(!configured(env))return response({ready:false,admin:false,restricted:true,provider:'OpenAI'});
+  if(!configured(env))return response({ready:false,admin:false,restricted:true,provider:provider(env)==='gemini'?'Gemini':'OpenAI',mode:provider(env)==='gemini'?'ideas_without_search':'researched'});
   const user=await resolveUser(request,env);
-  return response({ready:Boolean(user),admin:false,restricted:!user,loginRequired:!user,provider:'OpenAI',search:'web_search'});
+  return response({ready:Boolean(user),admin:false,restricted:!user,loginRequired:!user,provider:provider(env)==='gemini'?'Gemini':'OpenAI',search:provider(env)==='gemini'?'none':'web_search',mode:provider(env)==='gemini'?'ideas_without_search':'researched'});
  }
  if(request.method!=='POST')return response({error:'Método no permitido'},405);
  if(!configured(env))return response({code:'AI_NOT_CONFIGURED',error:'La IA todavía está en preparación. Podés seguir guardando viajes.'},503);
@@ -82,6 +86,11 @@ export async function secureAIGateway(request:Request,env:ViajaAIEnv):Promise<Re
  try{
   // The legacy planner expects owner headers from its previous hosting system.
   // Replace client-controlled values with values returned by Supabase Auth.
+  if(provider(env)==='gemini'){
+   const result=await geminiFreePlanner(request,{GEMINI_API_KEY:env.GEMINI_API_KEY});
+   success=result.ok;
+   return result;
+  }
   const verifiedHeaders=new Headers(request.headers);
   verifiedHeaders.delete('oai-authenticated-user-id');
   verifiedHeaders.delete('oai-authenticated-user-email');
@@ -98,7 +107,7 @@ export async function secureAIGateway(request:Request,env:ViajaAIEnv):Promise<Re
  }catch{return response({error:'No se pudo completar la investigación. El borrador continúa disponible.'},502)}
  finally{
   try{await invokeQuota(env,'viaja_finalize_ai_request',{
-   p_request_id:requestId,p_status:success?'completed':'failed',p_model:env.OPENAI_MODEL||'gpt-4.1-mini'
+   p_request_id:requestId,p_status:success?'completed':'failed',p_model:provider(env)==='gemini'?FREE_GEMINI_MODEL:(env.OPENAI_MODEL||'gpt-4.1-mini')
   })}catch{/* The reserved request still counts toward limits if completion update fails. */}
  }
 }
