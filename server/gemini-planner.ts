@@ -11,6 +11,11 @@ import {validateTrip} from './planner';
 export const FREE_GEMINI_MODEL='gemini-3.1-flash-lite';
 const MAX_DAYS=7;
 const json=(value:unknown,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'private, no-store'}});
+/** Only report fixed failure categories. Never log prompts, model outputs or API keys. */
+const failure=(code:string,error:string,status:number,details?:Record<string,string|number>)=>{
+ console.warn('[Viaja Gemini]',JSON.stringify({code,...details}));
+ return json({code,error},status);
+};
 
 type GeminiEnv={GEMINI_API_KEY?:string};
 type ActivityIdea={title:string;description:string;time:string;minutes:number;location:string};
@@ -91,7 +96,7 @@ function geminiRequest(trip:ReturnType<typeof validateTrip>){
    destination:trip.destination,origin:trip.origin,start:trip.start,end:trip.end,travelers:trip.travelers,
    budget:trip.budget,pace:trip.pace,transport:trip.transport,notes:trip.notes,adjustment:trip.adjustment
   })}]}],
-  generationConfig:{responseMimeType:'application/json',responseSchema:schema,temperature:0.4,maxOutputTokens:6500}
+  generationConfig:{responseMimeType:'application/json',responseSchema:schema,temperature:0.35,thinkingConfig:{thinkingLevel:'minimal'},maxOutputTokens:8192}
  };
 }
 
@@ -110,19 +115,30 @@ export async function geminiFreePlanner(request:Request,env:GeminiEnv):Promise<R
     signal:AbortSignal.timeout(80000),cache:'no-store'
   });
   if(!apiResponse.ok){
-   if(apiResponse.status===429)return json({error:'Gemini alcanzó el límite gratuito de tu proyecto. Consultá AI Studio → Límite de frecuencia.'},429);
-   if(apiResponse.status===404)return json({error:'El modelo gratuito no está disponible para este proyecto. Verificá los modelos habilitados en AI Studio.'},503);
-   if([401,403].includes(apiResponse.status))return json({error:'Gemini no autorizó la consulta. Revisá la clave y los permisos del proyecto.'},503);
-   return json({error:'Gemini no pudo completar la generación. Podés reintentar más tarde.'},502);
+   const details={httpStatus:apiResponse.status};
+   if(apiResponse.status===429)return failure('GEMINI_PROVIDER_QUOTA','Gemini alcanzó el límite gratuito de tu proyecto. Revisá las cuotas de Google AI Studio.',429,details);
+   if(apiResponse.status===404)return failure('GEMINI_MODEL_UNAVAILABLE','Gemini no reconoce este modelo para tu proyecto. Revisá los modelos disponibles en AI Studio.',503,details);
+   if([401,403].includes(apiResponse.status))return failure('GEMINI_CREDENTIALS','Gemini rechazó la clave o el proyecto no tiene permisos.',503,details);
+   if(apiResponse.status===400)return failure('GEMINI_REQUEST_REJECTED','Gemini rechazó el formato de la petición. Es un error de integración, no de tu viaje.',502,details);
+   return failure('GEMINI_PROVIDER_ERROR','Gemini no pudo completar la generación. Podés conservar el borrador e intentar después.',502,details);
   }
-  const raw=await apiResponse.json() as any;
+  let raw:any;
+  try{raw=await apiResponse.json()}catch{return failure('GEMINI_BAD_PROVIDER_JSON','Gemini devolvió una respuesta técnica no interpretable.',502)}
   const candidate=raw?.candidates?.[0];
-  if(candidate?.finishReason!=='STOP')return json({error:'Gemini devolvió una respuesta incompleta. Conservamos tu borrador.'},502);
-  const resultText=(candidate.content?.parts||[]).map((p:any)=>p.text||'').join('');
-  if(!resultText||resultText.length>60000)return json({error:'La respuesta de Gemini no tuvo el formato esperado.'},502);
+  if(candidate?.finishReason!=='STOP'){
+   const reason=typeof candidate?.finishReason==='string'?candidate.finishReason:'NO_CANDIDATE';
+   if(reason==='MAX_TOKENS')return failure('GEMINI_MAX_TOKENS','Gemini interrumpió el itinerario por el límite de respuesta. Probá con menos días.',502,{finishReason:reason});
+   if(reason==='SAFETY'||reason==='RECITATION')return failure('GEMINI_BLOCKED','Gemini bloqueó esta respuesta. Probá con otra descripción del viaje.',422,{finishReason:reason});
+   return failure('GEMINI_INCOMPLETE','Gemini no terminó de generar el itinerario. Conservamos tu borrador.',502,{finishReason:reason});
+  }
+  const resultText=(candidate.content?.parts||[]).filter((p:any)=>typeof p.text==='string').map((p:any)=>p.text).join('');
+  if(!resultText||resultText.length>60000)return failure('GEMINI_EMPTY_RESPONSE','Gemini no devolvió texto de itinerario válido.',502);
   let parsed:GeminiOutput;
-  try{parsed=validateIdeas(JSON.parse(resultText),trip.start,trip.days)}
-  catch{return json({error:'Gemini no devolvió un itinerario estructurado válido. Probá de nuevo con un viaje más corto.'},502)}
+  let resultData:unknown;
+  try{resultData=JSON.parse(resultText)}
+  catch{return failure('GEMINI_INVALID_JSON','Gemini devolvió un JSON incompleto. Conservamos el borrador.',502)}
+  try{parsed=validateIdeas(resultData,trip.start,trip.days)}
+  catch(e){return failure('GEMINI_INVALID_ITINERARY','Gemini generó un itinerario con datos inválidos. Probá con menos días.',502,{validation:e instanceof Error?e.message.slice(0,100):'invalid'})}
   const itinerary=parsed.days.map((d,i)=>({
    id:crypto.randomUUID(),title:'Día '+(i+1)+' — '+d.date+' · '+d.title,
    activities:d.activities.map(a=>({
@@ -158,6 +174,6 @@ export async function geminiFreePlanner(request:Request,env:GeminiEnv):Promise<R
   });
  }catch(e){
   const timedOut=e instanceof Error&&(e.name==='TimeoutError'||e.name==='AbortError');
-  return json({error:timedOut?'Gemini tardó demasiado. Tu borrador sigue guardado.':'No se pudo contactar con Gemini. Conservamos tu borrador.'},502)
+  return failure(timedOut?'GEMINI_TIMEOUT':'GEMINI_NETWORK_ERROR',timedOut?'Gemini tardó demasiado. Tu borrador sigue guardado.':'No se pudo contactar con Gemini. Conservamos tu borrador.',502);
  }
 }
