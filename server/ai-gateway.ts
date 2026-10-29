@@ -15,8 +15,18 @@ export type ViajaAIEnv={
 const response=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const baseUrl=(env:ViajaAIEnv)=>env.SUPABASE_URL||'https://ovagewbmrirzrlvbvtbw.supabase.co';
 const publicKey=(env:ViajaAIEnv)=>env.SUPABASE_PUBLISHABLE_KEY||'';
-const provider=(env:ViajaAIEnv)=>env.VIAJA_AI_PROVIDER==='gemini'?'gemini':'openai';
-const configured=(env:ViajaAIEnv)=>env.VIAJA_AI_ENABLED==='true'&&Boolean((provider(env)==='gemini'?env.GEMINI_API_KEY:env.OPENAI_API_KEY)&&env.SUPABASE_SECRET_KEY&&publicKey(env));
+type AIProvider='gemini'|'openai'|'unsupported';
+const provider=(env:ViajaAIEnv):AIProvider=>{
+ const selected=env.VIAJA_AI_PROVIDER?.trim().toLowerCase();
+ if(!selected||selected==='gemini')return 'gemini';
+ if(selected==='openai')return 'openai';
+ return 'unsupported';
+};
+const providerLabel=(env:ViajaAIEnv)=>provider(env)==='gemini'?'Gemini':provider(env)==='openai'?'OpenAI':null;
+const configured=(env:ViajaAIEnv)=>{
+ const selected=provider(env);
+ return env.VIAJA_AI_ENABLED==='true'&&selected!=='unsupported'&&Boolean((selected==='gemini'?env.GEMINI_API_KEY:env.OPENAI_API_KEY)&&env.SUPABASE_SECRET_KEY&&publicKey(env));
+};
 
 type SupabaseUser={id:string;email?:string;role?:string;is_anonymous?:boolean};
 async function resolveUser(request:Request,env:ViajaAIEnv):Promise<SupabaseUser|null>{
@@ -53,9 +63,9 @@ export async function secureAIGateway(request:Request,env:ViajaAIEnv):Promise<Re
  if(path!=='/api/status'&&path!=='/api/plan')return response({error:'No encontrado'},404);
  if(path==='/api/status'){
   if(request.method!=='GET')return response({error:'Método no permitido'},405);
-  if(!configured(env))return response({ready:false,admin:false,restricted:true,reason:'configuration_incomplete',provider:provider(env)==='gemini'?'Gemini':'OpenAI',mode:provider(env)==='gemini'?'ideas_without_search':'researched'});
+  if(!configured(env))return response({ready:false,admin:false,restricted:true,reason:provider(env)==='unsupported'?'provider_unsupported':'configuration_incomplete',provider:providerLabel(env),mode:provider(env)==='gemini'?'ideas_without_search':provider(env)==='openai'?'researched':null});
   const user=await resolveUser(request,env);
-  return response({ready:Boolean(user),admin:false,restricted:!user,reason:user?'ready':'authentication_required',loginRequired:!user,provider:provider(env)==='gemini'?'Gemini':'OpenAI',search:provider(env)==='gemini'?'none':'web_search',mode:provider(env)==='gemini'?'ideas_without_search':'researched'});
+  return response({ready:Boolean(user),admin:false,restricted:!user,reason:user?'ready':'authentication_required',loginRequired:!user,provider:providerLabel(env),search:provider(env)==='gemini'?'none':provider(env)==='openai'?'web_search':null,mode:provider(env)==='gemini'?'ideas_without_search':provider(env)==='openai'?'researched':null});
  }
  if(request.method!=='POST')return response({error:'Método no permitido'},405);
  if(!configured(env))return response({code:'AI_NOT_CONFIGURED',error:'La IA todavía está en preparación. Podés seguir guardando viajes.'},503);
