@@ -6,7 +6,7 @@
  * Generated activities are IDEAS ONLY, not researched or verified facts.
  * The API key never leaves the server runtime.
  */
-import {validateTrip} from './planner';
+import {validateTrip} from './planner.ts';
 
 export const FREE_GEMINI_MODEL='gemini-3.1-flash-lite';
 const MAX_DAYS=7;
