@@ -39,7 +39,7 @@ async function lookup(query:string):Promise<Coordinate|null>{
 }
 export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
  const element=useRef<HTMLDivElement>(null),map=useRef<MapInterface|null>(null),generation=useRef(0);
- const [points,setPoints]=useState<DisplayPoint[]>([]),[missing,setMissing]=useState<string[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(''),[mode,setMode]=useState<'walking'|'driving'|'transit'>('walking');
+ const [mapReady,setMapReady]=useState(false),[points,setPoints]=useState<DisplayPoint[]>([]),[missing,setMissing]=useState<string[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(''),[mode,setMode]=useState<'walking'|'driving'|'transit'>('walking');
  const stops=mapStops(activities,trip.destination);
  const fallback=trip.city&&pointValid(trip.city.latitude,trip.city.longitude)?{lat:trip.city.latitude,lon:trip.city.longitude}:null;
  const pinStops=useCallback(async()=>{
@@ -72,20 +72,21 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
     const initial=fallback?[fallback.lat,fallback.lon] as [number,number]:[45,9] as [number,number];
     const m=L.map(element.current).setView(initial,fallback?11:4);
     map.current=m;
+    setMapReady(true);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>',maxZoom:19}).addTo(m);
     if(!fallback){const center=readCache(trip.destination);if(center)m.setView([center.lat,center.lon],12)}
    }catch(e){if(!cancelled)setError('No pudimos cargar OpenStreetMap. Podés abrir igualmente las ubicaciones con Google Maps.')}
   })();
-  return()=>{cancelled=true;map.current?.remove();map.current=null};
+  return()=>{cancelled=true;setMapReady(false);map.current?.remove();map.current=null};
  },[trip.destination,fallback?.lat,fallback?.lon]);
  useEffect(()=>{
-  if(!points.length||!map.current||!window.L)return;
+  if(!mapReady||!points.length||!map.current||!window.L)return;
   // Refresh the map when pin collection changes.
   const L=window.L,m=map.current;
   // Leave the existing map for tiles, recreate only marker overlays via layer group if available.
   for(const p of points)L.marker([p.coordinate.lat,p.coordinate.lon]).addTo(m).bindPopup('<strong>'+safeText(p.title)+'</strong><div>'+safeText(p.time)+'</div>');
   m.fitBounds(mapBounds(points.map(p=>[p.coordinate.lat,p.coordinate.lon])),{padding:[35,35],maxZoom:14});
- },[points]);
+ },[points,mapReady]);
  const link=mapRouteUrl(activities,trip.destination,mode);
  return <section className="viaja-map-section">
   <div className="calendar-intro"><MapPin size={22}/><div><h3>Tu recorrido en el mapa</h3><p>Explorá los lugares de este día. Los puntos son ubicaciones aproximadas; comprobá las direcciones antes de desplazarte.</p></div></div>
