@@ -1,5 +1,5 @@
-import {validateItinerary} from './structured-itinerary';
-import {destinationsAPI} from './destinations';
+import {validateItinerary} from './structured-itinerary.ts';
+import {destinationsAPI} from './destinations.ts';
 type Env={OPENAI_API_KEY?:string;OPENAI_MODEL?:string;VIAJA_OWNER_EMAIL?:string};
 const json=(data:unknown,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'private, no-store'}});
 const sourceOptions=['official','blogs','forums','youtube','tiktok'];
