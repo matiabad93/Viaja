@@ -74,3 +74,19 @@ body{font-size:15px;line-height:1.5}button,a,input,textarea,select{-webkit-tap-h
   .viaja-account-backdrop{padding:12px;align-items:safe center;}
   .viaja-account-dialog{max-height:calc(100dvh - 24px);border-radius:16px;}
 }
+
+/* Available social sign-in providers are discovered from Supabase Auth settings. */
+.viaja-social-auth{margin:4px 0 20px}
+.viaja-social-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.viaja-social-provider{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:78px;padding:10px 4px;border:1px solid #d6e1d8;border-radius:12px;background:#fff;color:#173f35;font-size:12px;font-weight:700;transition:background .15s,border-color .15s}
+.viaja-social-provider:hover:not(:disabled){border-color:#648e7c;background:#f0f6f0}
+.viaja-social-provider:disabled{cursor:not-allowed;background:#f4f6f3;color:#73857a;opacity:1}
+.viaja-social-provider-icon{display:grid;place-items:center;height:22px;width:24px}
+.viaja-google-g{font-family:Arial,sans-serif;font-size:23px;font-weight:800;line-height:1;color:#4285f4}
+.viaja-facebook-f{display:grid;place-items:center;height:23px;width:23px;border-radius:50%;background:#1877f2;color:#fff;font-size:21px;font-family:Arial,sans-serif;font-weight:800;line-height:25px}
+.viaja-social-provider:disabled .viaja-facebook-f{filter:grayscale(1);opacity:.58}
+.viaja-social-provider:disabled .viaja-google-g{filter:grayscale(1);opacity:.58}
+.viaja-social-provider small{font-size:9px;font-weight:400;color:#819188}
+.viaja-social-separator{position:relative;display:flex;align-items:center;gap:11px;margin-top:18px;color:#63796e;font-size:11px;white-space:nowrap}
+.viaja-social-separator::before,.viaja-social-separator::after{content:"";height:1px;flex:1;background:#dce6dd}
+@media(max-width:360px){.viaja-social-list{gap:6px}.viaja-social-provider{font-size:11px;padding:9px 2px}}
