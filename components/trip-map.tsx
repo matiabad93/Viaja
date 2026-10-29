@@ -14,11 +14,11 @@ let leafletPromise:Promise<LeafletApi>|null=null;
 function ensureLeaflet():Promise<LeafletApi>{
  if(window.L)return Promise.resolve(window.L);
  if(leafletPromise)return leafletPromise;
- leafletPromise=new Promise((resolve,reject)=>{
+ leafletPromise=new Promise<LeafletApi>((resolve,reject)=>{
   if(!document.getElementById('viaja-leaflet-css')){const css=document.createElement('link');css.id='viaja-leaflet-css';css.rel='stylesheet';css.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';css.integrity='sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoF3JH5SQr4K35A=';css.crossOrigin='anonymous';document.head.appendChild(css)}
   const script=document.createElement('script');script.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';script.integrity='sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';script.crossOrigin='anonymous';script.onload=()=>window.L?resolve(window.L):reject(Error('Biblioteca de mapas no disponible'));script.onerror=()=>reject(Error('No se pudo cargar el mapa'));document.head.appendChild(script)
  }).catch(error=>{leafletPromise=null;throw error});
- return leafletPromise;
+ return leafletPromise!;
 }
 const safeText=(s:string)=>s.replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]||ch));
 const wait=(ms:number)=>new Promise<void>(resolve=>setTimeout(resolve,ms));
