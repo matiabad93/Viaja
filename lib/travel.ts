@@ -6,6 +6,9 @@ export type Expense={id:string;date:string;label:string;category:string;amount:n
 export type Plan={photos?:DestinationPhoto[];photoKey?:string;id:string;trip:Trip;kind:'draft'|'researched';createdAt:string;itinerary?:Day[];expenses?:Expense[];parts?:{text:string;annotations:{start:number;end:number;url:string;title:string}[]}[];sources?:{url:string;title:string}[]};
 export const money=(n:number)=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(n);
 export const spent=(p:Plan)=>(p.expenses||[]).reduce((n,e)=>n+Math.round(e.amount*100),0)/100;
+export const outsideBudget=(e:Expense)=>['Vuelos','Aéreo','Aéreos','Alojamiento','Hospedaje'].includes(e.category);
+export const budgetSpent=(p:Plan)=>(p.expenses||[]).filter(e=>!outsideBudget(e)).reduce((n,e)=>n+Math.round(e.amount*100),0)/100;
+export const extraSpent=(p:Plan)=>(p.expenses||[]).filter(outsideBudget).reduce((n,e)=>n+Math.round(e.amount*100),0)/100;
 export function status(p:Plan,today=new Date().toLocaleDateString('sv-SE')){return !p.trip.start||!p.trip.end?'Sin fechas':p.trip.start>today?'Próximo':p.trip.end<today?'Finalizado':'En curso'}
 export const photo=(s:string)=>/par[ií]s/i.test(s)?'/demo/paris.jpg':/colmar/i.test(s)?'/demo/colmar.jpg':/barcelona/i.test(s)?'/demo/barcelona.jpg':/roma/i.test(s)?'/demo/roma.jpg':/lisboa/i.test(s)?'/demo/lisboa.jpg':null;
 export function daysCount(t:Trip){const n=(Date.parse(t.end)-Date.parse(t.start))/86400000+1;return Number.isFinite(n)&&n>0?Math.min(366,n):0}

@@ -1,7 +1,7 @@
 name: Viaja v1 staging checks
 on:
   push:
-    branches: [feat/v1-production-release-plan]
+    branches: [feat/v1-production-release-plan, fix/map-and-budget-ux-20261029]
   pull_request:
     branches: [main]
 permissions:

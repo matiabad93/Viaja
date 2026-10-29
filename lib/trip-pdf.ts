@@ -1,4 +1,4 @@
-import {itineraryOf,money,spent,type Plan} from './travel.ts';
+import {itineraryOf,money,spent,budgetSpent,extraSpent,type Plan} from './travel.ts';
 
 // Dependency-free A4 PDF writer. Uses Helvetica/WinAnsi for Spanish punctuation.
 const W=595.28,H=841.89,M=48,usable=W-2*M;
@@ -23,7 +23,7 @@ export function buildTripPdf(plan:Plan):Uint8Array{
  line((trip.start||'Sin fecha')+' - '+(trip.end||'Sin regreso')+' | '+trip.travelers+' viajeros',10,false,0,18);
  heading('Resumen del viaje');
  data('Ciudad de salida',trip.origin);data('Duración',days.length+' días');data('Ritmo',trip.pace);data('Transporte',trip.transport);
- data('Presupuesto del grupo',money(trip.budget));data('Gastado',money(spent(plan)));data('Disponible',money(trip.budget-spent(plan)));
+ data('Presupuesto diario del grupo',trip.budget>0?money(trip.budget):'Sin definir');data('Gastado en conceptos diarios',money(budgetSpent(plan)));data('Vuelos y alojamiento aparte',money(extraSpent(plan)));data('Disponible',trip.budget>0?money(trip.budget-budgetSpent(plan)):'No aplica');
  if(trip.notes?.trim()){sub('Notas y preferencias');line(trip.notes,10)}
  heading('Itinerario completo');
  days.forEach((day,i)=>{
@@ -44,14 +44,14 @@ export function buildTripPdf(plan:Plan):Uint8Array{
  heading('Gastos y presupuesto');
  if(expenses.length)expenses.forEach((e,i)=>{room(40);line((i+1)+'. '+e.label+' - '+money(e.amount),10,true);line((e.date||'Sin fecha')+' · '+(e.category||'Sin categoría'),9,false,12,14)});
  else line('Sin gastos registrados.',10);
- y-=8;data('Total gastado',money(spent(plan)));data('Presupuesto total',money(trip.budget));data('Saldo',money(trip.budget-spent(plan)));
+ y-=8;data('Total registrado',money(spent(plan)));data('Gastado de presupuesto diario',money(budgetSpent(plan)));data('Vuelos y alojamiento',money(extraSpent(plan)));data('Presupuesto diario',trip.budget>0?money(trip.budget):'Sin definir');data('Saldo diario',trip.budget>0?money(trip.budget-budgetSpent(plan)):'No aplica');
  if(plan.parts?.length){heading('Informe y recomendaciones');for(const part of plan.parts){line(part.text,9,false,0,14);y-=6}}
  heading('Fuentes y referencias');
  if(plan.sources?.length)for(const source of plan.sources){line(source.title||'Fuente',10,true);line(source.url,8,false,0,13)}
  else line('Sin fuentes verificadas asociadas.',9);
  if(trip.links?.trim()){sub('Enlaces guardados');line(trip.links,8)}
  heading('Información importante');
- line('Los horarios, precios, trayectos y actividades propuestos pueden ser orientativos. Confirmá las reservas, las condiciones y los datos actuales antes de viajar.',9);
+ line('El presupuesto del grupo incluye actividades, comidas y transporte local. Vuelos y alojamiento se registran por separado. Los horarios y precios propuestos son orientativos. Confirmá los datos y las reservas antes de viajar.',9);
  const objects:string[]=[];const object=(s:string)=>{objects.push(s);return objects.length};
  const f1=object('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
  const f2=object('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');

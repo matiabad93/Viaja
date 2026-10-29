@@ -1,8 +1,14 @@
 import assert from 'node:assert/strict';
 // @ts-ignore Node native TypeScript
 import {geminiFreePlanner} from '../server/gemini-planner.ts';
+// @ts-ignore Node native TypeScript
+import {validateTrip} from '../server/planner.ts';
 const trip={destination:'Roma, Italia',origin:'Barcelona',start:'2026-11-14',end:'2026-11-15',travelers:2,budget:500,pace:'Equilibrado',transport:'Sin coche',notes:'',links:'',adjustment:'',sources:['official']};
 const req=()=>new Request('https://viaja.pages.dev/api/plan',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(trip)});
+assert.equal(validateTrip({...trip,budget:''}).budget,0);
+assert.equal(validateTrip({...trip,budget:null}).budget,0);
+assert.throws(()=>validateTrip({...trip,travelers:0}),/viajeros/);
+assert.equal(validateTrip(trip).budget,500);
 const original=globalThis.fetch;
 const success={candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify({summary:'Plan para dos días en Roma',budgetNotes:'Estimación sin precios actuales',days:[{date:'2026-11-14',title:'Centro histórico',activities:[{title:'Coliseo',description:'Visita sugerida',location:'Roma',time:'10:00',minutes:120}]},{date:'2026-11-15',title:'Recorrido tranquilo',activities:[{title:'Panteón',description:'Paseo orientativo',location:'Roma',time:'11:00',minutes:60}]}]})}]}}]};
 try {
