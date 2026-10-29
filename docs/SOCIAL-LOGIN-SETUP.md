@@ -1,6 +1,8 @@
-# Viaja 1.0.0 — configurar acceso social (Google, Apple, Facebook)
+# Viaja 1.0.0 — configurar acceso social (Gmail y Facebook)
 
-Los botones para estos tres proveedores están implementados en la **rama de staging**. Viaja consulta `GET /auth/v1/settings` de Supabase y **solo habilita el proveedor si aparece como activo**. Antes de introducir credenciales, el acceso por correo y contraseña sigue siendo la opción funcional.
+Los botones para estos dos proveedores están implementados en la **rama de staging**. Viaja consulta `GET /auth/v1/settings` de Supabase y **solo habilita el proveedor si aparece como activo**. Antes de introducir credenciales, el acceso por correo y contraseña sigue siendo la opción funcional.
+
+> **Decisión de producto (29-10-2026):** Viaja ofrecerá solamente **«Continuar con Gmail»** (proveedor `google` de Supabase Auth), **«Continuar con Facebook»** y acceso por correo y contraseña. **No** ofrecerá Apple. «Gmail» aquí significa iniciar sesión con la identidad de Google y **no concede acceso a los correos del usuario**. La integración para importar reservas desde Gmail sería una funcionalidad distinta, con autorización y permisos específicos.
 
 ## Proyecto y redirecciones
 - Supabase project: `viaja-production` (ref `ovagewbmrirzrlvbvtbw`).
@@ -12,10 +14,9 @@ Los botones para estos tres proveedores están implementados en la **rama de sta
 - **Nunca subir `client_secret`, claves privadas de Apple ni tokens de usuario a GitHub, Cloudflare como variables públicas, capturas compartidas o frontend.** Guardarlos en la configuración correspondiente dentro de Supabase.
 
 ## Prioridad de lanzamiento
-1. **Google primero** (alta adopción y configuración directa).
-2. **Apple segundo** (especialmente usuarios iPhone; requiere Apple Developer y mantenimiento periódico de la clave OAuth).
-3. **Facebook tercero** (Meta for Developers, permisos email, modo Live y validación de permisos/identidad según corresponda).
-4. Conservar **email y contraseña** como alternativa, más recuperación y verificación de correo.
+1. **Gmail (Google OAuth) primero** (alta adopción y configuración directa).
+2. **Facebook segundo** (Meta for Developers, permisos email, modo Live y validación de permisos/identidad según corresponda).
+3. Conservar **email y contraseña** como alternativa, más recuperación y verificación de correo.
 
 ## Google: tarea de configuración para el propietario
 1. Entrar a Google Cloud Console → Google Auth Platform → Branding/Audience. Crear una aplicación OAuth, público externo y consentimiento adecuado. Usar el nombre `Viaja`; limitar scopes a identidad (`openid`, email, perfil), **no pedir Gmail ni Drive** para iniciar sesión.
@@ -29,14 +30,6 @@ Los botones para estos tres proveedores están implementados en la **rama de sta
 
 Documentación: https://supabase.com/docs/guides/auth/social-sign-in/auth-google
 
-## Apple
-1. Cuenta de Apple Developer, Services ID y configuración web de Sign in with Apple con el callback indicado por Supabase.
-2. Completar Apple en Supabase → Authentication → Sign In / Providers, utilizando las credenciales oficiales.
-3. Probar desde Safari en iPhone y desde navegador de escritorio; verificar tratamiento de «Ocultar mi correo».
-4. **Importante:** la clave secreta OAuth de Apple necesita rotarse regularmente (documentación actual: cada 6 meses).
-
-Documentación: https://supabase.com/docs/guides/auth/social-sign-in/auth-apple
-
 ## Facebook (Meta)
 1. Crear una aplicación en https://developers.facebook.com con Facebook Login, según las opciones vigentes para tu cuenta.
 2. Registrar el callback exacto de Supabase; configurar permiso email.
@@ -46,7 +39,7 @@ Documentación: https://supabase.com/docs/guides/auth/social-sign-in/auth-apple
 Documentación: https://supabase.com/docs/guides/auth/social-sign-in/auth-facebook
 
 ## Criterios de aceptación (staging)
-- Los tres botones se muestran siempre, pero si un proveedor no está habilitado, el botón permanece desactivado con etiqueta «Próximamente»; no hay error de redirección ni promesa engañosa.
+- Los dos botones se muestran siempre, pero si un proveedor no está habilitado, el botón permanece desactivado con etiqueta «Próximamente»; no hay error de redirección ni promesa engañosa.
 - Un proveedor habilitado inicia el flujo oficial OAuth en Supabase y retorna al mismo dominio donde comenzó.
 - Estado de sesión válido y `auth.users` tiene la identidad conectada.
 - Un viaje guardado en la cuenta se recupera al cerrar e iniciar sesión en otro navegador, sin atribuirlo a otro usuario.
