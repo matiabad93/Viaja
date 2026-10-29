@@ -3,7 +3,7 @@ import {useEffect,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
 import {cloudReady,logIn,register,logOut,sendRecovery,changePassword,recoveryPending,importLocalTrips,getSocialProviderAvailability,beginSocialSignIn,type ViajaSession} from '../lib/supabase-client';
 import {unavailableSocialProviders,socialProviders,type SocialAvailability,type SocialProvider} from '../lib/social-auth';
-import {UserRound,LogOut,CloudUpload,X,LoaderCircle,Apple} from 'lucide-react';
+import {UserRound,LogOut,CloudUpload,X,LoaderCircle} from 'lucide-react';
 
 export function AccountControl({session,onReload,onError}:{session:ViajaSession|null;onReload:()=>Promise<void>;onError:(message:string)=>void}){
  const [open,setOpen]=useState(false);
@@ -23,7 +23,7 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
  useEffect(()=>{if(!open||session)return;let active=true;setSocialStatusLoading(true);getSocialProviderAvailability().then(result=>{if(active)setAvailableProviders(result)}).finally(()=>{if(active)setSocialStatusLoading(false)});return()=>{active=false}},[open,session]);
  const signInSocial=(provider:SocialProvider)=>{
   if(!availableProviders[provider]||socialStatusLoading)return;
-  try{setNotice('Redirigiendo a '+({google:'Google',apple:'Apple',facebook:'Facebook'}[provider])+'…');beginSocialSignIn(provider)}
+  try{setNotice('Redirigiendo a '+({google:'Gmail',facebook:'Facebook'}[provider])+'…');beginSocialSignIn(provider)}
   catch(e){setNotice(e instanceof Error?e.message:'No pudimos abrir el acceso social.')}
  };
  useEffect(()=>{
@@ -95,21 +95,22 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
       <h2>{mode==='login'?'Iniciar sesión':mode==='signup'?'Crear una cuenta':mode==='recover'?'Recuperar contraseña':'Nueva contraseña'}</h2>
       <p className="viaja-account-subtitle">Tus viajes, calendario y gastos estarán disponibles cuando ingreses con tu cuenta.</p>
       {mode!=='password'&&mode!=='recover'&&<div className="viaja-social-auth">
-        <div className="viaja-social-list" aria-label="Acceso con redes sociales">
+        <div className="viaja-social-list" aria-label="Acceso con Gmail o Facebook">
           {socialProviders.map(provider=><button
             key={provider}
             type="button"
             className={'viaja-social-provider viaja-social-'+provider}
             disabled={busy||socialStatusLoading||!availableProviders[provider]}
-            aria-label={'Continuar con '+({google:'Google',apple:'Apple',facebook:'Facebook'}[provider])+(availableProviders[provider]?'':' (pendiente de habilitar)')}
+            aria-label={'Continuar con '+({google:'Gmail',facebook:'Facebook'}[provider])+(availableProviders[provider]?'':' (pendiente de habilitar)')}
             title={availableProviders[provider]?'Continuar con '+provider:'Proveedor pendiente de configurar en Supabase'}
             onClick={()=>signInSocial(provider)}
           >
-            <span className="viaja-social-provider-icon" aria-hidden="true">{provider==='google'?<span className="viaja-google-g">G</span>:provider==='apple'?<Apple size={19} fill="currentColor" strokeWidth={1.4}/>:<span className="viaja-facebook-f">f</span>}</span>
-            <span>{provider==='google'?'Google':provider==='apple'?'Apple':'Facebook'}</span>
+            <span className="viaja-social-provider-icon" aria-hidden="true">{provider==='google'?<span className="viaja-google-g">G</span>:<span className="viaja-facebook-f">f</span>}</span>
+            <span>{provider==='google'?'Gmail':'Facebook'}</span>
             {!availableProviders[provider]&&<small>{socialStatusLoading?'Comprobando…':'Próximamente'}</small>}
           </button>)}
         </div>
+        <p className="viaja-social-explainer">Gmail utiliza el inicio de sesión seguro de Google. Viaja no accede a tus mensajes ni a tu bandeja de entrada.</p>
         <div className="viaja-social-separator"><span>o continuá con tu correo</span></div>
       </div>}
       <form onSubmit={run}>
