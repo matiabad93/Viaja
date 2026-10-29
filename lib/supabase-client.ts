@@ -39,7 +39,7 @@ async function api<T=JSONValue>(path:string,init:RequestInit={},token?:string):P
   headers.set('Content-Type','application/json');
   if(token) headers.set('Authorization','Bearer '+token);
   const response=await fetch(url+path,{...init,headers,cache:'no-store'});
-  const data=await response.json().catch(()=>({}));
+  const data:JSONValue=await response.json().catch(()=>({})) as JSONValue;
   if(!response.ok) throw Error(String(data.msg||data.message||data.error_description||data.error||'No pudimos completar la solicitud.').slice(0,220));
   return data as T;
 }
