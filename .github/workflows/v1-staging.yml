@@ -1,7 +1,7 @@
 name: Viaja v1 staging checks
 on:
   push:
-    branches: [feat/v1-production-release-plan, fix/map-and-budget-ux-20261029]
+    branches: [feat/v1-production-release-plan, fix/map-and-budget-ux-20261029, feat/multidestination-route-budget-ux-20261030]
   pull_request:
     branches: [main]
 permissions:
@@ -25,6 +25,7 @@ jobs:
       - run: node --experimental-strip-types tests/trip-pdf.test.mts
       - run: node --experimental-strip-types tests/calendar-map.test.mts
       - run: node --experimental-strip-types tests/photos-quality.test.mts
+      - run: node --experimental-strip-types tests/multidestinations.test.mts
       - run: pnpm run build:demo
       - name: Require actual production output
         run: test -f web-dist/index.html
