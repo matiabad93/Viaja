@@ -58,4 +58,29 @@ const italianCities=await realCityQuery('Italia',body=>body.mode==='country'&&bo
 ok(italianCities.cities[0].population>=italianCities.cities[1].population,'Italy returns genuine major cities ordered by population');
 const rosario=await realCityQuery('Rosario',body=>body.mode==='city'&&body.cities?.some(city=>city.country==='Argentina'&&city.name==='Rosario'&&/Santa Fe/i.test(city.region)));
 ok(rosario.cities.some(city=>city.name==='Rosario'&&city.country==='Argentina'&&/Santa Fe/i.test(city.region)),'Rosario shows Santa Fe, Argentina in real geocoder data');
+
+async function realMiamiTouristPhotos(){
+ let latest='';
+ for(let attempt=0;attempt<5;attempt++){
+  try{
+   const response=await fetch(new URL('/api/photos?q=Miami&country=Estados%20Unidos',origin),
+    {signal:AbortSignal.timeout(60000),headers:{Accept:'application/json'}});
+   const data=await response.json();
+   if(response.ok&&data.photoStrategy==='scenic-v2'&&Array.isArray(data.photos)&&data.photos.length>=2){
+    const pictures=data.photos;
+    ok(pictures.every(p=>p.title.includes('Miami')&&!/politic|president|handshake|conference|summit|portrait|protest/i.test(p.title)),
+     'Miami returns only recognizable tourist landscapes, never political or unrelated portraits');
+    ok(pictures.every(p=>p.source?.startsWith('https://commons.wikimedia.org/wiki/File:')&&p.author&&p.license),
+     'All Miami photos have original Commons URLs, author and license');
+    console.log('[preview] Verified Miami scenic photo subjects: '+pictures.slice(0,8).map(p=>p.title).join(' | '));
+    return;
+   }
+   latest='HTTP '+response.status+'; photoStrategy='+(data.photoStrategy||'none')+'; photos='+(data.photos?.length||0)+'; error='+(data.error||'');
+  }catch(e){latest=String(e)}
+  if(attempt<4)await new Promise(resolve=>setTimeout(resolve,4500));
+ }
+ throw Error('Live Miami tourism photos failed: '+latest);
+}
+await realMiamiTouristPhotos();
+
 console.log('PREVIEW HTTP SMOKE TEST PASSED for '+origin);
