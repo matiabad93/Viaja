@@ -1,6 +1,6 @@
 'use client';
 import {requestAPI} from '../lib/api-client';
-import {curatedCovers} from '../lib/destination-covers';
+import {curatedCovers,photoCacheKey} from '../lib/destination-covers';
 import {useEffect,useState,useRef} from 'react';
 import type {Plan,DestinationPhoto} from '../lib/travel';
 
@@ -8,7 +8,8 @@ export function DestinationGallery({plan,onChange}:{plan:Plan;onChange:(p:Plan)=
  const latest=useRef(plan);latest.current=plan;
  const change=useRef(onChange);change.current=onChange;
  const city=plan.trip.city?.name||plan.trip.destination.replace(/ · copia$/,'').split(',')[0].replace(/ esencial| entre miradores| y Alsacia| imprescindible/i,'');
- const key=city+'|'+plan.trip.start;
+ const country=plan.trip.city?.country||plan.trip.destination.split(',').slice(1).join(',').trim();
+ const key=photoCacheKey(city,country);
  const [photos,setPhotos]=useState<DestinationPhoto[]>([]);
  const [state,setState]=useState('');
  const [retry,setRetry]=useState(0);
@@ -32,7 +33,7 @@ export function DestinationGallery({plan,onChange}:{plan:Plan;onChange:(p:Plan)=
   const controller=new AbortController();
   setPhotos([]);setState('Buscando fotografías del destino…');
   requestAPI('/api/photos?'+new URLSearchParams({
-   q:city,country:plan.trip.city?.country||'',date:plan.trip.start,
+   q:city,country,date:plan.trip.start,
    lat:String(plan.trip.city?.latitude||0)
   }),{signal:controller.signal})
    .then(async r=>{
@@ -51,7 +52,7 @@ export function DestinationGallery({plan,onChange}:{plan:Plan;onChange:(p:Plan)=
  },[key,retry]);
  return <section className="destination-gallery surface">
   <div className="section-heading compact"><div><span className="eyebrow">CONOCÉ TU DESTINO</span><h3>{city} en imágenes</h3></div><button className="textbtn" onClick={()=>setRetry(n=>n+1)}>Actualizar fotos</button></div>
-  <p className="subtle">Imágenes de archivo de los lugares más representativos; las condiciones de tu viaje pueden ser distintas.</p>
+  <p className="subtle">Fotografías de monumentos, panorámicas y lugares turísticos identificables, con su fuente y licencia. No representan necesariamente la temporada de tu viaje.</p>
   {state&&<p role="status">{state}</p>}
   <div className="photo-grid">{photos.map(p=><figure key={p.source}><a href={p.source} target="_blank" rel="noopener noreferrer" aria-label={'Ver origen de '+p.title}><img src={p.url} alt={p.title.replace(/^File:/,'')} loading="lazy"/></a></figure>)}</div>
   {photos.length>0&&<details className="photo-credits"><summary>Autoría, licencias y archivos originales de estas fotos</summary><ul>{photos.map(p=><li key={p.source}>{p.author||'Autor no indicado'} · {p.license} · <a href={p.source} target="_blank" rel="noopener noreferrer">{p.title.replace(/^File:/,'')}</a></li>)}</ul><p>Las imágenes se recortan visualmente para ajustarse a las tarjetas.</p></details>}
