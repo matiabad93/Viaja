@@ -20,10 +20,20 @@ export async function destinationsAPI(request:Request){
  };
  const country=(u.searchParams.get('country')||'').slice(0,80).replace(/[^\p{L}\s]/gu,'');
  const query='"'+name.replace(/["\\]/g,'')+'" '+country;
- const results=await Promise.allSettled([builtin?Promise.resolve(builtin):search(query),season?search(query+' '+season):Promise.resolve([])]);
- const general=builtin||(results[0].status==='fulfilled'?results[0].value:[]),seasonal=results[1].status==='fulfilled'?results[1].value:[];
+ const results=builtin?[]:await Promise.allSettled([search(query),season?search(query+' '+season):Promise.resolve([])]);
+ const general=builtin||(results[0]?.status==='fulfilled'?results[0].value:[]),seasonal=results[1]?.status==='fulfilled'?results[1].value:[];
  if(!general.length&&!seasonal.length)throw Error('No encontramos fotos disponibles para este destino.');
- const seen=new Set();const photos=[...seasonal,...general].filter(p=>{if(seen.has(p.source))return false;seen.add(p.source);return true}).slice(0,10);
+ const rejected=/protest|demonstrat|manifest|climate|palestin|antifascis|politic|insect|millipede|cockroach|spider|reptile|dead |killed|accident|traffic jam|advert|graffiti|poster|flag|logo|map|diagram|painting|drawing|sketch|cartoon|screenshot|infographic|stock photo/i;
+ const city=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ const seen=new Set<string>();
+ const photos=[...general,...seasonal].filter(p=>{
+  if(seen.has(p.source)||rejected.test(p.title))return false;
+  // Free-text Commons matches can be any subject. For uncurated locations,
+  // require the destination name in the filename instead of taking random results.
+  if(!builtin&&!p.title.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(city))return false;
+  seen.add(p.source);return true;
+ }).slice(0,10);
+ if(!photos.length)throw Error('Ninguna fotografía verificada para este destino.');
  return Response.json({photos,season,seasonalCount:Math.min(seasonal.length,10),note:'Fotos de archivo del destino. La estación es un criterio de búsqueda, no una garantía del aspecto en las fechas de tu viaje.',fetchedAt:new Date().toISOString()},{headers:{'Cache-Control':'public, max-age=86400'}});
  }catch{return Response.json({error:'No pudimos consultar el proveedor. Podés reintentar; tus datos siguen guardados.'},{status:502})}
 }
