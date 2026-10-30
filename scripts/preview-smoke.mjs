@@ -36,4 +36,8 @@ console.log('[preview] AI readiness (anonymous): '+status.ready+'; provider='+(s
 ok(status.ready===false,'Unauthenticated visitors cannot use AI');
 const forbidden=await get('/api/plan',{method:'GET'});
 ok(forbidden.response.status===405,'GET /api/plan is rejected');
+const invalidOrigin=await get('/api/plan',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://untrusted.example'},body:'{}'});
+ok(invalidOrigin.response.status===403,'Cross-origin AI request is rejected before calling a provider');
+const anonymousPlan=await get('/api/plan',{method:'POST',headers:{'Content-Type':'application/json',Origin:origin},body:'{}'});
+ok(anonymousPlan.response.status===401,'Unauthenticated AI request is rejected before quota/provider invocation');
 console.log('PREVIEW HTTP SMOKE TEST PASSED for '+origin);
