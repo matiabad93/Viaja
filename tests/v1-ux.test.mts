@@ -23,4 +23,16 @@ assert.ok(stops.includes('disabled={!canAdd}'),'Cannot add an unselected stop');
 assert.ok(stops.includes('setConfirmedExtra(selected)'),'Selections stay tracked when reordering');
 assert.ok(css.includes('.topbar nav:has(>button:nth-child(4))'),'Bottom nav supports 3 and 4 sections');
 assert.ok(css.includes('env(safe-area-inset-bottom)'),'Bottom nav accommodates iPhone safe area');
-console.log('PASS: Madrid teaser navigation, sequential city confirmation, reordering, mobile UI guards');
+// AI regeneration must use Viaja's dialog, not window.confirm(), and must not
+// reserve the provider request before the user has actively confirmed.
+const dialog=readFileSync(new URL('../components/confirm-dialog.tsx',import.meta.url),'utf8');
+assert.ok(!/\\b(?:window\\.)?confirm\\s*\\(/.test(home),'AI regeneration must never show a browser-native confirm popup');
+assert.ok(home.includes('setPendingRegeneration(true)'),'Existing itinerary asks for confirmation');
+assert.ok(home.includes('onConfirm={confirmRegeneration}'),'Regeneration dialog has explicit confirmation');
+assert.ok(home.includes('onCancel={()=>setPendingRegeneration(false)}'),'Closing the dialog cancels regeneration');
+assert.ok(home.includes('danger={false}'),'Regeneration uses non-destructive dialog styling');
+assert.ok(home.indexOf('void performGeneration();};')<home.indexOf('const confirmRegeneration='),'Initial generation is independent of confirm callback');
+assert.ok(home.includes('expenses:draft.expenses'),'AI response retains already recorded expenses');
+assert.ok(dialog.includes('role={danger?"alertdialog":"dialog"}'),'Non-destructive dialog uses the appropriate accessible role');
+assert.ok(css.includes('.viaja-confirm-neutral .viaja-confirm-icon'),'Regeneration has branded modal styling');
+console.log('PASS: Madrid navigation, sequential stops, mobile UX and branded AI regeneration confirmation');
