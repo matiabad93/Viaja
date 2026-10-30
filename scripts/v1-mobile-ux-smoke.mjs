@@ -9,17 +9,25 @@ const runner=browserName==='webkit'?webkit:chromium;
 const browser=await runner.launch(browserName==='webkit'?{headless:true}:{headless:true,executablePath:'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']});
 const cities={
  paris:{id:1,name:'París',country:'Francia',region:'Isla de Francia',latitude:48.8566,longitude:2.3522,featureCode:'PPLC',population:2100000},
- toledo:{id:2,name:'Toledo',country:'España',region:'Castilla-La Mancha',latitude:39.8628,longitude:-4.0273,featureCode:'PPLA',population:85000}
+ toledo:{id:2,name:'Toledo',country:'España',region:'Castilla-La Mancha',latitude:39.8628,longitude:-4.0273,featureCode:'PPLA',population:85000},
+ rosario:{id:3,name:'Rosario',country:'Argentina',region:'Santa Fe',latitude:-32.9468,longitude:-60.6393,featureCode:'PPLA2',population:950000},
+ roma:{id:4,name:'Roma',country:'Italia',region:'Lacio',latitude:41.9028,longitude:12.4964,featureCode:'PPLC',countryCode:'IT',population:2800000},
+ milano:{id:5,name:'Milano',country:'Italia',region:'Lombardía',latitude:45.4642,longitude:9.19,featureCode:'PPLA',countryCode:'IT',population:1300000}
 };
 try{
  for(const viewport of [{width:390,height:844,name:'iphone'},{width:1280,height:900,name:'desktop'}]){
   const context=await browser.newContext({viewport:{width:viewport.width,height:viewport.height},locale:'es-ES'});
   const page=await context.newPage();
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  const cityFixture=(value)=>value.toLocaleLowerCase('es').includes('tol')?cities.toledo:cities.paris;
+  const cityFixture=(value)=>{
+   const q=value.toLocaleLowerCase('es');
+   return q.includes('tol')?cities.toledo:q.includes('ros')?cities.rosario:cities.paris;
+  };
   await page.route('**/api/cities?*',route=>{
    const q=new URL(route.request().url()).searchParams.get('q')||'';
-   return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({cities:[cityFixture(q)]})});
+   const country=q.toLocaleLowerCase('es').includes('ital');
+   return route.fulfill({status:200,contentType:'application/json',
+    body:JSON.stringify(country?{mode:'country',cities:[cities.roma,cities.milano]}:{mode:'city',cities:[cityFixture(q)]})});
   });
   // WebKit can exercise the GeoNames fallback when Pages Functions are temporarily
   // unavailable. Keep both paths deterministic for a UI behavior test.
@@ -77,6 +85,16 @@ try{
   await add.click();
   assert.equal(await page.getByRole('combobox',{name:'Destino adicional 3'}).inputValue(),'');
   assert.ok(await add.isDisabled(),'New empty third destination cannot be bypassed');
+  // A country suggests its actual major cities, not namesake towns abroad.
+  const main=page.getByRole('combobox',{name:'Destino principal'});
+  await main.fill('Italia');
+  await page.getByRole('option',{name:/Roma.*Italia/}).waitFor({state:'visible'});
+  assert.equal(await page.getByRole('option',{name:/Milano.*Italia/}).count(),1,'Country lists a second major city');
+  assert.equal(await page.getByRole('option',{name:/Italia.*México/}).count(),0,'Country search excludes namesake Mexican towns');
+  await main.fill('Rosario');
+  const rosario=page.getByRole('option',{name:/Rosario.*Santa Fe.*Argentina/});
+  await rosario.waitFor({state:'visible'});
+  assert.match(await rosario.innerText(),/Santa Fe, Argentina/,'Region and country appear under Rosario');
   const overflow=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,viewport:window.innerWidth}));
   assert.ok(overflow.scroll<=overflow.viewport+3,'No horizontal overflow: '+JSON.stringify(overflow));
   await page.screenshot({path:'artifacts/v1-mobile-ux/'+viewport.name+'-sequential-cities.png'});
