@@ -6,7 +6,7 @@ import {photo,type DestinationPhoto} from './travel';
 
 function normalize(s:string){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()}
 export function curatedCovers(destination:string):DestinationPhoto[]{
- const city=normalize(destination.split(',')[0].replace(/ · copia$/,'').replace(/ esencial| entre miradores| y alsacia/ig,''));
+ const city=normalize(destination.split(',')[0].replace(/ · copia$/,'').replace(/ esencial| entre miradores| y alsacia| imprescindible/ig,''));
  const galleries:Record<string,DestinationPhoto[]>={paris,colmar,barcelona,roma,lisboa,madrid};
  const images=galleries[city]||[];
  if(city==='paris'){
