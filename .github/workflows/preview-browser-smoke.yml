@@ -23,6 +23,13 @@ jobs:
         env:
           VIAJA_PREVIEW_URL: https://feat-v1-production-release-p.viaja.pages.dev
         run: node scripts/preview-browser-smoke.mjs
+      - name: Install Playwright WebKit for Safari-engine checks
+        run: /tmp/viaja-smoke/node_modules/.bin/playwright install --with-deps webkit
+      - name: Desktop and mobile WebKit UI smoke
+        env:
+          VIAJA_PREVIEW_URL: https://feat-v1-production-release-p.viaja.pages.dev
+          VIAJA_BROWSER: webkit
+        run: node scripts/preview-browser-smoke.mjs
       - name: Upload screenshot evidence
         uses: actions/upload-artifact@v4
         if: always()
