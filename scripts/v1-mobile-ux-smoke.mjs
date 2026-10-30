@@ -16,10 +16,16 @@ try{
   const context=await browser.newContext({viewport:{width:viewport.width,height:viewport.height},locale:'es-ES'});
   const page=await context.newPage();
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  const cityFixture=(value)=>value.toLocaleLowerCase('es').includes('tol')?cities.toledo:cities.paris;
   await page.route('**/api/cities?*',route=>{
-   const q=(new URL(route.request().url()).searchParams.get('q')||'').toLocaleLowerCase('es');
-   const item=q.includes('tol')?cities.toledo:cities.paris;
-   route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({cities:[item]})});
+   const q=new URL(route.request().url()).searchParams.get('q')||'';
+   return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({cities:[cityFixture(q)]})});
+  });
+  // WebKit can exercise the GeoNames fallback when Pages Functions are temporarily
+  // unavailable. Keep both paths deterministic for a UI behavior test.
+  await page.route('**/geocoding-api.open-meteo.com/v1/search?*',route=>{
+   const q=new URL(route.request().url()).searchParams.get('name')||'';
+   return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({results:[cityFixture(q)]})});
   });
   await page.goto(origin,{waitUntil:'domcontentloaded',timeout:45000});
   await page.getByRole('button',{name:'Planificar'}).first().click();
