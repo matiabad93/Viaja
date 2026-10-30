@@ -20,7 +20,7 @@ function uniqueImages(photos:DestinationPhoto[]){
  const used=new Set<string>();
  return photos.filter(p=>{if(!p.url?.startsWith('https://')||used.has(p.url))return false;used.add(p.url);return true});
 }
-export function useDestinationCover(destination:string,stored:DestinationPhoto[]|undefined,cityName?:string){
+export function useDestinationCover(destination:string,stored?:DestinationPhoto[],cityName?:string){
  const [remote,setRemote]=useState<DestinationPhoto[]>([]);
  const [bad,setBad]=useState<string[]>([]);
  const [index,setIndex]=useState(0);
