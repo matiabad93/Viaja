@@ -97,6 +97,13 @@ try{
   await page.locator('.trip-detail').waitFor({state:'visible'});
   assert.match(await page.locator('.trip-banner h1').innerText(),/París/,'Manual Paris trip has been created');
   assert.match(await page.locator('.trip-banner').getAttribute('style')||'',/Eiffel_Tower|Tour_Eiffel/i,'Paris cover prioritizes Eiffel Tower photography');
+  const bannerImg=page.locator('.trip-banner img[aria-hidden="true"]');
+  await page.waitForTimeout(1200);
+  assert.ok(await bannerImg.evaluate(img=>img instanceof HTMLImageElement && img.naturalWidth>0),'Paris destination photo actually loaded');
+  const initialPhoto=await bannerImg.getAttribute('src');
+  await page.waitForTimeout(6200);
+  assert.notEqual(await bannerImg.getAttribute('src'),initialPhoto,'Paris cover rotates to a second destination photo');
+  await page.screenshot({path:'artifacts/preview-browser/'+browserName+'-'+device.name+'-paris-cover.png',fullPage:false});
   await page.locator('.detail-tabs button').filter({hasText:'Itinerario'}).click();
   await page.getByRole('button',{name:/Actividad/}).last().click();
   await page.getByLabel('Nombre del lugar o actividad').fill('Paseo por París');
