@@ -14,5 +14,5 @@ assert.equal(validDate('2026-11-08'),true);
 assert.equal(validDate('not a date'),false);
 assert.match(formattedDate('2026-11-08'),/nov/i);
 const styles=readFileSync(new URL('../app/globals.css',import.meta.url),'utf8');
-assert.match(styles,/\\.calendar-day\\.other-month:not\\(:disabled\\)\\{color:inherit;opacity:1\\}/,'Adjacent month selectable days must not look disabled');
+assert.ok(styles.includes('.calendar-day.other-month:not(:disabled){color:inherit;opacity:1}'),'Adjacent month selectable days must not look disabled');
 console.log('Date range calendar: date comparisons, month grid, local timestamps and labels — OK');
