@@ -37,7 +37,7 @@ async function lookup(query:string):Promise<Coordinate|null>{
 export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
  const element=useRef<HTMLDivElement>(null),map=useRef<MapInterface|null>(null),leaflet=useRef<LeafletApi|null>(null),generation=useRef(0);
  const [mapReady,setMapReady]=useState(false),[points,setPoints]=useState<DisplayPoint[]>([]),[missing,setMissing]=useState<string[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(''),[loadError,setLoadError]=useState(''),[loadAttempt,setLoadAttempt]=useState(0),[mode,setMode]=useState<'walking'|'driving'|'transit'>('walking');
- const stops=mapStops(activities,trip.destination);
+ const stops=mapStops(activities,trip.destination,trip.additionalDestinations);
  const fallback=trip.city&&pointValid(trip.city.latitude,trip.city.longitude)?{lat:trip.city.latitude,lon:trip.city.longitude}:null;
  const pinStops=useCallback(async()=>{
   const ticket=++generation.current;setBusy(true);setError('');setPoints([]);setMissing([]);
@@ -116,7 +116,7 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
   for(const p of points)L.marker([p.coordinate.lat,p.coordinate.lon]).addTo(m).bindPopup('<strong>'+safeText(p.title)+'</strong><div>'+safeText(p.time)+'</div>');
   m.fitBounds(mapBounds(points.map(p=>[p.coordinate.lat,p.coordinate.lon])),{padding:[35,35],maxZoom:14});
  },[points,mapReady]);
- const link=mapRouteUrl(activities,trip.destination,mode);
+ const link=mapRouteUrl(activities,trip.destination,mode,trip.additionalDestinations);
  const mapCenter=fallback||points[0]?.coordinate;
  const iframeSource=mapCenter?'https://www.openstreetmap.org/export/embed.html?'+new URLSearchParams({bbox:[mapCenter.lon-.02,mapCenter.lat-.012,mapCenter.lon+.02,mapCenter.lat+.012].join(','),layer:'mapnik',marker:mapCenter.lat+','+mapCenter.lon}):null;
  return <section className="viaja-map-section">
