@@ -69,17 +69,40 @@ try{
   await numbers.nth(1).fill('');
   assert.equal(await numbers.nth(0).inputValue(),'','Travelers may be cleared before editing');
   assert.equal(await numbers.nth(1).inputValue(),'','Optional budget may be cleared');
-  const departure=page.getByLabel('Fecha de salida',{exact:true});
-  // The fixture already starts on 2026-11-06. A no-op fill would emit no change event.
-  // Choose a later date to verify both focus and invalid-return clearing.
-  await departure.fill('2026-11-08');
-  await page.waitForFunction(()=>document.activeElement?.getAttribute('aria-label')==='Fecha de regreso',null,{timeout:3000});
-  const focus=await page.evaluate(()=>document.activeElement?.getAttribute('aria-label'));
-  assert.equal(focus,'Fecha de regreso','Changing departure automatically focuses return date');
-  assert.equal(await page.getByLabel('Fecha de regreso',{exact:true}).inputValue(),'','Invalid previous return date is cleared');
+  const departure=page.getByRole('button',{name:'Fecha de salida',exact:true});
+  await departure.click();
+  await page.locator('.calendar-day[data-date="2026-11-08"]').click();
+  await page.getByRole('dialog',{name:'Elegir fecha de regreso'}).waitFor({state:'visible'});
+  assert.equal(await page.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'Fecha de regreso','Selecting departure focuses return date');
+  assert.equal(await page.locator('.calendar-day[data-date="2026-11-07"]').isDisabled(),true,'Return date before departure is unavailable');
+  await page.locator('.calendar-day[data-date="2026-11-10"]').click();
+  assert.equal(await page.getByRole('dialog',{name:'Elegir fecha de regreso'}).count(),0,'Calendar closes when return is selected');
+  assert.match(await page.getByRole('button',{name:'Fecha de regreso',exact:true}).innerText(),/10.*nov/i,'Return date is displayed');
   await page.screenshot({path:'artifacts/preview-browser/'+browserName+'-'+device.name+'-planner.png',fullPage:false});
   assert.equal(errors.length,0,'No fatal browser page errors: '+errors.join('; '));
   console.log('PASS '+device.name+' planner fields, date focus and no browser page errors');
+  await page.getByRole('button',{name:/Mis viajes/}).first().click();
+  await page.getByRole('button',{name:'Crear viaje',exact:true}).click();
+  await page.getByRole('combobox',{name:'¿A dónde querés ir?'}).fill('París, Francia');
+  await page.getByRole('button',{name:'Fecha de salida',exact:true}).click();
+  const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+12);
+  const afterTomorrow=new Date(tomorrow);afterTomorrow.setDate(afterTomorrow.getDate()+2);
+  const asISO=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+  const first=asISO(tomorrow),last=asISO(afterTomorrow);
+  for(let tries=0;tries<12&&!(await page.locator('.calendar-day[data-date="'+first+'"]').count());tries++)await page.getByRole('button',{name:'Mes siguiente'}).click();
+  await page.locator('.calendar-day[data-date="'+first+'"]').click();
+  for(let tries=0;tries<12&&!(await page.locator('.calendar-day[data-date="'+last+'"]').count());tries++)await page.getByRole('button',{name:'Mes siguiente'}).click();
+  await page.locator('.calendar-day[data-date="'+last+'"]').click();
+  await page.getByRole('button',{name:/Crear mi viaje sin IA/}).click();
+  await page.locator('.trip-detail').waitFor({state:'visible'});
+  assert.match(await page.locator('.trip-banner h1').innerText(),/París/,'Manual Paris trip has been created');
+  assert.match(await page.locator('.trip-banner').getAttribute('style')||'',/Eiffel_Tower|Tour_Eiffel/i,'Paris cover prioritizes Eiffel Tower photography');
+  await page.locator('.detail-tabs button').filter({hasText:'Itinerario'}).click();
+  await page.getByRole('button',{name:/Actividad/}).last().click();
+  await page.getByLabel('Nombre del lugar o actividad').fill('Paseo por París');
+  await page.getByRole('button',{name:'Guardar actividad'}).click();
+  await page.getByText('Paseo por París').waitFor({state:'visible'});
+  console.log('PASS '+device.name+' manual travel creation, day agenda, activity editing and Paris iconic image');
   await context.close();
  }
  console.log('BROWSER PREVIEW SMOKE PASSED ['+browserName+'] for '+url);
