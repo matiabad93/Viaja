@@ -6,7 +6,7 @@ import {tourismTopics,photoSearchQuery,scenicCandidate,tourismPhotos,PHOTO_SOURC
 const miami=tourismTopics('Miami');
 assert.ok(miami.some(t=>t.term==='Beach'),'Miami prioritizes beaches');
 assert.ok(miami.some(t=>t.term==='Ocean Drive'),'Miami includes Ocean Drive');
-assert.equal(PHOTO_SOURCE_VERSION,'scenic-v2');
+assert.equal(PHOTO_SOURCE_VERSION,'scenic-v3');
 assert.ok(photoSearchQuery('Miami',miami[0]).includes('intitle:"Beach"'));
 const make=(title:string,extra:Record<string,unknown>={})=>({
  title:'File:'+title,index:1,imageinfo:[{width:1800,height:1100,mime:'image/jpeg',
