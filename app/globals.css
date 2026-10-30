@@ -296,3 +296,24 @@ body{font-size:15px;line-height:1.5}button,a,input,textarea,select{-webkit-tap-h
 .forecast-row small{display:block;font-size:11px;color:#69796e;line-height:1.5;margin-top:4px}
 .forecast-row>b{white-space:nowrap}
 @media(max-width:600px){.trip-stops-editor{padding:13px}.trip-stop-row{grid-template-columns:minmax(0,1fr)}.trip-stop-actions{justify-content:flex-end}.forecast-row .secondary{width:100%}}
+
+
+/* City autocomplete shared by origin, main city and all added stops. */
+.city-combobox{position:relative;width:100%;min-width:0}
+.city-combobox:focus-within{z-index:80}
+.city-combobox>input{width:100%;min-height:48px;font-size:16px}
+.city-results{position:absolute;left:0;right:0;top:calc(100% + 5px);z-index:100;max-height:min(256px,36dvh);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:white;border:1px solid #cfdbd0;border-radius:12px;padding:5px;box-shadow:0 12px 28px #173d3028}
+.city-results [role=option].city-result-option{display:flex;flex-direction:column;align-items:flex-start;text-align:left;width:100%;gap:3px;min-height:57px;padding:9px 12px;background:transparent;border:0;border-radius:8px;color:#163d32;font-size:14px;cursor:pointer;white-space:normal}
+.city-results [role=option].city-result-option:hover,.city-results [role=option].city-result-option[aria-selected=true]{background:#e8f1e8}
+.city-result-name{display:block;font-size:14px;font-weight:650;line-height:1.3}
+.city-result-country{display:block;color:#66776c;font-weight:400;font-size:12px;line-height:1.3}
+.city-search-state{padding:12px!important;margin:0!important;font-size:12px}
+.city-search-state button{width:auto;margin-left:8px;text-decoration:underline}
+.city-result-source{display:block;padding:8px 12px;font-size:10px;color:#68796e}
+.trip-stops-editor .city-results{left:0;right:0}
+.trip-stop-row:focus-within{position:relative;z-index:75}
+.trip-stops-editor:focus-within{position:relative;z-index:70}
+@media(max-width:600px){
+ .city-results,.trip-stops-editor .city-results{left:0;right:0;max-height:min(225px,34dvh)}
+ .city-combobox>input{font-size:16px}
+}

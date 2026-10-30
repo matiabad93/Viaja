@@ -7,7 +7,7 @@ import type {Plan,DestinationPhoto} from '../lib/travel';
 export function DestinationGallery({plan,onChange}:{plan:Plan;onChange:(p:Plan)=>boolean}){
  const latest=useRef(plan);latest.current=plan;
  const change=useRef(onChange);change.current=onChange;
- const city=plan.trip.city?.name||plan.trip.destination.replace(/ · copia$/,'').split(',')[0].replace(/ esencial| entre miradores| y Alsacia/i,'');
+ const city=plan.trip.city?.name||plan.trip.destination.replace(/ · copia$/,'').split(',')[0].replace(/ esencial| entre miradores| y Alsacia| imprescindible/i,'');
  const key=city+'|'+plan.trip.start;
  const [photos,setPhotos]=useState<DestinationPhoto[]>([]);
  const [state,setState]=useState('');
