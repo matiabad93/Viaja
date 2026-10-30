@@ -33,5 +33,5 @@ return <section className="triptools"><div className="planbuttons"><button class
 function GuideImage({title,image,large=false}:{title:string;image?:string;large?:boolean}){
  const cover=useDestinationCover(title);
  const src=cover.src||image;
- return <div className={'guide-cover-rotating'+(large?' guide-cover-large':'')}>{src?<img className={large?'cover':''} loading="lazy" src={src} alt={cover.alt||title} onError={cover.onError}/>:<div className="destinationcover">{title}</div>}{cover.credit&&<span className="cover-credit">{cover.credit}</span>}</div>
+ return <div className={'guide-cover-rotating'+(large?' guide-cover-large':'')}>{src?<img className={large?'cover':''} loading="lazy" src={src} alt={cover.alt||title} onError={cover.onError}/>:<div className="destinationcover">{title}</div>}</div>
 }
