@@ -21,19 +21,19 @@ jobs:
           npm install --prefix /tmp/viaja-smoke --no-package-lock --no-audit --no-fund playwright@1.56.1
       - name: Desktop and mobile Chromium UI smoke
         env:
-          VIAJA_PREVIEW_URL: https://feat-v1-production-release-p.viaja.pages.dev
-        run: node scripts/preview-browser-smoke.mjs
+          VIAJA_LOCAL_URL: https://feat-v1-production-release-p.viaja.pages.dev
+        run: node scripts/v1-mobile-ux-smoke.mjs
       - name: Install Playwright WebKit for Safari-engine checks
         run: /tmp/viaja-smoke/node_modules/.bin/playwright install --with-deps webkit
       - name: Desktop and mobile WebKit UI smoke
         env:
-          VIAJA_PREVIEW_URL: https://feat-v1-production-release-p.viaja.pages.dev
+          VIAJA_LOCAL_URL: https://feat-v1-production-release-p.viaja.pages.dev
           VIAJA_BROWSER: webkit
-        run: node scripts/preview-browser-smoke.mjs
+        run: node scripts/v1-mobile-ux-smoke.mjs
       - name: Upload screenshot evidence
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: Viaja-Preview-Browser-Smoke
-          path: artifacts/preview-browser/
+          name: Viaja-Preview-V1-UX-Smoke
+          path: artifacts/v1-mobile-ux/
           retention-days: 7
