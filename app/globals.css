@@ -228,7 +228,8 @@ body{font-size:15px;line-height:1.5}button,a,input,textarea,select{-webkit-tap-h
 .trip-calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .trip-calendar-days .weekday{text-align:center;font-size:11px;color:#718578;line-height:30px;font-weight:600}
 .calendar-day{height:40px;min-width:0;border-radius:9px;font-size:13px;text-align:center;cursor:pointer}
-.calendar-day.other-month{color:#8c998f;opacity:.55}
+.calendar-day.other-month:not(:disabled){color:inherit;opacity:1}
+.calendar-day.other-month:disabled{color:#8c998f;opacity:.22}
 .calendar-day.today{box-shadow:inset 0 0 0 1px #8b9d83}
 .calendar-day.between{background:#e5eee3}
 .calendar-day.chosen{background:#235342;color:white;font-weight:700}
@@ -260,3 +261,9 @@ body{font-size:15px;line-height:1.5}button,a,input,textarea,select{-webkit-tap-h
 .visualguides .guide-cover-large img.cover{width:100%;height:230px;object-fit:cover;border-radius:14px}
 .visualguides .guide-cover-rotating .cover-credit{left:8px;bottom:8px;font-size:9px}
 @media(max-width:700px){.visualguides .guide-cover-rotating img{height:200px}}
+
+/* Image gallery attribution is available below the gallery and on the credits page, never over photos. */
+.photo-credits{margin-top:16px;font-size:12px;color:var(--muted)}
+.photo-credits summary{cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.photo-credits ul{padding-left:18px;line-height:1.8;margin-top:9px}
+.photo-credits a{color:var(--green);text-decoration:underline}
