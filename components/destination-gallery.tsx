@@ -1,6 +1,7 @@
 'use client';
 import {requestAPI} from '../lib/api-client';
 import {curatedCovers,photoCacheKey} from '../lib/destination-covers';
+import {PHOTO_SOURCE_VERSION} from '../server/tourism-photos';
 import {useEffect,useState,useRef} from 'react';
 import type {Plan,DestinationPhoto} from '../lib/travel';
 
