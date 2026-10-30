@@ -88,7 +88,17 @@ try{
   // A country suggests its actual major cities, not namesake towns abroad.
   const main=page.getByRole('combobox',{name:'Destino principal'});
   await main.fill('Italia');
-  await page.getByRole('option',{name:/Roma.*Italia/}).waitFor({state:'visible'});
+  try{
+   await page.getByRole('option',{name:/Roma.*Italia/}).waitFor({state:'visible',timeout:12000});
+  }catch(e){
+   console.log('COUNTRY SUGGESTION DEBUG '+browserName+' '+viewport.name,JSON.stringify({
+    input:await main.inputValue(),expanded:await main.getAttribute('aria-expanded'),
+    optionTexts:await page.locator('[role=option]').allInnerTexts(),
+    searchContents:await page.locator('.city-results').allInnerTexts(),
+    searchStatus:await page.locator('.city-search-state').allInnerTexts(),errors
+   }));
+   throw e;
+  }
   assert.equal(await page.getByRole('option',{name:/Milano.*Italia/}).count(),1,'Country lists a second major city');
   assert.equal(await page.getByRole('option',{name:/Italia.*México/}).count(),0,'Country search excludes namesake Mexican towns');
   await main.fill('Rosario');
