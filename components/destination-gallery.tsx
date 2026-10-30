@@ -34,7 +34,7 @@ export function DestinationGallery({plan,onChange}:{plan:Plan;onChange:(p:Plan)=
   const controller=new AbortController();
   setPhotos([]);setState('Buscando fotografías del destino…');
   requestAPI('/api/photos?'+new URLSearchParams({
-   q:city,country,date:plan.trip.start,
+   q:city,country,v:PHOTO_SOURCE_VERSION,date:plan.trip.start,
    lat:String(plan.trip.city?.latitude||0)
   }),{signal:controller.signal})
    .then(async r=>{
