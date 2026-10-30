@@ -19,6 +19,7 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm exec tsc --noEmit
       - run: pnpm run test:core
+      - run: node --experimental-strip-types tests/date-range.test.mts
       - run: node --experimental-strip-types tests/social-auth.test.mts
       - run: node --experimental-strip-types tests/gemini-adapter.test.mts
       - run: node --experimental-strip-types tests/trip-pdf.test.mts
