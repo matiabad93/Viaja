@@ -19,7 +19,7 @@ import {cityLabel} from '../lib/city-suggestions';
 import {reviewItineraryFeasibility} from '../lib/trip-feasibility';
 export function TripDetail({plan,onChange,onBack,onAI,onDelete,report,initialEdit=false}:{plan:Plan;onChange:(p:Plan)=>boolean;onBack:()=>void;onAI:(p:Plan)=>void;onDelete:()=>void;report:React.ReactNode;initialEdit?:boolean}){
 const [view,setView]=useState('Itinerario');const [pendingActivity,setPendingActivity]=useState<Activity|null>(null);const [section,setSection]=useState('Resumen'),[dayIndex,setDayIndex]=useState(0),[activity,setActivity]=useState<Activity|null>(null),[moveDay,setMoveDay]=useState(0),[edit,setEdit]=useState(initialEdit),[trip,setTrip]=useState(plan.trip);
-const cover=useDestinationCover(plan.trip.destination,plan.photos,plan.trip.city?.name);
+const cover=useDestinationCover(plan.trip.destination,plan.photos,plan.trip.city?.name,plan.photoKey,plan.trip.city?.country);
 const days=itineraryOf(plan),selected=days[Math.min(dayIndex,days.length-1)],image=cover.src,total=spent(plan),dailySpent=budgetSpent(plan),remaining=plan.trip.budget-dailySpent;
 const updateDays=(next:Day[])=>onChange({...plan,itinerary:next});
 const editActivity=(a:Activity)=>{setActivity({...a});setMoveDay(dayIndex)};
