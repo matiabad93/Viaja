@@ -11,5 +11,5 @@ function itineraryLength(p:Plan){return p.itinerary?.length||p.parts?.length||1}
 
 function JourneyCover({plan,onOpen}:{plan:Plan;onOpen:()=>void}){
  const cover=useDestinationCover(plan.trip.destination,plan.photos,plan.trip.city?.name);
- return <button className="journey-cover" onClick={onOpen} aria-label={'Abrir '+plan.trip.destination}>{cover.src?<img loading="lazy" src={cover.src} alt={cover.alt} onError={cover.onError}/>:<div className="destination-art"><MapPin size={46} strokeWidth={1}/><span>{plan.trip.destination}</span></div>}<span className="status-pill">{status(plan)}</span><span className="cover-arrow"><ArrowUpRight size={20}/></span>{cover.credit&&<span className="cover-credit">{cover.credit}</span>}</button>
+ return <button className="journey-cover" onClick={onOpen} aria-label={'Abrir '+plan.trip.destination}>{cover.src?<img loading="lazy" src={cover.src} alt={cover.alt} onError={cover.onError}/>:<div className="destination-art"><MapPin size={46} strokeWidth={1}/><span>{plan.trip.destination}</span></div>}<span className="status-pill">{status(plan)}</span><span className="cover-arrow"><ArrowUpRight size={20}/></span></button>
 }
