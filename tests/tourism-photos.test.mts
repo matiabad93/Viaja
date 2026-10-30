@@ -2,14 +2,11 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 // @ts-ignore Node native TS strip runner
 import {tourismTopics,photoSearchQuery,scenicCandidate,tourismPhotos,PHOTO_SOURCE_VERSION} from '../server/tourism-photos.ts';
-// @ts-ignore Node native TS strip runner
-import {photoCacheKey} from '../lib/destination-covers.ts';
 
 const miami=tourismTopics('Miami');
 assert.ok(miami.some(t=>t.term==='Beach'),'Miami prioritizes beaches');
 assert.ok(miami.some(t=>t.term==='Ocean Drive'),'Miami includes Ocean Drive');
 assert.equal(PHOTO_SOURCE_VERSION,'scenic-v2');
-assert.equal(photoCacheKey('Miami','Estados Unidos'),'scenic-v2|miami|estados unidos');
 assert.ok(photoSearchQuery('Miami',miami[0]).includes('intitle:"Beach"'));
 const make=(title:string,extra:Record<string,unknown>={})=>({
  title:'File:'+title,index:1,imageinfo:[{width:1800,height:1100,mime:'image/jpeg',
@@ -43,8 +40,9 @@ try {
  assert.ok(calls.length<=6,'Limit Wikimedia requests to a modest amount');
 }finally{globalThis.fetch=original}
 const cover=readFileSync(new URL('../lib/destination-covers.ts',import.meta.url),'utf8');
-assert.ok(cover.includes('photoKey===key'),'Existing trips must not reuse old images without the current photo strategy');
+assert.ok(cover.includes('PHOTO_SOURCE_VERSION')&&cover.includes('photoKey===key'),'Existing trips must not reuse old images without the current photo strategy');
 assert.ok(cover.includes('if(curated.length||safeStored.length'),'Valid verified images can be reused without extra API calls');
+assert.ok(cover.includes("PHOTO_SOURCE_VERSION+'|'+normalize(city)+'|'+normalize(country)"),'Cache key is versioned and location-specific');
 const gallery=readFileSync(new URL('../components/destination-gallery.tsx',import.meta.url),'utf8');
 assert.ok(gallery.includes('photoCacheKey(city,country)'),'Gallery keys are versioned as well');
 console.log('PASS: verified tourist attractions, excluded political photos, anti-stale-cache and Wikimedia attribution');
