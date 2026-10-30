@@ -25,7 +25,8 @@ export function useDestinationCover(destination:string,stored?:DestinationPhoto[
  const [bad,setBad]=useState<string[]>([]);
  const [index,setIndex]=useState(0);
  const curated=useMemo(()=>curatedCovers(destination),[destination]);
- const photos=useMemo(()=>uniqueImages([...curated,...(stored||[]),...remote]),[curated,stored,remote]);
+ // Curated destinations must never cycle through legacy off-topic stored photos.
+ const photos=useMemo(()=>uniqueImages(curated.length?curated:[...(stored||[]),...remote]),[curated,stored,remote]);
  const good=useMemo(()=>photos.filter(p=>!bad.includes(p.url)),[photos,bad]);
  useEffect(()=>{setIndex(0);setBad([]);setRemote([])},[destination]);
  useEffect(()=>{
