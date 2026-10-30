@@ -252,3 +252,11 @@ body{font-size:15px;line-height:1.5}button,a,input,textarea,select{-webkit-tap-h
  .formcard .formgrid>.fieldhelp{margin-top:-6px}
 }
 @media(max-width:360px){.trip-date-fields{grid-template-columns:1fr;gap:12px}}
+
+/* Rotating, attributed destination photographs in editorial guides. */
+.visualguides .guide-cover-rotating{position:relative;overflow:hidden;background:#e7ede4;min-height:165px}
+.visualguides .guide-cover-rotating img{display:block;width:100%;height:190px;object-fit:cover}
+.visualguides .guide-cover-large{border-radius:14px}
+.visualguides .guide-cover-large img.cover{width:100%;height:230px;object-fit:cover;border-radius:14px}
+.visualguides .guide-cover-rotating .cover-credit{left:8px;bottom:8px;font-size:9px}
+@media(max-width:700px){.visualguides .guide-cover-rotating img{height:200px}}
