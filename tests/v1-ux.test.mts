@@ -3,8 +3,8 @@ import {readFileSync} from 'node:fs';
 // @ts-ignore Node TypeScript stripping
 import {canAppendDestination,swapStops} from '../lib/stop-editor.ts';
 
-assert.equal(canAppendDestination('','','',[] as any),false,'Empty main city blocks the next stop');
-assert.equal(canAppendDestination('París, Francia','',''.split(''),[]),false,'Typed but unselected main city is incomplete');
+assert.equal(canAppendDestination('','',[],[]),false,'Empty main city blocks the next stop');
+assert.equal(canAppendDestination('París, Francia','',[],[]),false,'Typed but unselected main city is incomplete');
 assert.equal(canAppendDestination('París, Francia','París, Francia',[],[]),true,'Confirmed first city allows a second');
 assert.equal(canAppendDestination('París, Francia','París, Francia',[''],['']),false,'Blank next stop blocks another');
 assert.equal(canAppendDestination('París, Francia','París, Francia',['Toledo, España'],['']),false,'Typed but unselected city blocks the next stop');
