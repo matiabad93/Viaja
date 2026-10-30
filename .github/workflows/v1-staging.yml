@@ -26,3 +26,18 @@ jobs:
       - run: pnpm run build:demo
       - name: Require actual production output
         run: test -f web-dist/index.html
+
+  pages-npm-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install exactly as Cloudflare Pages
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build with Cloudflare Pages command
+        run: npm run build:demo
+      - name: Check built app entry point
+        run: test -f web-dist/index.html
