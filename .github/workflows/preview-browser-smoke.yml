@@ -1,0 +1,39 @@
+name: Viaja Preview browser smoke
+on:
+  push:
+    branches: [feat/v1-production-release-plan]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare Playwright without modifying repo dependencies
+        run: |
+          command -v google-chrome
+          google-chrome --version
+          npm install --prefix /tmp/viaja-smoke --no-package-lock --no-audit --no-fund playwright@1.56.1
+      - name: Desktop and mobile Chromium UI smoke
+        env:
+          VIAJA_PREVIEW_URL: https://feat-v1-production-release-p.viaja.pages.dev
+        run: node scripts/preview-browser-smoke.mjs
+      - name: Install Playwright WebKit for Safari-engine checks
+        run: /tmp/viaja-smoke/node_modules/.bin/playwright install --with-deps webkit
+      - name: Desktop and mobile WebKit UI smoke
+        env:
+          VIAJA_PREVIEW_URL: https://feat-v1-production-release-p.viaja.pages.dev
+          VIAJA_BROWSER: webkit
+        run: node scripts/preview-browser-smoke.mjs
+      - name: Upload screenshot evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Viaja-Preview-Browser-Smoke
+          path: artifacts/preview-browser/
+          retention-days: 7

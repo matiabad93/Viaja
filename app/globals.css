@@ -15,3 +15,248 @@ body{font-size:15px;line-height:1.5}button,a,input,textarea,select{-webkit-tap-h
 @media(max-width:700px){.topbar{backdrop-filter:none;-webkit-backdrop-filter:none}.topbar nav{position:fixed;bottom:0;top:auto}}
 .city-combobox{position:relative;flex:1;min-width:0}.city-combobox input{width:100%}.city-results{position:absolute;left:0;right:0;top:calc(100% + 8px);background:white;border:1px solid #dce3db;border-radius:14px;box-shadow:0 12px 32px #173d3026;z-index:25;padding:8px;max-height:340px;overflow:auto}.city-results [role=option]{padding:12px;cursor:pointer;border-radius:8px;display:grid;gap:4px}.city-results [role=option]:hover,.city-results [aria-selected=true]{background:#e7efe4}.city-results small,.city-results p{font-size:12px;color:#536657;padding:5px}.destination-gallery{margin-top:24px}.photo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.photo-grid figure{margin:0;min-width:0}.photo-grid img{width:100%;height:180px;object-fit:cover;border-radius:12px}.photo-grid figcaption{font-size:11px;color:#536657;line-height:1.5;max-height:55px;overflow:auto}.profile{font-size:12px;min-width:48px}.inputicon:has(.city-combobox){overflow:visible}@media(max-width:600px){.photo-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.photo-grid img{height:140px}.city-results{left:-30px}.destination-gallery{padding:16px}}
 .activity-check{display:flex;align-items:center;gap:12px;cursor:pointer}.activity-check input{width:24px;height:24px;accent-color:#1c4b3e;flex-shrink:0}.activity-check h3{margin:0}.activity-completed{background:#edf3e9;border-color:#b6cfad}.activity-completed h3{text-decoration:line-through;color:#52705a}.hour-agenda{max-height:65vh;overflow:auto;padding:8px;border-left:3px solid #c9d6bd}.hour-agenda .activity-card{margin-bottom:12px}.activity-card>p{font-size:12px;overflow-wrap:anywhere}
+
+/* Viaja account modal — responsive and keyboard accessible */
+.viaja-account{position:relative;z-index:60;max-width:240px}
+.viaja-account-trigger{display:flex;align-items:center;gap:7px;padding:10px 12px;border-radius:999px;border:1px solid #cbd8d1;background:#fff;color:#173f35;font-size:12px;font-weight:700;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.viaja-account-trigger svg{flex-shrink:0}
+.viaja-account-backdrop{position:fixed;inset:0;z-index:300;background:rgba(11,30,24,.58);display:flex;align-items:center;justify-content:center;padding:20px}
+.viaja-account-dialog{position:relative;background:#fff;color:#173f35;padding:30px;border-radius:20px;width:min(440px,100%);box-shadow:0 24px 90px rgba(0,0,0,.24);max-height:85dvh;overflow-y:auto;text-align:left}
+.viaja-account-dialog h2{font-size:25px;margin:0 38px 8px 0;color:#173f35}
+.viaja-account-close{position:absolute;right:18px;top:17px;border:0;background:#eff3ed;border-radius:50%;height:34px;width:34px;display:grid;place-items:center}
+.viaja-account-subtitle{font-size:13px;line-height:1.6;color:#607167;margin-bottom:22px;overflow-wrap:anywhere}
+.viaja-account-dialog form{display:grid;gap:15px}
+.viaja-account-dialog form label{display:grid;gap:7px;font-size:12px;font-weight:700}
+.viaja-account-dialog form input{width:100%;padding:12px;border:1px solid #c5d2c9;border-radius:9px;font-size:15px;background:#fff;color:#173f35}
+.viaja-account-submit,.viaja-account-action{display:flex;align-items:center;justify-content:center;gap:10px;border:0;background:#194b3d;color:white;padding:13px;border-radius:10px;font-weight:700;cursor:pointer;width:100%}
+.viaja-account-action{margin-bottom:11px;background:#ecf3ed;color:#173f35;border:1px solid #cbd8cf}
+.viaja-account-links{display:flex;gap:11px;flex-wrap:wrap;margin-top:18px}
+.viaja-account-links button{border:0;padding:4px 0;background:transparent;text-decoration:underline;color:#24594d;font-size:12px}
+.viaja-account-notice{padding:12px;border-radius:9px;margin-top:15px;font-size:13px;background:#eaf2e7;color:#224f38;overflow-wrap:anywhere}
+.viaja-account-help{font-size:12px;color:#627a6d;line-height:1.6;margin-top:15px}
+.viaja-account-dialog button:focus-visible{outline:3px solid #51a895;outline-offset:3px}
+@media(max-width:720px){.viaja-account{max-width:135px}.viaja-account-trigger{font-size:11px;padding:9px}.viaja-account-dialog{padding:25px 20px}}
+
+/* Auth dialog viewport placement: portal is rendered under body to escape sticky header stacking. */
+.viaja-account-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  width:100%;
+  height:100vh;
+  height:100dvh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:clamp(16px,4vw,32px);
+  background:rgba(245,248,242,.72);
+  -webkit-backdrop-filter:blur(6px);
+  backdrop-filter:blur(6px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+.viaja-account-dialog{
+  position:relative;
+  flex:0 1 440px;
+  width:min(440px,100%);
+  min-width:0;
+  max-width:100%;
+  max-height:calc(100dvh - 32px);
+  margin:auto;
+  overflow-y:auto;
+  border:1px solid #d8e4d8;
+  border-radius:20px;
+  background:#fff;
+  box-shadow:0 18px 55px rgba(19,56,41,.2);
+  text-align:left;
+}
+@media(max-width:540px){
+  .viaja-account-backdrop{padding:12px;align-items:safe center;}
+  .viaja-account-dialog{max-height:calc(100dvh - 24px);border-radius:16px;}
+}
+
+/* Available social sign-in providers are discovered from Supabase Auth settings. */
+.viaja-social-auth{margin:4px 0 20px}
+.viaja-social-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.viaja-social-provider{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:78px;padding:10px 4px;border:1px solid #d6e1d8;border-radius:12px;background:#fff;color:#173f35;font-size:12px;font-weight:700;transition:background .15s,border-color .15s}
+.viaja-social-provider:hover:not(:disabled){border-color:#648e7c;background:#f0f6f0}
+.viaja-social-provider:disabled{cursor:not-allowed;background:#f4f6f3;color:#73857a;opacity:1}
+.viaja-social-provider-icon{display:grid;place-items:center;height:22px;width:24px}
+.viaja-google-g{font-family:Arial,sans-serif;font-size:23px;font-weight:800;line-height:1;color:#4285f4}
+.viaja-facebook-f{display:grid;place-items:center;height:23px;width:23px;border-radius:50%;background:#1877f2;color:#fff;font-size:21px;font-family:Arial,sans-serif;font-weight:800;line-height:25px}
+.viaja-social-provider:disabled .viaja-facebook-f{filter:grayscale(1);opacity:.58}
+.viaja-social-provider:disabled .viaja-google-g{filter:grayscale(1);opacity:.58}
+.viaja-social-provider small{font-size:9px;font-weight:400;color:#819188}
+.viaja-social-separator{position:relative;display:flex;align-items:center;gap:11px;margin-top:18px;color:#63796e;font-size:11px;white-space:nowrap}
+.viaja-social-separator::before,.viaja-social-separator::after{content:"";height:1px;flex:1;background:#dce6dd}
+@media(max-width:360px){.viaja-social-list{gap:6px}.viaja-social-provider{font-size:11px;padding:9px 2px}}
+
+/* Product decision: Gmail (Google OAuth) + Facebook only. */
+.viaja-social-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+.viaja-social-explainer{margin:9px 0 0;text-align:center;color:#62796d;font-size:11px;line-height:1.5}
+
+
+/* Branded destructive-action confirmation */
+.viaja-confirm-backdrop{position:fixed;inset:0;z-index:999;background:rgba(10,30,23,.65);display:flex;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(3px)}
+.viaja-confirm-dialog{position:relative;width:min(440px,100%);padding:30px;border-radius:20px;background:#fff;color:#173f35;box-shadow:0 24px 80px rgba(0,0,0,.28);text-align:left}
+.viaja-confirm-icon{width:48px;height:48px;background:#fbece4;color:#a33e31;border-radius:15px;display:grid;place-items:center;margin-bottom:18px}
+.viaja-confirm-dialog h2{font:26px Georgia,serif;line-height:1.25;margin:0 30px 13px 0}
+.viaja-confirm-dialog p{color:#65776b;line-height:1.6;font-size:13px;margin:0}
+.viaja-confirm-close{position:absolute;top:16px;right:16px;background:#eef2eb;border-radius:50%;width:34px;height:34px;display:grid;place-items:center}
+.viaja-confirm-actions{margin-top:28px;display:flex;gap:12px;justify-content:flex-end}
+.viaja-confirm-actions button{min-width:128px;min-height:44px;justify-content:center;border-radius:10px;font-weight:700;font-size:12px}
+.viaja-danger-button{background:#a63d30;color:#fff;padding:12px 16px}
+.viaja-danger-button:hover{background:#873327}
+.viaja-confirm-actions button:disabled{opacity:.6;cursor:wait}
+@media(max-width:440px){.viaja-confirm-dialog{padding:22px}.viaja-confirm-actions{flex-direction:column-reverse}.viaja-confirm-actions button{width:100%}}
+/* Calendar is a true time-oriented layout, distinct from itinerary cards */
+.calendar-timeline{margin:20px 0 28px}
+.calendar-intro{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px;padding:18px 20px;background:#e9f0e5;border-radius:14px;color:#194538}
+.calendar-intro svg{flex-shrink:0;margin-top:4px}
+.calendar-intro h3{font:23px Georgia,serif;margin:0 0 7px}
+.calendar-intro p{font-size:12px;line-height:1.6;color:#5c705f}
+.calendar-grid{position:relative;background:linear-gradient(90deg,#f2f5ed 0 80px,#fff 80px);border-radius:15px;border:1px solid #dce5d8;overflow:hidden}
+.calendar-hour{position:absolute;left:0;right:0;display:flex;align-items:center;gap:10px;font-size:11px;color:#617266;transform:translateY(-50%);pointer-events:none}
+.calendar-hour>span{width:65px;flex-shrink:0;text-align:right}
+.calendar-hour>i{height:1px;background:#e6ece3;flex:1}
+.calendar-slot{position:absolute;left:96px;right:15px;width:calc(100% - 111px);z-index:1;background:#e5eee2;border-left:4px solid #376d53;border-radius:10px;padding:12px 15px;text-align:left;display:flex;flex-direction:column;gap:4px;overflow:auto}
+.calendar-slot:hover{background:#d7e8d4;z-index:4;box-shadow:0 3px 12px #173f3526}
+.calendar-slot strong{font-size:11px;color:#41654d}
+.calendar-slot>span{font:18px Georgia,serif;color:#183d30;overflow-wrap:anywhere}
+.calendar-slot small{font-size:11px;color:#5a7060}
+.calendar-slot-overlap{background:#fff0e4;border-left-color:#b96b35;z-index:2}
+.calendar-slot-overlap em{display:flex;gap:4px;align-items:center;font-size:10px;font-style:normal;color:#a14f2f}
+.calendar-slot-done{opacity:.6}
+.calendar-empty{display:flex;align-items:center;gap:16px;color:#617266}
+.calendar-flexible{margin-top:20px}
+.calendar-flexible>p{font-size:12px;color:#687a6e;margin:0 0 20px}
+.calendar-flexible>button{width:100%;display:flex;align-items:center;gap:12px;border-top:1px solid #e3e9df;padding:14px 4px;text-align:left}
+.calendar-flexible>button>span{flex:1;font-weight:600}
+.calendar-flexible small{font-size:11px;color:#5e765f}
+@media(max-width:650px){.calendar-slot{left:72px;right:8px;width:calc(100% - 80px);padding:9px}.calendar-slot>span{font-size:15px}.calendar-hour>span{width:51px}.calendar-grid{background:linear-gradient(90deg,#f2f5ed 0 60px,#fff 60px)}}
+
+
+/* Time scale is 1.1px/minute: slot boundaries match the hour lines exactly. */
+.calendar-grid{overflow:visible;border-radius:15px}
+.calendar-slot{box-sizing:border-box;min-height:0;overflow:hidden;padding:6px 12px;gap:2px}
+.calendar-slot strong{font-size:10px;line-height:1.3}
+.calendar-slot>span{font-size:14px;line-height:1.3}
+.calendar-slot small{line-height:1.25}
+.calendar-slot-overlap{opacity:.91}
+.calendar-hour:first-child{transform:none}
+.calendar-hour:last-of-type{transform:translateY(-100%)}
+/* Embedded, interactive map using open-source tiles. */
+.viaja-map-section{display:grid;gap:16px;margin:20px 0}
+.viaja-map-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.viaja-map-toolbar>label{font-size:12px;font-weight:700;color:#234b3d;display:flex;align-items:center;gap:9px}
+.viaja-map-toolbar select{background:#fff;border:1px solid #cfdbcd;border-radius:9px;padding:11px;color:#234b3d}
+.viaja-map-toolbar a.secondary{min-height:45px}
+.viaja-osm-map{height:min(66vh,480px);min-height:300px;width:100%;border:1px solid #cddacb;border-radius:16px;overflow:hidden;background:#dce8dd;z-index:0}
+.viaja-map-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.viaja-map-stop{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #dce6da;border-radius:12px;padding:13px 15px;min-width:0}
+.viaja-map-stop-number{height:29px;width:29px;flex-shrink:0;display:grid;place-items:center;border-radius:50%;background:#e3eadc;color:#235544;font-size:12px;font-weight:800}
+.viaja-map-stop>div{flex:1;min-width:0}
+.viaja-map-stop strong{display:block;font-size:13px;overflow-wrap:anywhere}
+.viaja-map-stop small{display:block;color:#687d6f;font-size:11px;margin-top:4px;overflow-wrap:anywhere}
+.viaja-map-stop>a{padding:7px;color:#36684f}
+.viaja-map-attribution{font-size:11px;line-height:1.6;color:#617668}
+.viaja-map-attribution a{text-decoration:underline}
+.viaja-map-section .subtle{display:flex;align-items:flex-start;gap:7px}
+@media(max-width:650px){.viaja-map-list{grid-template-columns:1fr}.viaja-map-toolbar{align-items:stretch}.viaja-map-toolbar>.primary,.viaja-map-toolbar>a.secondary{width:100%}.viaja-osm-map{height:360px}.calendar-slot>span{font-size:13px}}
+
+/* Mobile itinerary cards: prevent Safari flex shrink from collapsing activity titles. */
+@media (max-width: 700px) {
+  .agenda { min-width: 0; }
+  .agenda .activity-card {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: start;
+    column-gap: 12px;
+    row-gap: 12px;
+    width: 100%;
+    min-width: 0;
+    padding: 16px 14px;
+  }
+  .agenda .activity-rail { grid-column: 1; width: 44px; min-width: 0; }
+  .agenda .activity-body { grid-column: 2; min-width: 0; width: 100%; }
+  .agenda .activity-check { min-width: 0; align-items: flex-start; }
+  .agenda .activity-check h3 {
+    min-width: 0;
+    font-size: 20px;
+    line-height: 1.3;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+  .agenda .activity-card > p {
+    grid-column: 1 / -1;
+    min-width: 0;
+    width: 100%;
+    line-height: 1.7;
+    overflow-wrap: break-word;
+  }
+  .agenda .activity-actions {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    justify-content: flex-end;
+  }
+  .topbar .viaja-account { min-width: 0; max-width: min(55vw, 220px); }
+  .topbar .viaja-account-trigger { min-width: 0; width: 100%; }
+}
+
+/* Viaja release: aligned controls, accessible two-step calendar, manual planning */
+.formcard .formgrid,.edit-panel .input-grid{column-gap:22px;row-gap:23px}
+.formcard .formgrid>label,.edit-panel .input-grid>label{min-width:0}
+.formcard .formgrid input,.formcard .formgrid select,.formcard .formgrid textarea,.edit-panel .input-grid input{min-height:48px;box-sizing:border-box;border-radius:10px}
+.formcard .formgrid>.fieldhelp{margin-top:-12px;line-height:1.55}
+.trip-date-range{grid-column:1/-1;position:relative;min-width:0}
+.trip-date-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.trip-date-field{min-width:0}
+.trip-date-label{font-size:12px;font-weight:600;color:#405647;display:block;margin:0 0 8px}
+.date-trigger{width:100%;height:49px;min-width:0;padding:0 12px;display:flex;align-items:center;gap:10px;text-align:left;background:#fbfcf9;border:1px solid #dbe3d6;border-radius:10px;color:var(--ink);font-size:13px;line-height:1.2}
+.date-trigger>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.date-trigger svg{flex-shrink:0;color:#6a846b}
+.date-trigger.active,.date-trigger:focus-visible{outline:2px solid #64866c;outline-offset:2px;border-color:#64866c}
+.trip-calendar-popover{position:absolute;z-index:65;top:100%;left:0;margin-top:9px;width:min(100%,380px);padding:18px;box-sizing:border-box;background:#fff;border:1px solid #cdd9c9;box-shadow:0 18px 44px #183a2a2e;border-radius:16px}
+.trip-calendar-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.trip-calendar-top strong{display:block;font-size:15px;color:#173f35}
+.trip-calendar-top small{display:block;color:#66766d;margin-top:4px;font-size:11px;line-height:1.5}
+.calendar-close{padding:5px;border-radius:8px}
+.trip-calendar-month{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:18px;margin-bottom:11px}
+.trip-calendar-month strong{text-transform:capitalize;font-size:14px}
+.trip-calendar-month button{border:1px solid #e0e7dc;border-radius:8px;padding:7px}
+.trip-calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.trip-calendar-days .weekday{text-align:center;font-size:11px;color:#718578;line-height:30px;font-weight:600}
+.calendar-day{height:40px;min-width:0;border-radius:9px;font-size:13px;text-align:center;cursor:pointer}
+.calendar-day.other-month{color:#8c998f;opacity:.55}
+.calendar-day.today{box-shadow:inset 0 0 0 1px #8b9d83}
+.calendar-day.between{background:#e5eee3}
+.calendar-day.chosen{background:#235342;color:white;font-weight:700}
+.calendar-day:disabled{opacity:.22;cursor:not-allowed}
+.calendar-day:focus-visible{outline:2px solid #b46e4b;outline-offset:1px}
+.trip-calendar-hint{font-size:11px;line-height:1.5;margin-top:13px;color:#64786d}
+.planning-actions{margin-top:25px;border-top:1px solid #e3eade;padding-top:21px;display:grid;gap:11px}
+.planning-actions .manual-plan{width:100%;min-height:50px;font-weight:700;font-size:14px}
+.planning-actions .ai-plan{width:100%;min-height:48px;display:flex;align-items:center;justify-content:center;gap:9px}
+.planning-actions p{font-size:12px;color:#607368;line-height:1.6;margin:0 0 2px}
+.planning-actions .ai-unavailable{font-size:11px}
+.cover-credit{position:absolute;bottom:9px;left:12px;font-size:9px;color:white;background:#173f3599;padding:3px 7px;border-radius:6px;max-width:calc(100% - 24px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trip-banner .cover-credit{left:auto;right:14px;bottom:9px}
+@media(max-width:700px){
+ .formcard .formgrid,.edit-panel .input-grid{column-gap:14px;row-gap:20px}
+ .trip-date-fields{gap:14px}
+ .date-trigger{padding:0 9px;gap:6px;font-size:11px;min-height:48px}
+ .date-trigger svg{width:15px;height:15px}
+ .trip-calendar-popover{width:100%;padding:14px}
+ .calendar-day{height:39px}
+ .formcard .formgrid>.fieldhelp{margin-top:-6px}
+}
+@media(max-width:360px){.trip-date-fields{grid-template-columns:1fr;gap:12px}}
+
+/* Rotating, attributed destination photographs in editorial guides. */
+.visualguides .guide-cover-rotating{position:relative;overflow:hidden;background:#e7ede4;min-height:165px}
+.visualguides .guide-cover-rotating img{display:block;width:100%;height:190px;object-fit:cover}
+.visualguides .guide-cover-large{border-radius:14px}
+.visualguides .guide-cover-large img.cover{width:100%;height:230px;object-fit:cover;border-radius:14px}
+.visualguides .guide-cover-rotating .cover-credit{left:8px;bottom:8px;font-size:9px}
+@media(max-width:700px){.visualguides .guide-cover-rotating img{height:200px}}

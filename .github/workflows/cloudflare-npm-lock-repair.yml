@@ -1,0 +1,37 @@
+name: Viaja Cloudflare npm lock repair
+on:
+  push:
+    branches: [feat/v1-production-release-plan]
+    paths:
+      - .github/workflows/cloudflare-npm-lock-repair.yml
+permissions:
+  contents: write
+jobs:
+  repair-lock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generate npm lockfile from current package.json
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Run the same build as Cloudflare Pages
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build:demo
+          test -f web-dist/index.html
+      - name: Commit only the refreshed npm lockfile
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "package-lock.json was already synchronized"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- package-lock.json
+          git commit -m "fix(ci): sync npm lockfile with bundled Leaflet for Cloudflare Pages"
+          git push origin HEAD:feat/v1-production-release-plan

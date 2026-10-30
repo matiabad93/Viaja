@@ -1,0 +1,44 @@
+name: Viaja v1 staging checks
+on:
+  push:
+    branches: [feat/v1-production-release-plan, fix/map-and-budget-ux-20261029]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  web-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: corepack enable && corepack prepare pnpm@11.25.0 --activate
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm run test:core
+      - run: node --experimental-strip-types tests/date-range.test.mts
+      - run: node --experimental-strip-types tests/social-auth.test.mts
+      - run: node --experimental-strip-types tests/gemini-adapter.test.mts
+      - run: node --experimental-strip-types tests/trip-pdf.test.mts
+      - run: node --experimental-strip-types tests/calendar-map.test.mts
+      - run: pnpm run build:demo
+      - name: Require actual production output
+        run: test -f web-dist/index.html
+
+  pages-npm-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install exactly as Cloudflare Pages
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build with Cloudflare Pages command
+        run: npm run build:demo
+      - name: Check built app entry point
+        run: test -f web-dist/index.html
