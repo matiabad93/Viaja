@@ -1,5 +1,5 @@
 // @ts-ignore Native Node test runner requires explicit extension
-import {paris,colmar,barcelona,roma,lisboa} from './builtin-photos.ts';
+import {paris,colmar,barcelona,roma,lisboa,madrid} from './builtin-photos.ts';
 const clean=(s:unknown)=>String(s||'').replace(/<[^>]*>/g,'').replace(/&[^;]+;/g,' ').slice(0,500);
 async function remote(url:string){const r=await fetch(url,{headers:{'User-Agent':'Viaja/1.0 (travel photo attribution; contact via site owner)'},signal:AbortSignal.timeout(12000)});if(!r.ok)throw Error('El proveedor no respondió.');return r.json() as Promise<any>}
 export async function destinationsAPI(request:Request){
@@ -11,7 +11,7 @@ export async function destinationsAPI(request:Request){
  const data=await remote('https://geocoding-api.open-meteo.com/v1/search?'+new URLSearchParams({name,count:'10',language:'es',format:'json'}));
  return Response.json({cities:(data.results||[]).filter((c:any)=>String(c.feature_code).startsWith('PPL')).map((c:any)=>({id:c.id,name:c.name,country:c.country||'',region:c.admin1||'',latitude:c.latitude,longitude:c.longitude,timezone:c.timezone})),attribution:'Open-Meteo · GeoNames'},{headers:{'Cache-Control':'public, max-age=86400'}});
  }
- const builtin=({paris,colmar,barcelona,roma,lisboa} as Record<string,typeof paris>)[name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()];
+ const builtin=({paris,colmar,barcelona,roma,lisboa,madrid} as Record<string,typeof paris>)[name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()];
  const month=Number((u.searchParams.get('date')||'').slice(5,7)),lat=Number(u.searchParams.get('lat')||'0');
  const seasons=['winter','spring','summer','autumn'];const season=month>=1&&month<=12?seasons[(Math.floor(month%12/3)+(lat<0?2:0))%4]:'';
  const search=async(term:string)=>{
