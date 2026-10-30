@@ -60,6 +60,8 @@ try{
    throw e;
   }
   await option.click();
+  const selectedExtra=await page.getByRole('combobox',{name:'Destino adicional 2'}).inputValue();
+  assert.ok(selectedExtra.includes(','),'Selected additional destination has both city and country');
   assert.ok(await add.isEnabled(),'Selecting the previous city unlocks the next');
   const first=page.getByRole('combobox',{name:'Destino principal'});
   const second=page.getByRole('combobox',{name:'Destino adicional 2'});
@@ -67,11 +69,11 @@ try{
   assert.ok(firstRect&&secondRect&&Math.abs(firstRect.x-secondRect.x)<2&&Math.abs(firstRect.width-secondRect.width)<2,'Primary city and secondary city inputs align');
   assert.ok(await page.getByRole('button',{name:'Subir destino 1'}).isDisabled(),'First city cannot move above first');
   await page.getByRole('button',{name:'Subir destino 2'}).click();
-  assert.equal(await first.inputValue(),'Toledo, España','Secondary city can become primary');
+  assert.equal(await first.inputValue(),selectedExtra,'Secondary city can become primary');
   assert.equal(await second.inputValue(),'París, Francia','Former primary becomes second city');
   await page.getByRole('button',{name:'Bajar destino 1'}).click();
   assert.equal(await first.inputValue(),'París, Francia','Primary can move down again');
-  assert.equal(await second.inputValue(),'Toledo, España','Secondary restored after moving primary');
+  assert.equal(await second.inputValue(),selectedExtra,'Secondary restored after moving primary');
   await add.click();
   assert.equal(await page.getByRole('combobox',{name:'Destino adicional 3'}).inputValue(),'');
   assert.ok(await add.isDisabled(),'New empty third destination cannot be bypassed');
