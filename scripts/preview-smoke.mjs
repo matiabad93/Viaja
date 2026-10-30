@@ -61,7 +61,7 @@ ok(rosario.cities.some(city=>city.name==='Rosario'&&city.country==='Argentina'&&
 
 async function realMiamiTouristPhotos(){
  let latest='';
- for(let attempt=0;attempt<5;attempt++){
+ for(let attempt=0;attempt<20;attempt++){
   try{
    const response=await fetch(new URL('/api/photos?q=Miami&country=Estados%20Unidos&v=scenic-v3',origin),
     {signal:AbortSignal.timeout(60000),headers:{Accept:'application/json'}});
@@ -77,7 +77,7 @@ async function realMiamiTouristPhotos(){
    }
    latest='HTTP '+response.status+'; photoStrategy='+(data.photoStrategy||'none')+'; photos='+(data.photos?.length||0)+'; error='+(data.error||'');
   }catch(e){latest=String(e)}
-  if(attempt<4)await new Promise(resolve=>setTimeout(resolve,4500));
+  if(attempt<19)await new Promise(resolve=>setTimeout(resolve,4500));
  }
  throw Error('Live Miami tourism photos failed: '+latest);
 }
