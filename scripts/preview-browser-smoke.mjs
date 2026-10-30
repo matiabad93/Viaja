@@ -5,7 +5,7 @@
  */
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
-import {chromium} from '/tmp/viaja-smoke/node_modules/playwright/index.mjs';
+import {chromium,webkit} from '/tmp/viaja-smoke/node_modules/playwright/index.mjs';
 
 const url=(process.env.VIAJA_PREVIEW_URL||'https://feat-v1-production-release-p.viaja.pages.dev').replace(/\/$/,'');
 const fixture={
@@ -29,7 +29,10 @@ const fixture={
  ]
 };
 await mkdir('artifacts/preview-browser',{recursive:true});
-const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_EXECUTABLE||'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']});
+const browserName=process.env.VIAJA_BROWSER==='webkit'?'webkit':'chromium';
+const browserType=browserName==='webkit'?webkit:chromium;
+const launchOptions=browserName==='webkit'?{headless:true}:{headless:true,executablePath:process.env.CHROME_EXECUTABLE||'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']};
+const browser=await browserType.launch(launchOptions);
 try{
  for(const device of [{name:'desktop',width:1280,height:900},{name:'mobile',width:390,height:844}]){
   const context=await browser.newContext({viewport:{width:device.width,height:device.height},locale:'es-ES',deviceScaleFactor:1});
@@ -56,7 +59,7 @@ try{
   const bounds=await page.locator('.leaflet-container').boundingBox();
   assert.ok(bounds&&bounds.width>200&&bounds.height>180,'Leaflet container has usable dimensions');
   assert.equal(await page.getByText('No pudimos cargar el mapa integrado.',{exact:false}).count(),0,'No map loader error');
-  await page.screenshot({path:'artifacts/preview-browser/'+device.name+'-map.png',fullPage:false});
+  await page.screenshot({path:'artifacts/preview-browser/'+browserName+'-'+device.name+'-map.png',fullPage:false});
   console.log('PASS '+device.name+' Leaflet map created '+Math.round(bounds.width)+'x'+Math.round(bounds.height));
   await page.getByRole('button',{name:'Planificar'}).first().click();
   await page.locator('form.formcard').waitFor({state:'visible'});
@@ -70,14 +73,14 @@ try{
   // The fixture already starts on 2026-11-06. A no-op fill would emit no change event.
   // Choose a later date to verify both focus and invalid-return clearing.
   await departure.fill('2026-11-08');
-  await page.waitForFunction(()=>document.activeElement?.getAttribute('aria-label')==='Fecha de regreso',{timeout:3000});
+  await page.waitForFunction(()=>document.activeElement?.getAttribute('aria-label')==='Fecha de regreso',null,{timeout:3000});
   const focus=await page.evaluate(()=>document.activeElement?.getAttribute('aria-label'));
   assert.equal(focus,'Fecha de regreso','Changing departure automatically focuses return date');
   assert.equal(await page.getByLabel('Fecha de regreso',{exact:true}).inputValue(),'','Invalid previous return date is cleared');
-  await page.screenshot({path:'artifacts/preview-browser/'+device.name+'-planner.png',fullPage:false});
+  await page.screenshot({path:'artifacts/preview-browser/'+browserName+'-'+device.name+'-planner.png',fullPage:false});
   assert.equal(errors.length,0,'No fatal browser page errors: '+errors.join('; '));
   console.log('PASS '+device.name+' planner fields, date focus and no browser page errors');
   await context.close();
  }
- console.log('BROWSER PREVIEW SMOKE PASSED for '+url);
+ console.log('BROWSER PREVIEW SMOKE PASSED ['+browserName+'] for '+url);
 }finally{await browser.close()}
