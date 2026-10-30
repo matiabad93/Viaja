@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 // @ts-ignore Node native TS strip runner
-import {tourismTopics,photoSearchQuery,scenicCandidate,tourismPhotos,PHOTO_SOURCE_VERSION} from '../server/tourism-photos.ts';
+import {tourismTopics,photoSearchQuery,scenicCandidate,scenicScore,tourismPhotos,PHOTO_SOURCE_VERSION} from '../server/tourism-photos.ts';
 
 const miami=tourismTopics('Miami');
 assert.ok(miami.some(t=>t.term==='Beach'),'Miami prioritizes beaches');
@@ -18,6 +18,12 @@ const beach=make('Miami Beach South Beach ocean coastline.jpg');
 assert.equal(scenicCandidate(beach,'Miami',miami[0])?.author,'Creative Commons photographer');
 assert.equal(scenicCandidate(make('Miami handshake of politicians on Beach.jpg'),'Miami',miami[0]),null,'No news or politicians');
 assert.equal(scenicCandidate(make('Miami portrait on Beach.jpg'),'Miami',miami[0]),null,'No portraits');
+assert.equal(scenicCandidate(make('Miami Beach Boulevard Hotel Neon sign.jpg'),'Miami',miami[0]),null,'Exclude hotel signage');
+assert.equal(scenicCandidate(make('Wake N Bakery South Beach Miami seating.jpg'),'Miami',miami[0]),null,'Exclude bakery interiors');
+assert.equal(scenicCandidate(make('Biscayne Lady Miami Beach.jpg'),'Miami',miami[0]),null,'Exclude named tourist boats');
+assert.ok(scenicScore({url:'x',source:'x',title:'Miami skyline panorama',author:'x',license:'CC0'})>
+ scenicScore({url:'x',source:'x',title:'Miami hotel on Ocean Drive',author:'x',license:'CC0'}),'Panoramas rank above hotels');
+
 assert.equal(scenicCandidate(make('Another Miami.jpg'),'Miami',miami[0]),null,'Place type must match requested landmark');
 assert.equal(scenicCandidate(make('Italy Beach.jpg'),'Miami',miami[0]),null,'No other city');
 assert.equal(scenicCandidate(make('Miami Beach.jpg',{width:400,height:400}),'Miami',miami[0]),null,'No small or square images');
