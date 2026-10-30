@@ -67,10 +67,13 @@ try{
   assert.equal(await numbers.nth(0).inputValue(),'','Travelers may be cleared before editing');
   assert.equal(await numbers.nth(1).inputValue(),'','Optional budget may be cleared');
   const departure=page.getByLabel('Fecha de salida',{exact:true});
-  await departure.fill('2026-11-06');
-  await page.waitForTimeout(120);
+  // The fixture already starts on 2026-11-06. A no-op fill would emit no change event.
+  // Choose a later date to verify both focus and invalid-return clearing.
+  await departure.fill('2026-11-08');
+  await page.waitForFunction(()=>document.activeElement?.getAttribute('aria-label')==='Fecha de regreso',{timeout:3000});
   const focus=await page.evaluate(()=>document.activeElement?.getAttribute('aria-label'));
-  assert.equal(focus,'Fecha de regreso','Departure automatically focuses return date');
+  assert.equal(focus,'Fecha de regreso','Changing departure automatically focuses return date');
+  assert.equal(await page.getByLabel('Fecha de regreso',{exact:true}).inputValue(),'','Invalid previous return date is cleared');
   await page.screenshot({path:'artifacts/preview-browser/'+device.name+'-planner.png',fullPage:false});
   assert.equal(errors.length,0,'No fatal browser page errors: '+errors.join('; '));
   console.log('PASS '+device.name+' planner fields, date focus and no browser page errors');
