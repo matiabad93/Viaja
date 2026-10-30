@@ -18,7 +18,7 @@ const failure=(code:string,error:string,status:number,details?:Record<string,str
 };
 
 type GeminiEnv={GEMINI_API_KEY?:string};
-type ActivityIdea={title:string;description:string;time:string;minutes:number;location:string};
+type ActivityIdea={title:string;description:string;time:string;minutes:number;location:string;estimatedCostEUR?:number;costCategory?:'Actividades'|'Transporte'|'Comida';costNote?:string};
 type DayIdea={date:string;title:string;activities:ActivityIdea[]};
 type GeminiOutput={summary:string;budgetNotes:string;days:DayIdea[]};
 
@@ -53,7 +53,11 @@ function validateIdeas(data:unknown,start:string,days:number):GeminiOutput{
    const fingerprint=title.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es').trim();
    if(seen.has(fingerprint))throw Error('Actividades repetidas.');
    seen.add(fingerprint);
-   return {title,description,location,time,minutes:Number(minutes)};
+   const amount=a.estimatedCostEUR;
+   const estimatedCostEUR=typeof amount==='number'&&Number.isFinite(amount)&&amount>=0&&amount<=1000000?amount:undefined;
+   const costCategory=['Actividades','Transporte','Comida'].includes(String(a.costCategory))?a.costCategory as ActivityIdea['costCategory']:undefined;
+   const costNote=typeof a.costNote==='string'?a.costNote.slice(0,250):undefined;
+   return {title,description,location,time,minutes:Number(minutes),estimatedCostEUR,costCategory,costNote};
   });
   return {date:expected,title:shortText(day.title,120),activities};
  });
@@ -70,7 +74,7 @@ function geminiRequest(trip:ReturnType<typeof validateTrip>){
     date:{type:'STRING'},title:{type:'STRING'},
     activities:{type:'ARRAY',items:{type:'OBJECT',properties:{
      title:{type:'STRING'},description:{type:'STRING'},time:{type:'STRING'},
-     minutes:{type:'INTEGER'},location:{type:'STRING'}
+     minutes:{type:'INTEGER'},location:{type:'STRING'},estimatedCostEUR:{type:'NUMBER'},costCategory:{type:'STRING'},costNote:{type:'STRING'}
     },required:['title','description','time','minutes','location']}}
    },required:['date','title','activities']}}
   },required:['summary','budgetNotes','days']
@@ -90,16 +94,21 @@ function geminiRequest(trip:ReturnType<typeof validateTrip>){
  'Proponé horarios tentativos cronológicos sin solapamientos y con transiciones plausibles; indicá claramente en summary que no son horarios de apertura confirmados ni rutas optimizadas con datos de mapas en tiempo real.',
  'La descripción de cada día debe mencionar la zona geográfica y la lógica del paseo. El resumen general debe explicar las prioridades, el ritmo y los traslados principales. Si el viaje es de varios días, distribuí equilibradamente las visitas para aprovecharlos.',
  'Toma en serio el origen y transporte del viajero, pero como no hay horas de vuelos/trenes, no supongas llegadas ni salidas específicas: el primer y último día son flexibles para ajustar según billetes.',
+ 'Cuando hay varios destinos, distribuí días por ciudad siguiendo estrictamente el orden indicado. Nunca mezclés atracciones de ciudades distintas en un mismo recorrido peatonal; proponé un traslado interurbano como actividad propia (categoría Transporte) con margen de tiempo razonable y sugerí comprobar conexiones antes de pagar.',
+ 'Verificá que no se regrese sin motivo a barrios visitados antes; agrupá casco antiguo, monumentos contiguos y estaciones de llegada el mismo día. Incluí los puntos imperdibles de cada ciudad antes de rellenar con visitas secundarias.',
+ 'Para actividades pagas, entradas o trenes y buses necesarios, incluí estimatedCostEUR como estimación aproximada del costo TOTAL DEL GRUPO solo cuando tengas confianza razonable; si no, omití el campo y explicá la incertidumbre en costNote. Nunca inventes un precio exacto ni lo presentes como confirmado.',
+ 'Las visitas gratuitas pueden llevar estimatedCostEUR=0 únicamente cuando tengas fundamento para considerar gratuita la actividad exterior. Agregá costCategory Actividades, Transporte o Comida. Si hay transporte interurbano, su posible coste debe figurar explícitamente en el plan y en el presupuesto.',
+ 'Antes de elegir opciones de pago, compará la suma de gastos estimados con el presupuesto indicado. Si es ajustado, elegí alternativas gratuitas y explicá el riesgo en budgetNotes. Las entradas estimadas no están compradas y no son un gasto realizado.',
  'El presupuesto debe ser orientativo, sin cantidades inventadas ni supuestos de cotizaciones actuales.',
  'Respondé SOLAMENTE un objeto JSON válido con los campos summary, budgetNotes y days.',
- 'Cada día debe contener date (YYYY-MM-DD), title, activities (array de title, description, time HH:MM, minutes entero y location).',
+ 'Cada día debe contener date (YYYY-MM-DD), title, activities (array de title, description, time HH:MM, minutes entero, location, y opcionalmente estimatedCostEUR, costCategory y costNote).',
  'Devuelve exactamente '+trip.days+' días, de '+trip.start+' a '+trip.end+'.',
  'Toda recomendación está sujeta a verificación independiente antes de reservar o desplazarse.'
  ].join('\n');
  return {
   systemInstruction:{parts:[{text:guidance}]},
   contents:[{role:'user',parts:[{text:JSON.stringify({
-   destination:trip.destination,origin:trip.origin,start:trip.start,end:trip.end,travelers:trip.travelers,
+   destination:trip.destination,additionalDestinations:trip.additionalDestinations,origin:trip.origin,start:trip.start,end:trip.end,travelers:trip.travelers,
    budget:trip.budget,pace:trip.pace,transport:trip.transport,notes:trip.notes,adjustment:trip.adjustment
   })}]}],
   generationConfig:{responseMimeType:'application/json',responseSchema:schema,temperature:0.35,thinkingConfig:{thinkingLevel:'minimal'},maxOutputTokens:16384}
@@ -149,7 +158,7 @@ export async function geminiFreePlanner(request:Request,env:GeminiEnv):Promise<R
    id:crypto.randomUUID(),title:'Día '+(i+1)+' — '+d.date+' · '+d.title,
    activities:d.activities.map(a=>({
     id:crypto.randomUUID(),title:a.title,description:a.description,location:a.location,
-    time:a.time,duration:a.minutes+' min',endTime:(()=>{
+    time:a.time,duration:a.minutes+' min',estimatedCostEUR:a.estimatedCostEUR,costCategory:a.costCategory,costNote:a.costNote,endTime:(()=>{
      const minutes=Number(a.time.slice(0,2))*60+Number(a.time.slice(3))+a.minutes;
      return String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');
     })(),scheduleStatus:'estimated'
@@ -168,7 +177,7 @@ export async function geminiFreePlanner(request:Request,env:GeminiEnv):Promise<R
    'Itinerario tentativo',
    ...parsed.days.flatMap((d,i)=>[
     'Día '+(i+1)+' — '+d.date+' · '+d.title,
-    ...d.activities.map(a=>a.time+' — '+a.title+': '+a.description+' (duración sugerida: '+a.minutes+' min; zona: '+a.location+')')
+    ...d.activities.map(a=>a.time+' — '+a.title+': '+a.description+' (duración sugerida: '+a.minutes+' min; zona: '+a.location+(a.estimatedCostEUR!==undefined?'; coste orientativo del grupo: '+a.estimatedCostEUR+' EUR':'')+')')
    ]),
    '',
    'Fuentes: no consultadas en esta modalidad gratuita.',
