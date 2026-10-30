@@ -40,4 +40,22 @@ const invalidOrigin=await get('/api/plan',{method:'POST',headers:{'Content-Type'
 ok(invalidOrigin.response.status===403,'Cross-origin AI request is rejected before calling a provider');
 const anonymousPlan=await get('/api/plan',{method:'POST',headers:{'Content-Type':'application/json',Origin:origin},body:'{}'});
 ok(anonymousPlan.response.status===401,'Unauthenticated AI request is rejected before quota/provider invocation');
+// Verify real, unmocked geocoding responses after the branch deployment lands.
+async function realCityQuery(q,valid){
+ let last='No response';
+ for(let attempt=1;attempt<=5;attempt++){
+  try{
+   const result=await get('/api/cities?'+new URLSearchParams({q}));
+   const body=JSON.parse(result.body);
+   if(result.response.ok&&valid(body))return body;
+   last='HTTP '+result.response.status+'; mode='+(body.mode||'none')+'; count='+(body.cities?.length||0);
+  }catch(e){last=String(e)}
+  if(attempt<5)await new Promise(resolve=>setTimeout(resolve,3500));
+ }
+ throw Error('Live '+q+' geocoding failed: '+last);
+}
+const italianCities=await realCityQuery('Italia',body=>body.mode==='country'&&body.country?.code==='IT'&&body.cities?.length>=2&&body.cities.every(city=>city.countryCode==='IT'&&city.name!=='Italia'));
+ok(italianCities.cities[0].population>=italianCities.cities[1].population,'Italy returns genuine major cities ordered by population');
+const rosario=await realCityQuery('Rosario',body=>body.mode==='city'&&body.cities?.some(city=>city.country==='Argentina'&&city.name==='Rosario'&&/Santa Fe/i.test(city.region)));
+ok(rosario.cities.some(city=>city.name==='Rosario'&&city.country==='Argentina'&&/Santa Fe/i.test(city.region)),'Rosario shows Santa Fe, Argentina in real geocoder data');
 console.log('PREVIEW HTTP SMOKE TEST PASSED for '+origin);
