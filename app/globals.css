@@ -267,3 +267,32 @@ body{font-size:15px;line-height:1.5}button,a,input,textarea,select{-webkit-tap-h
 .photo-credits summary{cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .photo-credits ul{padding-left:18px;line-height:1.8;margin-top:9px}
 .photo-credits a{color:var(--green);text-decoration:underline}
+
+
+/* Ordered multi-destination editing and travel feasibility. */
+.trip-stops-editor{grid-column:1/-1;display:grid;gap:12px;border:1px solid #dbe6d8;border-radius:14px;padding:17px;background:#f8faf5;min-width:0}
+.trip-stops-heading{display:flex;align-items:baseline;flex-wrap:wrap;justify-content:space-between;gap:8px}
+.trip-stops-heading strong{color:#234d3d;font-size:15px}
+.trip-stops-heading span{font-size:12px;color:#68796c}
+.trip-stops-editor label{display:block;min-width:0}
+.trip-stops-editor .city-combobox{min-width:0}
+.trip-stop-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;min-width:0}
+.trip-stop-actions{display:flex;align-items:center;gap:2px;padding-bottom:2px}
+.trip-stop-actions button{width:35px;height:42px;border:1px solid #d7e1d3;border-radius:7px;display:grid;place-items:center;background:#fff}
+.trip-stop-actions button:disabled{opacity:.25;cursor:not-allowed}
+.trip-add-stop{width:max-content;min-height:42px}
+.trip-feasibility{border:1px solid #d4dfc2;background:#f6f9ed;padding:16px;border-radius:12px;margin:16px 0;display:grid;gap:6px}
+.trip-feasibility.blocked{background:#fff2eb;border-color:#edcbbb}
+.trip-feasibility strong{color:#284d35}
+.trip-feasibility p{font-size:12px;line-height:1.6}
+.forecast-panel{margin:18px 0}
+.forecast-panel .section-heading{margin-bottom:10px}
+.forecast-panel .section-heading h3{font-size:21px}
+.forecast-panel .section-heading strong{font-size:22px;color:#244b39}
+.forecast-list{display:grid;gap:10px;margin-top:18px}
+.forecast-row{display:flex;align-items:center;flex-wrap:wrap;gap:14px;padding:12px 0;border-top:1px solid #e1e9dc}
+.forecast-row>div{flex:1;min-width:180px}
+.forecast-row strong{display:block;font-size:13px}
+.forecast-row small{display:block;font-size:11px;color:#69796e;line-height:1.5;margin-top:4px}
+.forecast-row>b{white-space:nowrap}
+@media(max-width:600px){.trip-stops-editor{padding:13px}.trip-stop-row{grid-template-columns:minmax(0,1fr)}.trip-stop-actions{justify-content:flex-end}.forecast-row .secondary{width:100%}}

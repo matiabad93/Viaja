@@ -1,13 +1,13 @@
 'use client';
 import {useEffect,useMemo,useState} from 'react';
 import {requestAPI} from './api-client';
-import {paris,colmar,barcelona,roma,lisboa} from '../server/builtin-photos';
+import {paris,colmar,barcelona,roma,lisboa,madrid} from '../server/builtin-photos';
 import {photo,type DestinationPhoto} from './travel';
 
 function normalize(s:string){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()}
 export function curatedCovers(destination:string):DestinationPhoto[]{
  const city=normalize(destination.split(',')[0].replace(/ · copia$/,'').replace(/ esencial| entre miradores| y alsacia/ig,''));
- const galleries:Record<string,DestinationPhoto[]>={paris,colmar,barcelona,roma,lisboa};
+ const galleries:Record<string,DestinationPhoto[]>={paris,colmar,barcelona,roma,lisboa,madrid};
  const images=galleries[city]||[];
  if(city==='paris'){
   // Eiffel Tower first, then other Paris views. Never substitute another city's stock image.

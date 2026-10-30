@@ -24,6 +24,8 @@ try {
  assert.equal(itinerary.itinerary.length,2);
  assert.equal(itinerary.itinerary[0].activities[0].time,'10:00');
  assert.equal(itinerary.sources.length,0);
+ assert.match(prompt,/Cuando hay varios destinos/, 'Gemini must organize city sequences');
+ assert.match(prompt,/estimatedCostEUR/, 'Gemini should estimate ticket and transport costs');
  assert.match(prompt,/4 a 6 paradas/, 'Full days should use enough relevant activities');
  assert.match(prompt,/Agrupá cada día por áreas próximas/, 'Nearby stops should be grouped to avoid backtracking');
  assert.match(prompt,/horarios de apertura confirmados/, 'No claims about live availability');

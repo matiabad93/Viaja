@@ -9,7 +9,7 @@ export function validateItinerary(raw:unknown,start:string,count:number){
  const key=a.title.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();if(seen.has(key))throw Error('Actividad duplicada.');seen.add(key);
  const u=new URL(a.source);if(u.protocol!=='https:')throw Error('Fuente inválida.');
  const n=Number(a.time.slice(0,2))*60+Number(a.time.slice(3))+a.minutes;if(n>=1440)throw Error('La actividad excede el día.');
- return {id:crypto.randomUUID(),title:a.title,description:a.description,time:a.time,duration:a.minutes+' min',endTime:String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0'),source:a.source,location:typeof a.location==='string'?a.location:'',scheduleStatus:'estimated'};
+ return {id:crypto.randomUUID(),title:a.title,description:a.description,time:a.time,duration:a.minutes+' min',endTime:String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0'),source:a.source,location:typeof a.location==='string'?a.location:'',estimatedCostEUR:typeof a.estimatedCostEUR==='number'&&Number.isFinite(a.estimatedCostEUR)&&a.estimatedCostEUR>=0&&a.estimatedCostEUR<=1000000?a.estimatedCostEUR:undefined,costCategory:['Transporte','Actividades','Comida'].includes(a.costCategory)?a.costCategory:undefined,costNote:typeof a.costNote==='string'?a.costNote.slice(0,250):undefined,scheduleStatus:'estimated'};
  });
  if(!activities.length&&!d.limitation)throw Error('Día vacío sin explicación.');
  return {id:crypto.randomUUID(),title:d.limitation||date,activities};
