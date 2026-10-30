@@ -41,7 +41,7 @@ assert.ok(css.includes('env(safe-area-inset-bottom)'),'Bottom nav accommodates i
 // AI regeneration must use Viaja's dialog, not window.confirm(), and must not
 // reserve the provider request before the user has actively confirmed.
 const dialog=readFileSync(new URL('../components/confirm-dialog.tsx',import.meta.url),'utf8');
-assert.ok(!/\\b(?:window\\.)?confirm\\s*\\(/.test(home),'AI regeneration must never show a browser-native confirm popup');
+assert.ok(!/\b(?:window\.)?confirm\s*\(/.test(home),'AI regeneration must never show a browser-native confirm popup');
 assert.ok(home.includes('setPendingRegeneration(true)'),'Existing itinerary asks for confirmation');
 assert.ok(home.includes('onConfirm={confirmRegeneration}'),'Regeneration dialog has explicit confirmation');
 assert.ok(home.includes('onCancel={()=>setPendingRegeneration(false)}'),'Closing the dialog cancels regeneration');
