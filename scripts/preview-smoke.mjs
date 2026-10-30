@@ -66,7 +66,7 @@ async function realMiamiTouristPhotos(){
    const response=await fetch(new URL('/api/photos?q=Miami&country=Estados%20Unidos',origin),
     {signal:AbortSignal.timeout(60000),headers:{Accept:'application/json'}});
    const data=await response.json();
-   if(response.ok&&data.photoStrategy==='scenic-v2'&&Array.isArray(data.photos)&&data.photos.length>=2){
+   if(response.ok&&data.photoStrategy==='scenic-v3'&&Array.isArray(data.photos)&&data.photos.length>=2){
     const pictures=data.photos;
     ok(pictures.every(p=>p.title.includes('Miami')&&!/politic|president|handshake|conference|summit|portrait|protest/i.test(p.title)),
      'Miami returns only recognizable tourist landscapes, never political or unrelated portraits');
