@@ -1,0 +1,20 @@
+name: Viaja Preview HTTP smoke
+on:
+  push:
+    branches: [feat/v1-production-release-plan]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview-http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify Cloudflare branch preview
+        env:
+          VIAJA_PREVIEW_URL: https://feat-v1-production-release-p.viaja.pages.dev
+        run: node scripts/preview-smoke.mjs
