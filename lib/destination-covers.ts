@@ -42,7 +42,7 @@ export function useDestinationCover(destination:string,stored?:DestinationPhoto[
  useEffect(()=>{
   if(curated.length||safeStored.length||city.length<2)return;
   const controller=new AbortController();
-  requestAPI('/api/photos?'+new URLSearchParams({q:city,country}),{signal:controller.signal})
+  requestAPI('/api/photos?'+new URLSearchParams({q:city,country,v:PHOTO_SOURCE_VERSION}),{signal:controller.signal})
    .then(async response=>{if(!response.ok)throw Error('Photos unavailable');return response.json() as Promise<{photos?:DestinationPhoto[]}>})
    .then(result=>{if(!controller.signal.aborted)setRemote({key,photos:result.photos||[]})})
    .catch(()=>{});
