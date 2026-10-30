@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
-import {chromium} from '/tmp/viaja-smoke/node_modules/playwright/index.mjs';
+import {chromium,webkit} from '/tmp/viaja-smoke/node_modules/playwright/index.mjs';
 
 const origin=process.env.VIAJA_LOCAL_URL||'http://127.0.0.1:4173';
 await mkdir('artifacts/v1-mobile-ux',{recursive:true});
-const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']});
+const browserName=process.env.VIAJA_BROWSER==='webkit'?'webkit':'chromium';
+const runner=browserName==='webkit'?webkit:chromium;
+const browser=await runner.launch(browserName==='webkit'?{headless:true}:{headless:true,executablePath:'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']});
 const cities={
  paris:{id:1,name:'París',country:'Francia',region:'Isla de Francia',latitude:48.8566,longitude:2.3522,featureCode:'PPLC',population:2100000},
  toledo:{id:2,name:'Toledo',country:'España',region:'Castilla-La Mancha',latitude:39.8628,longitude:-4.0273,featureCode:'PPLA',population:85000}
@@ -45,7 +47,7 @@ try{
   assert.ok(overflow.scroll<=overflow.viewport+3,'No horizontal overflow: '+JSON.stringify(overflow));
   await page.screenshot({path:'artifacts/v1-mobile-ux/'+viewport.name+'-sequential-cities.png'});
   assert.equal(errors.length,0,'No uncaught browser errors: '+errors.join('; '));
-  console.log('PASS '+viewport.name+' Madrid guide navigation, sequential cities, layout');
+  console.log('PASS '+browserName+' '+viewport.name+' Madrid guide navigation, sequential cities, layout');
   await context.close();
  }
 }finally{await browser.close()}
