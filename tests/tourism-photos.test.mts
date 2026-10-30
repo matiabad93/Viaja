@@ -10,7 +10,7 @@ assert.equal(PHOTO_SOURCE_VERSION,'scenic-v2');
 assert.ok(photoSearchQuery('Miami',miami[0]).includes('intitle:"Beach"'));
 const make=(title:string,extra:Record<string,unknown>={})=>({
  title:'File:'+title,index:1,imageinfo:[{width:1800,height:1100,mime:'image/jpeg',
- thumburl:'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/test.jpg/1280px-test.jpg',
+ thumburl:'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/'+encodeURIComponent(title)+'/1280px-'+encodeURIComponent(title),
  descriptionurl:'https://commons.wikimedia.org/wiki/File:'+title.replace(/ /g,'_'),
  extmetadata:{LicenseShortName:{value:'CC BY-SA 4.0'},Artist:{value:'Creative Commons photographer'}},...extra}]
 });
