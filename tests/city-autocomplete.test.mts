@@ -36,7 +36,7 @@ try{
 
 const component=readFileSync(new URL('../components/trip-stops-editor.tsx',import.meta.url),'utf8');
 assert.ok(component.includes("ariaLabel={'Destino adicional '"),'All extra destination inputs use autocomplete');
-assert.ok(component.includes('onSelect={c=>change'), 'Extra destinations accept suggestions');
+assert.ok(component.includes('onSelect={city=>selectStop(i,cityLabel(city))}'), 'Extra destinations accept and confirm city suggestions');
 const home=readFileSync(new URL('../app/page.tsx',import.meta.url),'utf8');
 const detail=readFileSync(new URL('../components/trip-detail.tsx',import.meta.url),'utf8');
 assert.ok(home.includes('ariaLabel="Ciudad de salida"'),'Planner origin autocompletes');
