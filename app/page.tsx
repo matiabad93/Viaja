@@ -17,7 +17,7 @@ import {Trip,Plan,itineraryOf,daysCount} from '../lib/travel';
 import {TripsDashboard} from '../components/trips-dashboard';
 import {ConfirmDialog} from '../components/confirm-dialog';
 import {TripDetail} from '../components/trip-detail';
-const empty:Trip={destination:'',additionalDestinations:[],origin:'Barcelona, España',start:'',end:'',travelers:2,budget:0,pace:'Equilibrado',transport:'Sin coche',notes:'',links:'',adjustment:'',sources:['official','blogs','forums','youtube']};
+const empty:Trip={destination:'',additionalDestinations:[],origin:'',start:'',end:'',travelers:2,budget:0,pace:'Equilibrado',transport:'Sin coche',notes:'',links:'',adjustment:'',sources:['official','blogs','forums','youtube']};
 const sourceNames:Record<string,string>={official:'Sitios oficiales',blogs:'Blogs de viajes',forums:'Foros y comunidades',youtube:'YouTube',tiktok:'TikTok'};
 const storageKey='viaja-ai-trips-v1';const safeURL=(url:string)=>{try{const u=new URL(url);return ['https:','http:'].includes(u.protocol)?url:null}catch{return null}};
 function readableDate(date:string){return new Date(date+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'})}
