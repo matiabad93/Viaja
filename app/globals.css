@@ -317,3 +317,59 @@ body{font-size:15px;line-height:1.5}button,a,input,textarea,select{-webkit-tap-h
  .city-results,.trip-stops-editor .city-results{left:0;right:0;max-height:min(225px,34dvh)}
  .city-combobox>input{font-size:16px}
 }
+
+
+/* V1 UX finish: compact stops, predictable mobile navigation and tap targets. */
+.example-guide{width:100%;text-align:left;gap:15px;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease}
+.example-guide>span:first-child{display:grid;gap:5px;min-width:0}
+.example-guide .example-title{display:block;font:24px/1.18 Georgia;color:var(--ink);margin-top:5px}
+.example-guide .example-subtitle{display:block;color:var(--muted);font-size:12px;font-weight:400}
+.example-guide .example-open{flex:0 0 44px;height:44px;border-radius:50%;background:#e8eee3;border:1px solid #d8e1d1;display:grid;place-items:center}
+.example-guide:hover{border-color:#a8bfa8;box-shadow:0 6px 20px #214e4010}
+.example-guide:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+.trip-stops-editor{gap:13px}
+.trip-stop-row{min-width:0;align-items:end}
+.trip-stop-row>label{min-width:0}
+.trip-stop-actions{gap:3px}
+.trip-stop-actions button{min-width:44px;width:44px;min-height:44px;height:44px;border-radius:10px}
+.trip-stop-actions button:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.trip-add-stop{min-height:46px}
+.trip-add-stop:disabled{opacity:.45}
+.trip-step-hint{margin:-5px 0 0;color:#546d60;font-size:12px;line-height:1.5}
+.trip-stops-editor .fieldhelp{margin:0}
+.inputicon>svg{pointer-events:none}
+.visualguides .tabs{overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;flex-wrap:nowrap}
+.visualguides .tabs button{flex-shrink:0;min-height:44px}
+.visualguides .card button{min-height:44px}
+.visualguides .guidehead>.row{flex-wrap:wrap}
+html{scroll-padding-top:86px}
+#main-content{scroll-margin-top:86px}
+@media(max-width:700px){
+ .topbar{background:#fafbf7;backdrop-filter:none;-webkit-backdrop-filter:none;flex-wrap:nowrap}
+ .topbar nav{grid-template-columns:repeat(3,minmax(0,1fr));height:calc(66px + env(safe-area-inset-bottom));padding:5px 8px calc(5px + env(safe-area-inset-bottom));background:#fafbf7}
+ .topbar nav:has(>button:nth-child(4)){grid-template-columns:repeat(4,minmax(0,1fr))}
+ .topbar nav button{min-width:0;white-space:normal;line-height:1.2;text-align:center;gap:4px}
+ .topbar .logo{flex:0 0 auto;font-size:30px}
+ .topbar .viaja-account{max-width:min(59vw,230px)}
+ main{padding-bottom:calc(118px + env(safe-area-inset-bottom));}
+ .formcard{padding:21px 16px}
+ .formtitle h2{font-size:25px}
+ .trip-stops-editor{gap:12px;padding:14px}
+ .trip-stop-row{grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}
+ .trip-stop-actions{justify-content:flex-end;gap:1px;padding-bottom:1px}
+ .trip-stop-actions button{width:42px;min-width:42px;height:46px;min-height:46px}
+ .trip-step-hint{font-size:12px}
+ .visualguides .cardbody{padding:18px}
+ .visualguides .tabs{margin:17px 0}
+ .detail-tabs{overflow-x:auto;scrollbar-width:thin}
+ .detail-tabs button{white-space:nowrap;flex-shrink:0}
+}
+@media(max-width:430px){
+ .formcard .formgrid{grid-template-columns:minmax(0,1fr)}
+ .formcard .formgrid>label{grid-column:1/-1}
+ .trip-stops-editor{grid-column:1/-1}
+ .trip-date-range{grid-column:1/-1}
+ .trip-stop-row{grid-template-columns:minmax(0,1fr) 126px}
+ .formcard .formgrid>.fieldhelp{margin-top:-10px}
+ .example-guide{padding:19px}
+}
