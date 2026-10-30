@@ -3,6 +3,7 @@ import {useState} from 'react';
 import {Plus,Trash2,ArrowUp,ArrowDown,MapPin} from 'lucide-react';
 import {DestinationSearch} from './destination-search';
 import {cityLabel} from '../lib/city-suggestions';
+import {canAppendDestination,swapStops} from '../lib/stop-editor';
 import type {Trip} from '../lib/travel';
 
 /** Stops must be chosen in sequence. Previously saved locations remain editable.
@@ -14,7 +15,7 @@ export function TripStopsEditor({trip,onChange}:{trip:Trip;onChange:(t:Trip)=>vo
  const [confirmedExtra,setConfirmedExtra]=useState<string[]>(()=>list.map(s=>s.trim()));
  const isMainSelected=!!trip.destination.trim()&&confirmedMain===trip.destination.trim();
  const allAdditionalSelected=list.every((item,i)=>!!item.trim()&&confirmedExtra[i]===item.trim());
- const canAdd=isMainSelected&&allAdditionalSelected&&list.length<5;
+ const canAdd=canAppendDestination(trip.destination,confirmedMain,list,confirmedExtra);
 
  const updateStops=(items:string[],selected:string[])=>{
   setConfirmedExtra(selected);
@@ -33,10 +34,7 @@ export function TripStopsEditor({trip,onChange}:{trip:Trip;onChange:(t:Trip)=>vo
  const shiftStop=(index:number,delta:number)=>{
   const other=index+delta;
   if(other<0||other>=list.length)return;
-  const next=[...list],selected=[...confirmedExtra];
-  [next[index],next[other]]=[next[other],next[index]];
-  [selected[index],selected[other]]=[selected[other],selected[index]];
-  updateStops(next,selected);
+  updateStops(swapStops(list,index,other),swapStops(confirmedExtra,index,other));
  };
  const removeStop=(index:number)=>updateStops(list.filter((_,i)=>i!==index),confirmedExtra.filter((_,i)=>i!==index));
  const hint=!isMainSelected?'Seleccioná el destino principal en las sugerencias para continuar.':
