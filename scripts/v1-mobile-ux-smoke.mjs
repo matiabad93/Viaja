@@ -38,7 +38,18 @@ try{
   assert.ok(await add.isDisabled(),'Blank additional city blocks subsequent destination');
   await page.getByRole('combobox',{name:'Destino adicional 2'}).fill('Tol');
   assert.ok(await add.isDisabled(),'Typing does not count as selecting a city');
-  await page.getByRole('option',{name:/Toledo.*España/}).first().click();
+  const option=page.getByRole('option',{name:/Toledo.*España/}).first();
+  try{
+   await option.waitFor({state:'visible',timeout:9000});
+  }catch(e){
+   console.log('DEBUG '+browserName+' '+viewport.name+' missing Toledo option',
+    JSON.stringify({input:await page.getByRole('combobox',{name:'Destino adicional 2'}).inputValue(),
+    expanded:await page.getByRole('combobox',{name:'Destino adicional 2'}).getAttribute('aria-expanded'),
+    results:await page.locator('.city-results').allInnerTexts(),
+    options:await page.locator('[role=option]').allInnerTexts()}));
+   throw e;
+  }
+  await option.click();
   assert.ok(await add.isEnabled(),'Selecting the previous city unlocks the next');
   await add.click();
   assert.equal(await page.getByRole('combobox',{name:'Destino adicional 3'}).inputValue(),'');
