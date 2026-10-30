@@ -89,7 +89,7 @@ try{
   const main=page.getByRole('combobox',{name:'Destino principal'});
   await main.fill('Italia');
   try{
-   await page.getByRole('option',{name:/Roma.*Italia/}).waitFor({state:'visible',timeout:12000});
+   await page.getByRole('option',{name:/(Roma|Rome).*Italia/}).waitFor({state:'visible',timeout:12000});
   }catch(e){
    console.log('COUNTRY SUGGESTION DEBUG '+browserName+' '+viewport.name,JSON.stringify({
     input:await main.inputValue(),expanded:await main.getAttribute('aria-expanded'),
@@ -99,7 +99,7 @@ try{
    }));
    throw e;
   }
-  assert.equal(await page.getByRole('option',{name:/Milano.*Italia/}).count(),1,'Country lists a second major city');
+  assert.equal(await page.getByRole('option',{name:/(Milano|Milan).*Italia/}).count(),1,'Country lists a second major city');
   assert.equal(await page.getByRole('option',{name:/Italia.*México/}).count(),0,'Country search excludes namesake Mexican towns');
   await main.fill('Rosario');
   const rosario=page.getByRole('option',{name:/Rosario.*Santa Fe.*Argentina/});
