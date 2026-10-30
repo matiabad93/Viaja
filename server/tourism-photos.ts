@@ -5,7 +5,7 @@
  */
 import type {DestinationPhoto} from '../lib/travel';
 
-export const PHOTO_SOURCE_VERSION='scenic-v2';
+export const PHOTO_SOURCE_VERSION='scenic-v3';
 export type ScenicTopic={term:string;label:string};
 const normal=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('en').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
 const safe=(s:unknown)=>String(s||'').replace(/<[^>]*>/g,'').replace(/&[^;]+;/g,' ').slice(0,400).trim();
@@ -36,7 +36,7 @@ const famous:Record<string,{term:string;label:string}[]>={
  amsterdam:[{term:'canals',label:'Amsterdam canals'},{term:'historic',label:'Amsterdam historic centre'},{term:'skyline',label:'Amsterdam skyline'},{term:'bridges',label:'Amsterdam bridges'}],
  tokyo:[{term:'Skytree',label:'Tokyo Skytree'},{term:'Shibuya',label:'Shibuya'},{term:'Sensoji',label:'Senso-ji'},{term:'skyline',label:'Tokyo skyline'}],
 };
-const deny=/\b(politic|politician|president|governor|mayor|minister|election|campaign|congress|senator|speech|handshake|handshaking|hand shake|meeting|ceremony|conference|conference hall|summit|signing|awards?|protest|march|demonstrat|people|portrait|person|model|celebrity|actor|football|soccer|match|team|police|crime|arrest|shooting|hospital|ambulance|disaster|accident|war|fire|flags?|logos?|posters?|brochure|advertis|drawing|illustration|painting|artwork|map|diagram|infographic|icon|screenshot|stock photo|stockphoto|watermark|selfie|passport|hotel room|restaurant menu|menu|interview|press)\b/i;
+const deny=/\b(politic|politician|president|governor|mayor|minister|election|campaign|congress|senator|speech|handshake|handshaking|hand shake|meeting|ceremony|conference|conference hall|summit|signing|awards?|protest|march|demonstrat|people|portrait|person|model|celebrity|actor|football|soccer|match|team|police|crime|arrest|shooting|hospital|ambulance|disaster|accident|war|fire|flags?|logos?|posters?|brochure|advertis|drawing|illustration|painting|artwork|map|diagram|infographic|icon|screenshot|stock photo|stockphoto|watermark|selfie|passport|hotel room|restaurant menu|menu|interview|press|neon|signs?|bakery|seating|shop|storefront|retail|cocktail|waiter|buffet|interior|yacht|ship|cruise|vessel|lady)\b/i;
 
 export function tourismTopics(city:string):ScenicTopic[]{
  const n=normal(city);
@@ -76,6 +76,19 @@ export function scenicCandidate(file:FilePage,city:string,topic:ScenicTopic):Des
  if(!license||!/^(CC|Public domain|PD\b)/i.test(license))return null;
  return {url:info.thumburl,source:info.descriptionurl,title:topic.label+' · '+title,author:safe(meta?.Artist?.value)||'Autor no indicado',license};
 }
+/** Scenic streets, beaches, panoramas and monuments outrank signs and storefronts. */
+export function scenicScore(photo:DestinationPhoto):number{
+ const title=normal(photo.title);
+ let score=0;
+ for(const token of ['skyline','panorama','panoramic','aerial','sunset','sunrise','beach','coastline',
+  'lifeguard','ocean drive','ocean','seafront','waterfront','bridge','monument','cathedral',
+  'castle','historic','architecture','street','pier','view','landscape','coast','sand']){
+  if(title.includes(token))score+=token==='skyline'||token==='beach'||token==='panorama'?8:3;
+ }
+ if(/\bhotels?\b/.test(title))score-=18;
+ return score;
+}
+
 async function commons(city:string,topic:ScenicTopic):Promise<DestinationPhoto[]>{
  const params=new URLSearchParams({
   action:'query',format:'json',formatversion:'2',generator:'search',
@@ -90,8 +103,8 @@ async function commons(city:string,topic:ScenicTopic):Promise<DestinationPhoto[]
  const result=await response.json() as {query?:{pages?:FilePage[]}};
  const items=Array.isArray(result.query?.pages)?result.query.pages:[];
  return items.sort((a,b)=>(a.index||0)-(b.index||0)).flatMap(file=>{
-  const photo=scenicCandidate(file,city,topic);return photo?[photo]:[];
- }).slice(0,3);
+  const photo=scenicCandidate(file,city,topic);return photo?[{photo,index:file.index||0}]:[];
+ }).sort((a,b)=>scenicScore(b.photo)-scenicScore(a.photo)||a.index-b.index).map(({photo})=>photo).slice(0,3);
 }
 export async function tourismPhotos(city:string):Promise<DestinationPhoto[]>{
  const subjects=tourismTopics(city);
