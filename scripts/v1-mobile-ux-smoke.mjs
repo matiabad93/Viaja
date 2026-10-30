@@ -26,6 +26,8 @@ try{
   await page.getByText('Puerta del Sol').first().waitFor({state:'visible'});
   await page.screenshot({path:'artifacts/v1-mobile-ux/'+viewport.name+'-madrid-guide.png'});
   await page.getByRole('button',{name:'Planificar'}).first().click();
+  const originCity=page.getByRole('combobox',{name:'Ciudad de salida'});
+  assert.equal(await originCity.inputValue(),'','New trip leaves city of departure empty');
   const add=page.getByRole('button',{name:'Agregar otro destino'});
   assert.ok(await add.isDisabled(),'Cannot add extra city before main city selected');
   await page.getByRole('combobox',{name:'Destino principal'}).fill('Paris');
@@ -38,6 +40,17 @@ try{
   assert.ok(await add.isDisabled(),'Typing does not count as selecting a city');
   await page.getByRole('option',{name:/Toledo.*España/}).first().click();
   assert.ok(await add.isEnabled(),'Selecting the previous city unlocks the next');
+  const first=page.getByRole('combobox',{name:'Destino principal'});
+  const second=page.getByRole('combobox',{name:'Destino adicional 2'});
+  const firstRect=await first.boundingBox(),secondRect=await second.boundingBox();
+  assert.ok(firstRect&&secondRect&&Math.abs(firstRect.x-secondRect.x)<2&&Math.abs(firstRect.width-secondRect.width)<2,'Primary city and secondary city inputs align');
+  assert.ok(await page.getByRole('button',{name:'Subir destino 1'}).isDisabled(),'First city cannot move above first');
+  await page.getByRole('button',{name:'Subir destino 2'}).click();
+  assert.equal(await first.inputValue(),'Toledo, España','Secondary city can become primary');
+  assert.equal(await second.inputValue(),'París, Francia','Former primary becomes second city');
+  await page.getByRole('button',{name:'Bajar destino 1'}).click();
+  assert.equal(await first.inputValue(),'París, Francia','Primary can move down again');
+  assert.equal(await second.inputValue(),'Toledo, España','Secondary restored after moving primary');
   await add.click();
   assert.equal(await page.getByRole('combobox',{name:'Destino adicional 3'}).inputValue(),'');
   assert.ok(await add.isDisabled(),'New empty third destination cannot be bypassed');

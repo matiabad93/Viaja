@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useRef} from 'react';
 import {createPortal} from 'react-dom';
-import {AlertTriangle,X} from 'lucide-react';
+import {AlertTriangle,RotateCcw,X} from 'lucide-react';
 
 type Props={open:boolean;title:string;description:string;confirmLabel?:string;busy?:boolean;danger?:boolean;onConfirm:()=>void;onCancel:()=>void};
 export function ConfirmDialog({open,title,description,confirmLabel='Eliminar',busy=false,danger=true,onConfirm,onCancel}:Props){
@@ -25,9 +25,9 @@ export function ConfirmDialog({open,title,description,confirmLabel='Eliminar',bu
  },[open,busy,onCancel]);
  if(!open||typeof document==='undefined')return null;
  return createPortal(<div className="viaja-confirm-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget&&!busy)onCancel()}}>
-  <section className="viaja-confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="viaja-confirm-title" aria-describedby="viaja-confirm-description">
+  <section className={"viaja-confirm-dialog"+(danger?"":" viaja-confirm-neutral")} role={danger?"alertdialog":"dialog"} aria-modal="true" aria-labelledby="viaja-confirm-title" aria-describedby="viaja-confirm-description">
    <button className="viaja-confirm-close" type="button" disabled={busy} onClick={onCancel} aria-label="Cerrar"><X size={18}/></button>
-   <span className="viaja-confirm-icon"><AlertTriangle size={22}/></span>
+   <span className="viaja-confirm-icon" aria-hidden="true">{danger?<AlertTriangle size={22}/>:<RotateCcw size={22}/>}</span>
    <h2 id="viaja-confirm-title">{title}</h2>
    <p id="viaja-confirm-description">{description}</p>
    <div className="viaja-confirm-actions">
