@@ -13,7 +13,7 @@ export async function destinationsAPI(request:Request){
   if(country){
    // A country is not a city. Return its largest cities, not e.g. Mexican
    // villages named "Italia". countries.dev sources GeoNames and sorts by population.
-   let cities= [];
+   let cities:ReturnType<typeof rankCountryCities>=[];
    let provider='countries.dev · GeoNames';
    try{
     const raw=await remote('https://countries.dev/cities?'+new URLSearchParams({country:country.code,limit:'30'}));
