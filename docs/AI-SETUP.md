@@ -46,7 +46,7 @@ La respuesta de `/api/status` no muestra secretos. `configuration_incomplete` in
 
 ## Límites y seguridad de uso
 
-El gateway requiere token de Supabase Auth, valida el usuario y reserva cuota transaccional antes de llamar al proveedor. Los límites iniciales son 2 solicitudes por usuario cada 24 horas, 40 globales cada 24 horas y 5 minutos entre solicitudes. Los intentos fallidos también consumen la reserva para prevenir abuso. Estos topes son de peticiones, no un presupuesto monetario.
+El gateway requiere token de Supabase Auth, valida el usuario y reserva cuota transaccional antes de llamar al proveedor. Los límites iniciales son 10 solicitudes por usuario cada 24 horas, 40 globales cada 24 horas y sin espera obligatoria entre solicitudes. La reserva transaccional impide una segunda generación simultánea del mismo usuario. Los intentos fallidos también consumen la reserva para prevenir abuso. Estos topes son de peticiones, no un presupuesto monetario.
 
 Gemini devuelve ideas sin búsqueda. La aplicación debe advertir que ubicaciones, precios, horarios y disponibilidad requieren verificación independiente. Si Gemini responde 429/4xx o falla la validación del JSON, el borrador del viaje debe conservarse y no deben presentarse resultados simulados.
 
