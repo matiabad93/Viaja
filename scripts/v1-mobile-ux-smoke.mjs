@@ -23,7 +23,7 @@ try{
   });
   // WebKit can exercise the GeoNames fallback when Pages Functions are temporarily
   // unavailable. Keep both paths deterministic for a UI behavior test.
-  await page.route('**/geocoding-api.open-meteo.com/v1/search?*',route=>{
+  await page.route('**/v1/search?*',route=>{
    const q=new URL(route.request().url()).searchParams.get('name')||'';
    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({results:[cityFixture(q)]})});
   });
