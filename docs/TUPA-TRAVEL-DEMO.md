@@ -1,3 +1,7 @@
+# Documento histórico de la demo inicial
+
+> Para la **versión completa premium con IA, autenticación y datos aislados**, consultá [TUPA-PREMIUM-AI-DEPLOY.md](./TUPA-PREMIUM-AI-DEPLOY.md). La versión premium **no precarga viajes ficticios** al usuario y solo habilita la IA con claves independientes de la agencia. Este documento histórico aplica a `demo/tupa-travel`, no a `tupa-travel-v1`.
+
 # Tupã Travel — propuesta de prueba (white-label)
 
 > Versión comercial **no oficial** creada como demostración tecnológica, sin integración con el sistema de ventas, precios o cuentas de la agencia. El uso del logo aportado para esta demo no implica un contrato ni autorización comercial permanente.
