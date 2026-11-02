@@ -1,11 +1,11 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
-import {cloudReady,logIn,register,logOut,sendRecovery,changePassword,recoveryPending,importLocalTrips,getSocialProviderAvailability,beginSocialSignIn,type Tupã TravelSession} from '../lib/supabase-client';
+import {cloudReady,logIn,register,logOut,sendRecovery,changePassword,recoveryPending,importLocalTrips,getSocialProviderAvailability,beginSocialSignIn,type ViajaSession} from '../lib/supabase-client';
 import {unavailableSocialProviders,socialProviders,type SocialAvailability,type SocialProvider} from '../lib/social-auth';
 import {UserRound,LogOut,CloudUpload,X,LoaderCircle} from 'lucide-react';
 
-export function AccountControl({session,onReload,onError}:{session:Tupã TravelSession|null;onReload:()=>Promise<void>;onError:(message:string)=>void}){
+export function AccountControl({session,onReload,onError}:{session:ViajaSession|null;onReload:()=>Promise<void>;onError:(message:string)=>void}){
  const [open,setOpen]=useState(false);
  const [mode,setMode]=useState<'login'|'signup'|'recover'|'password'>('login');
  const [email,setEmail]=useState('');
