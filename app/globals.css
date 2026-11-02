@@ -394,3 +394,13 @@ html{scroll-padding-top:86px}
  .trip-stops-editor .trip-stop-row{grid-template-columns:minmax(0,1fr) 126px;gap:8px}
  .trip-stops-editor .trip-stop-actions{margin-bottom:1px}
 }
+
+
+/* Detailed travel guidance: readable itinerary content on small and large screens. */
+.day-practical-guide{margin:4px 0 22px;padding:18px 21px;border:1px solid #d7e3d6;border-left:4px solid #4e7e67;border-radius:12px;background:#f6f9f3}
+.day-practical-guide strong,.activity-expanded-guide strong{display:block;color:#254b39;font-size:14px}
+.day-practical-guide p{white-space:pre-line;line-height:1.75;font-size:14px;margin:9px 0}
+.day-practical-guide small{color:#64776b;font-size:11px;line-height:1.5}
+.activity-expanded-guide{margin:14px 0 16px;padding:13px 16px;background:#f8faf6;border-radius:11px;border:1px solid #e2e9de}
+.activity-expanded-guide p{white-space:pre-line;line-height:1.8;margin:8px 0 0}
+@media(max-width:600px){.day-practical-guide{padding:14px}.activity-expanded-guide{padding:12px}}
