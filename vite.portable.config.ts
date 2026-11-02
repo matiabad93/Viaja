@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import path from 'node:path';
 import {onRequest} from './functions/api/[[path]]';
 export default defineConfig({
- define:{__VIAJA_NATIVE__:JSON.stringify(process.env.VIAJA_NATIVE==='true'),__VIAJA_API_BASE__:JSON.stringify(process.env.VIAJA_API_BASE||''),__VIAJA_SUPABASE_URL__:JSON.stringify(''),__VIAJA_SUPABASE_PUBLIC_KEY__:JSON.stringify('')},
+ define:{__VIAJA_NATIVE__:JSON.stringify(process.env.VIAJA_NATIVE==='true'),__VIAJA_API_BASE__:JSON.stringify(process.env.VIAJA_API_BASE||''),__VIAJA_SUPABASE_URL__:JSON.stringify(process.env.TUPA_SUPABASE_URL||''),__VIAJA_SUPABASE_PUBLIC_KEY__:JSON.stringify(process.env.TUPA_SUPABASE_PUBLISHABLE_KEY||'')},
  root:'portable',publicDir:'../public',
  plugins:[react(),{name:'viaja-demo-api',configureServer(server){server.middlewares.use(async(req,res,next)=>{
   if(!req.url?.startsWith('/api/'))return next();
