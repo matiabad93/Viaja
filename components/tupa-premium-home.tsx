@@ -1,5 +1,5 @@
 'use client';
-import {ArrowRight,CalendarDays,Compass,MapPinned,Suitcase,Globe2,Star,MapPin,Sparkles} from 'lucide-react';
+import {ArrowRight,CalendarDays,Compass,MapPinned,Briefcase,Globe2,Star,MapPin,Sparkles} from 'lucide-react';
 
 type PageAction=()=>void;
 export function TupaPremiumHome({onPlan,onSaved,onExplore,onColmar,onSantorini}:{onPlan:PageAction;onSaved:PageAction;onExplore:PageAction;onColmar:PageAction;onSantorini:PageAction}){
@@ -28,7 +28,7 @@ export function TupaPremiumHome({onPlan,onSaved,onExplore,onColmar,onSantorini}:
    </article>
    <nav className="tupa-quick-actions" aria-label="Acciones principales">
     <button type="button" className="tupa-quick-primary" onClick={onPlan}><CalendarDays size={30}/><strong>Planificar</strong><small>Creá tu itinerario</small></button>
-    <button type="button" onClick={onSaved}><Suitcase size={30}/><strong>Mis viajes</strong><small>Todo en un lugar</small></button>
+    <button type="button" onClick={onSaved}><Briefcase size={30}/><strong>Mis viajes</strong><small>Todo en un lugar</small></button>
     <button type="button" onClick={onExplore}><Compass size={30}/><strong>Explorar<br/>destinos</strong><small>Descubrí tu próxima ruta</small></button>
    </nav>
   </div>
