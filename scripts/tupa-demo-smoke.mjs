@@ -23,7 +23,7 @@ try{
   assert.ok(await page.getByRole('button',{name:/Ver itinerario/}).isVisible(),'Colmar editorial CTA is visible');
   const saved=await page.evaluate(()=>localStorage.getItem('tupa-travel-trips-v1'));
   assert.ok(saved,'First visit seeds isolated travel storage');
-  assert.ok(JSON.parse(saved).some(p=>p.trip.destination==='Roma, Italia'),'Editable sample Rome trip exists');
+  assert.deepEqual(JSON.parse(saved),[],'A first-time visitor receives an empty private trips dashboard, never seeded demo data');
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
   assert.ok(overflow<6,'Premium mobile and desktop layouts must not have horizontal overflow: '+overflow);
   await page.screenshot({path:'artifacts/tupa-demo/'+viewport.name+'-premium-home.png',fullPage:true});
