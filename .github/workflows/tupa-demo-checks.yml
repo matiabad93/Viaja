@@ -1,13 +1,14 @@
-name: Tupã Travel private demo checks
+name: Tupã Travel Premium v1 checks
 on:
   push:
     branches:
       - demo/tupa-travel
+      - tupa-travel-v1
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  tupa-demo-verify:
+  tupa-v1-verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     steps:
@@ -17,7 +18,7 @@ jobs:
           node-version: '22'
       - name: Install dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Verify isolated agency demo
+      - name: Verify Tupã Travel premium app isolation
         run: node --experimental-strip-types tests/tupa-demo.test.mts
       - name: TypeScript
         run: npx tsc --noEmit
@@ -26,7 +27,7 @@ jobs:
       - name: Validate output
         run: |
           test -f web-dist/index.html
-          test -f web-dist/tupa-travel-logo.svg
+          test -f web-dist/tupa-premium-emblem.svg
           grep -q 'Tupã Travel' web-dist/index.html
       - name: Chromium browser smoke
         run: |
@@ -38,6 +39,6 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: Tupa-Travel-Demo-Screenshots
+          name: Tupa-Travel-Premium-Screenshots
           path: artifacts/tupa-demo/
           retention-days: 10
