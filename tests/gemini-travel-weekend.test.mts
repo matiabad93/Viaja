@@ -39,6 +39,11 @@ const provider={
 };
 const normalized=normalizeGeminiIdeas(provider,trip.start,4);
 assert.equal(normalized.days.length,4);
+const threeDaySelection=normalizeGeminiIdeas(provider,trip.start,3);
+assert.equal(threeDaySelection.days.length,3,'If a user selects three days despite four-day notes, the plan stays within the selected dates');
+assert.equal(threeDaySelection.days[2].date,'2026-11-29');
+assert.ok(threeDaySelection.days.every(d=>d.activities.length>0),'The three in-range dates retain their proposed activities');
+
 assert.equal(normalized.days[3].activities.length,0,'An early departure can have zero sightseeing activities');
 assert.equal(normalized.days[1].activities.length,3);
 assert.equal(normalized.days[1].activities[2].minutes,29,'Over-midnight schedules are truncated instead of crashing');
@@ -74,6 +79,14 @@ try{
  assert.equal(response.status,200,'The four-day Alsace travel scenario must not fail with GEMINI_INVALID_ITINERARY');
  const json=await response.json() as any;
  assert.equal(json.itinerary.length,4);
+ const threeDayRequest=new Request('https://viaja.pages.dev/api/plan',{
+  method:'POST',headers:{'content-type':'application/json'},
+  body:JSON.stringify({...trip,end:'2026-11-29'})
+ });
+ const shortResponse=await geminiFreePlanner(threeDayRequest,{GEMINI_API_KEY:'test-key-not-live'});
+ assert.equal(shortResponse.status,200,'A three-day form with four-day notes should not produce GEMINI_INVALID_ITINERARY');
+ assert.equal((await shortResponse.json() as any).itinerary.length,3);
+
  assert.equal(json.itinerary[3].activities.length,0);
  assert.equal(json.itinerary[2].activities[0].title,'Tren regional');
  assert.ok(json.parts[0].text.includes('Observaciones de validación'),'Recovered schedule should disclose dropped items');
