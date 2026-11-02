@@ -11,12 +11,19 @@ const emblem=read('public/tupa-premium-emblem.svg');
 const home=read('components/tupa-premium-home.tsx');
 const nav=read('components/tupa-premium-navigation.tsx');
 const profile=read('components/tupa-premium-profile.tsx');
-assert.ok(vite.includes("__VIAJA_SUPABASE_URL__:JSON.stringify('')"),'Premium Tupã branch must not access Viaja production database');
-assert.ok(vite.includes("__VIAJA_SUPABASE_PUBLIC_KEY__:JSON.stringify('')"),'No live production auth in branded environment');
+const auth=read('lib/supabase-client.ts'), gateway=read('server/ai-gateway.ts'),schema=read('supabase/tupa/setup.sql');
+assert.ok(vite.includes('process.env.TUPA_SUPABASE_URL'),'Premium Tupã build uses only its own project URL');
+assert.ok(vite.includes('process.env.TUPA_SUPABASE_PUBLISHABLE_KEY'),'Account build uses a Tupã publishable key');
 assert.ok(!vite.includes('ovagewbmrirzrlvbvtbw'),'No production Supabase URL in build config');
 assert.ok(app.includes("const storageKey='tupa-travel-trips-v1'"),'User data keeps a distinct local namespace');
 assert.ok(app.includes("'tupa-travel-current-v1'"),'Drafts keep their own namespace');
-assert.ok(!app.includes("<AccountControl session={session}"),'Do not render production authentication without isolated backend');
+assert.ok(app.includes('<AccountControl session={session}'),'Premium Tupã renders auth only with its own project configured');
+assert.ok(auth.includes("'tupa-auth-session-v1'"),'Tupã sessions do not share Viaja local storage');
+assert.ok(auth.includes("'tupa-travel-trips-v1'"),'Guest trip import is isolated');
+assert.ok(gateway.includes('tupa_reserve_ai_request')&&gateway.includes('tupa_finalize_ai_request'),'Gateway reserves and finalizes Tupã-only quotas');
+assert.ok(gateway.includes('isolatedProject(env)')&&!gateway.includes("||'https://ovagewbmrirzrlvbvtbw.supabase.co'"),'No implicit Viaja database fallback');
+assert.ok(schema.includes('create policy tupa_trips_owner_select')&&schema.includes('user_id=(select auth.uid())'),'Cloud trips use ownership RLS');
+assert.ok(schema.includes('per_user>=10')&&schema.includes('global_total>=40'),'Daily AI quotas are configured');
 assert.ok(app.includes('TupaPremiumHome')&&app.includes('TupaPremiumNavigation')&&app.includes('TupaPremiumProfile'),'Premium Home and navigation are mounted');
 assert.ok(app.includes("useState<TupaTab>('home')"),'App now opens in branded luxury homepage');
 assert.ok(!app.includes('TupaDemoBanner'),'Old demo banner must no longer be mounted');
@@ -42,4 +49,4 @@ for(const t of [colmar,santorini]){
 }
 assert.equal(colmar.trip.destination,'Colmar, Francia');
 assert.equal(santorini.trip.destination,'Santorini, Grecia');
-console.log('PASS: premium Tupã logo, responsive home, five navigation tabs, honest editorial routes and isolated local data');
+console.log('PASS: Tupã premium responsive app, isolated auth and cloud tables, secure AI quota gateway and editorial routes');
