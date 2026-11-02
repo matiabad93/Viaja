@@ -22,7 +22,7 @@ assert.equal(projectedCostTotal(plan as any),91);
 assert.deepEqual(projectedCosts(plan as any).map(x=>x.category),['Actividades','Actividades','Transporte']);
 assert.equal(projectedCosts(plan as any)[2].date,'2026-11-14');
 const ui=readFileSync(new URL('../app/page.tsx',import.meta.url),'utf8');
-assert.ok(ui.includes('Probar con Madrid')&&ui.includes('TripStopsEditor'),'Planner includes Madrid sample and stops editor');
+assert.ok(ui.includes('Un finde en Madrid')&&ui.includes('TripStopsEditor'),'Planner includes Madrid sample and stops editor');
 const guide=readFileSync(new URL('../components/travel-hub.tsx',import.meta.url),'utf8');
 const barcelona=guide.slice(guide.indexOf("id:'barcelona'"),guide.indexOf("id:'lisboa'"));
 assert.ok(barcelona.indexOf('Plaça de Catalunya')>=0,'Plaça Catalunya included');
