@@ -1,4 +1,4 @@
-import {itineraryOf,newId,type Plan,type Trip,type Day} from './travel';
+import {itineraryOf,newId,type Plan,type Trip,type Day} from './travel.ts';
 
 export type CommunityActivity={title:string;description:string;time?:string;duration?:string;location?:string};
 export type CommunityDay={title:string;advice?:string;activities:CommunityActivity[]};
