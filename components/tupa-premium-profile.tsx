@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useState} from 'react';
-import {UserRound,ShieldCheck,Download,Suitcase,HeartHandshake,ExternalLink,Check} from 'lucide-react';
+import {UserRound,ShieldCheck,Download,Briefcase,HeartHandshake,ExternalLink,Check} from 'lucide-react';
 import type {Plan} from '../lib/travel';
 export function TupaPremiumProfile({plans,onOpenTrips}:{plans:Plan[];onOpenTrips:()=>void}){
  const [name,setName]=useState('');
@@ -24,9 +24,9 @@ export function TupaPremiumProfile({plans,onOpenTrips}:{plans:Plan[];onOpenTrips
     <button type="button" className="tupa-gold-btn" onClick={persist}>{saved?<Check size={18}/>:<UserRound size={18}/>} {saved?'Preferencia guardada':'Guardar preferencia'}</button>
    </article>
    <article className="tupa-profile-card">
-    <div className="tupa-profile-avatar"><Suitcase size={32}/></div><h2>Tus itinerarios</h2>
+    <div className="tupa-profile-avatar"><Briefcase size={32}/></div><h2>Tus itinerarios</h2>
     <p>Tenés <strong>{plans.length}</strong> {plans.length===1?'viaje guardado':'viajes guardados'} en este navegador.</p>
-    <button type="button" className="tupa-outline-btn" onClick={onOpenTrips}><Suitcase size={18}/>Ver mis viajes</button>
+    <button type="button" className="tupa-outline-btn" onClick={onOpenTrips}><Briefcase size={18}/>Ver mis viajes</button>
     <button type="button" className="tupa-outline-btn" onClick={download}><Download size={18}/>Exportar mis viajes (JSON)</button>
    </article>
    <article className="tupa-profile-card">
