@@ -21,6 +21,7 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
  const dialogRef=useRef<HTMLElement>(null);
  const closeDialog=()=>{setOpen(false);triggerRef.current?.focus()};
  useEffect(()=>{if(!open||session)return;let active=true;setSocialStatusLoading(true);getSocialProviderAvailability().then(result=>{if(active)setAvailableProviders(result)}).finally(()=>{if(active)setSocialStatusLoading(false)});return()=>{active=false}},[open,session]);
+ useEffect(()=>{if(session && recoveryPending()){setMode('password');setOpen(true)}},[session]);
  const signInSocial=(provider:SocialProvider)=>{
   if(!availableProviders[provider]||socialStatusLoading)return;
   try{setNotice('Redirigiendo a '+({google:'Gmail',facebook:'Facebook'}[provider])+'…');beginSocialSignIn(provider)}
@@ -87,7 +88,7 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
   {open&&typeof document!=='undefined'&&createPortal(<div className="viaja-account-backdrop" role="presentation" onMouseDown={(e)=>{if(e.target===e.currentTarget)closeDialog()}}>
    <section ref={dialogRef} className="viaja-account-dialog" role="dialog" aria-modal="true" aria-label={session?'Mi cuenta':'Acceder a Tupã Travel'}>
     <button className="viaja-account-close" type="button" onClick={closeDialog} aria-label="Cerrar"><X size={20}/></button>
-    {session?<><h2>Mi cuenta</h2><p className="viaja-account-subtitle">Sesión iniciada como <strong>{session.user.email||'usuario'}</strong>. Tus viajes se guardan en Supabase.</p>
+    {session&&mode!=='password'?<><h2>Mi cuenta</h2><p className="viaja-account-subtitle">Sesión iniciada como <strong>{session.user.email||'usuario'}</strong>. Tus viajes se guardan en Supabase.</p>
       <button type="button" className="viaja-account-action" disabled={busy} onClick={importTrips}><CloudUpload size={17}/> Importar viajes anteriores de este dispositivo</button>
       {confirmImport&&<p className="viaja-account-help">Se conservará la copia local. Tocá «Importar» nuevamente para confirmar.</p>}
       <button type="button" className="viaja-account-action" disabled={busy} onClick={signOut}><LogOut size={17}/> Cerrar sesión</button>
@@ -118,11 +119,11 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
        {mode!=='recover'&&<label>{mode==='password'?'Contraseña nueva':'Contraseña'}<input type="password" required minLength={8} maxLength={128} autoComplete={mode==='login'?'current-password':'new-password'} value={password} onChange={e=>setPassword(e.target.value)}/></label>}
        <button className="viaja-account-submit" type="submit" disabled={busy}>{working&&<LoaderCircle size={16} className="spin"/>}{mode==='login'?'Entrar':mode==='signup'?'Registrarme':mode==='recover'?'Enviar instrucciones':'Actualizar contraseña'}</button>
       </form>
-      <div className="viaja-account-links">
+      {mode!=='password'&&<div className="viaja-account-links">
        {mode!=='login'&&<button type="button" onClick={()=>{setMode('login');setNotice('')}}>Ya tengo una cuenta</button>}
        {mode!=='signup'&&<button type="button" onClick={()=>{setMode('signup');setNotice('')}}>Crear cuenta</button>}
        {mode==='login'&&<button type="button" onClick={()=>{setMode('recover');setNotice('')}}>Olvidé mi contraseña</button>}
-      </div>
+      </div>}
     </>}
     {notice&&<p className="viaja-account-notice" role="status">{notice}</p>}
     <p className="viaja-account-help">No compartas tu contraseña. La cuenta pertenece a Tupã Travel y utiliza Supabase Auth.</p>
