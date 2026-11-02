@@ -3,14 +3,14 @@ import "./globals.css";
 import {PWAStatus} from "../components/pwa-status";
 
 export const metadata: Metadata = {
-  title: "Viaja · Tu viaje, investigado",
-  description: "Planificá escapadas con fuentes, presupuesto y recomendaciones.",
+  title: "Tupã Travel · El arte de descubrir el mundo",
+  description: "Descubrí destinos y creá itinerarios a medida con una experiencia premium.",
   manifest: "/manifest.webmanifest",
-  appleWebApp: {capable:true,title:"Viaja",statusBarStyle:"default"},
+  appleWebApp: {capable:true,title:"Tupã Travel",statusBarStyle:"default"},
   icons: {
-    icon: "/icon-192.png",
-    apple: "/apple-touch-icon.png",
-    shortcut: "/favicon.svg",
+    icon: "/tupa-premium-emblem.svg",
+    apple: "/tupa-premium-emblem.svg",
+    shortcut: "/tupa-premium-emblem.svg",
   },
 };
 
