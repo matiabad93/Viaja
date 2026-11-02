@@ -8,6 +8,12 @@ export function reviewItineraryFeasibility(trip:Trip):PlanningReview{
  const destinations=travelStops(trip),blocking:string[]=[],warnings:string[]=[];
  const days=trip.start&&trip.end?Math.floor((Date.parse(trip.end)-Date.parse(trip.start))/86400000)+1:0;
  if(!Number.isFinite(days)||days<1)return {destinations,days:0,blocking:[],warnings:[]};
+ const nights=/(?:^|\s)(\d{1,2})\s+noches?\b/i.exec(trip.notes||'');
+ if(nights){
+  const count=Number(nights[1]);
+  if(count>=1&&count<=30&&days<count+1)
+   warnings.push('Mencionaste '+count+' noches de alojamiento, pero seleccionaste '+days+' días. Normalmente '+count+' noches abarcan '+(count+1)+' días de calendario (incluyendo la fecha de regreso). Revisá las fechas antes de usar IA.');
+ }
  if(destinations.length>6)blocking.push('Por ahora podés planificar hasta 6 destinos por viaje. Reducí la cantidad.');
  if(destinations.length>days)blocking.push('Hay '+destinations.length+' destinos para '+days+' días. Necesitás como mínimo un día por destino; reducí ciudades o ampliá fechas.');
  const normalized=destinations.map(s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());
