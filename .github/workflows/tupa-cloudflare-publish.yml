@@ -1,4 +1,4 @@
-name: Tupã Travel — publicar en Cloudflare (manual)
+name: Tupã Travel — publicación aislada en Cloudflare
 
 on:
   push:
