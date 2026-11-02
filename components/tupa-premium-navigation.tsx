@@ -1,5 +1,5 @@
 'use client';
-import {useState} from 'react';
+import {useState,type ReactNode} from 'react';
 import {CalendarDays,Compass,Home,Menu,UserRound,Briefcase,X} from 'lucide-react';
 export type TupaTab='home'|'planner'|'saved'|'detail'|'guides'|'profile'|'admin';
 type Tab=TupaTab;
@@ -10,7 +10,7 @@ const links:{tab:Tab;label:string;short:string;Icon:typeof Home}[]=[
  {tab:'guides',label:'Explorar',short:'Explorar',Icon:Compass},
  {tab:'profile',label:'Mi perfil',short:'Mi perfil',Icon:UserRound}
 ];
-export function TupaPremiumNavigation({active,onNavigate,tripCount}:{active:Tab;onNavigate:(tab:Tab)=>void;tripCount:number}){
+export function TupaPremiumNavigation({active,onNavigate,tripCount,account}:{active:Tab;onNavigate:(tab:Tab)=>void;tripCount:number;account?:ReactNode}){
  const [open,setOpen]=useState(false);
  const navigate=(tab:Tab)=>{onNavigate(tab);setOpen(false)};
  const selected=active==='detail'?'saved':active;
@@ -25,6 +25,7 @@ export function TupaPremiumNavigation({active,onNavigate,tripCount}:{active:Tab;
     <nav className="tupa-desktop-nav" aria-label="Navegación principal">
      {links.map(({tab,label,Icon})=><button type="button" key={tab} className={selected===tab?'active':''} aria-current={selected===tab?'page':undefined} onClick={()=>navigate(tab)}><Icon size={17}/>{label}{tab==='saved'&&tripCount>0&&<small>{tripCount}</small>}</button>)}
     </nav>
+    {account&&<div className="tupa-header-account">{account}</div>}
     <a className="tupa-header-contact" href="https://www.instagram.com/tupatravel/" target="_blank" rel="noopener noreferrer">Contactar <span aria-hidden="true">↗</span></a>
    </div>
    {open&&<nav className="tupa-mobile-expanded" aria-label="Menú principal">{links.map(({tab,label,Icon})=><button type="button" onClick={()=>navigate(tab)} key={tab}><Icon size={19}/>{label}</button>)}</nav>}
