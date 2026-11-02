@@ -404,3 +404,56 @@ html{scroll-padding-top:86px}
 .activity-expanded-guide{margin:14px 0 16px;padding:13px 16px;background:#f8faf6;border-radius:11px;border:1px solid #e2e9de}
 .activity-expanded-guide p{white-space:pre-line;line-height:1.8;margin:8px 0 0}
 @media(max-width:600px){.day-practical-guide{padding:14px}.activity-expanded-guide{padding:12px}}
+
+
+/* Opt-in community itineraries. Keep personal trips visually distinct. */
+.explore-switch{display:flex;gap:8px;margin:0 0 30px;padding:7px;border:1px solid var(--line);background:#eef3eb;border-radius:14px;width:max-content;max-width:100%;flex-wrap:wrap}
+.explore-switch button{padding:12px 18px;border-radius:9px;font-size:14px;font-weight:700;color:var(--ink)}
+.explore-switch button.active,.explore-switch button[aria-pressed=true]{background:white;box-shadow:0 2px 12px #1c39351c;color:#204d3b}
+.community-explore{width:100%}
+.community-filters{display:grid;grid-template-columns:minmax(260px,1fr) 170px 190px;gap:15px;align-items:end;margin:18px 0}
+.community-filters label{display:grid;gap:7px;font-size:12px;font-weight:700;color:var(--ink)}
+.community-filters label.searchbox{display:flex;gap:10px;align-items:center;min-height:47px}
+.community-filters label.searchbox input{width:100%}
+.community-filters label>select{border:1px solid var(--line);border-radius:11px;background:#fff;padding:13px 12px;min-height:47px;max-width:100%}
+.community-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:19px;margin:22px 0 35px}
+.community-card{background:#fff;border:1px solid #dfe7de;border-radius:18px;overflow:hidden;box-shadow:0 8px 29px #1a382b0a;display:flex;flex-direction:column}
+.community-card-cover{height:116px;display:flex;align-items:center;justify-content:space-between;padding:22px 25px;background:linear-gradient(120deg,#254f43,#5f7b66);color:#f3f7f1}
+.community-card-cover span{font-size:10px;letter-spacing:2px;color:#edf4e4;font-weight:700}
+.community-card-body{padding:21px 23px;display:flex;flex-direction:column;align-items:flex-start;gap:14px;flex:1}
+.community-card-body h2{font:25px/1.18 Georgia,serif;color:var(--ink)}
+.community-card-body>p{display:flex;align-items:flex-start;gap:6px;line-height:1.5;overflow-wrap:anywhere}
+.community-card-body .textbtn{margin-top:auto}
+.community-tags{display:flex;flex-wrap:wrap;gap:8px}
+.community-tags span{display:inline-flex;align-items:center;gap:6px;background:#edf3eb;color:#335444;border-radius:40px;padding:7px 10px;font-size:12px;font-weight:600}
+.community-hero{border:1px solid #d9e3d7;background:linear-gradient(130deg,#edf4ec,#fff);border-radius:22px;padding:28px;margin:14px 0 22px}
+.community-hero h1{margin:12px 0;font:clamp(29px,4vw,50px)/1.15 Georgia,serif}
+.community-hero>p{max-width:750px}
+.community-actions{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0 12px}
+.community-actions button,.community-detail-share-actions button{display:inline-flex;align-items:center;gap:8px}
+.community-link-label{display:grid;gap:7px;font-weight:700;max-width:700px}
+.community-link-label input{border:1px solid #bdcfc0;background:#fff;border-radius:9px;padding:13px;font-size:13px;width:100%}
+.community-disclaimer{background:#f7f8f3;border:1px solid #e0e7dd;border-radius:12px;padding:14px 17px;margin-bottom:23px}
+.community-days{display:grid;gap:20px}
+.community-day{border:1px solid #dce6d9;background:#fff;padding:22px 24px;border-radius:17px}
+.community-day-heading span{font-weight:700;font-size:11px;letter-spacing:1.4px;color:#628374}
+.community-day-heading h2{font:29px/1.2 Georgia,serif;margin:7px 0 14px;color:var(--ink)}
+.community-day-advice{background:#f4f8f2;border-left:3px solid #61896b;padding:13px 17px;margin-bottom:16px;white-space:pre-line}
+.community-stops{display:grid;gap:13px}
+.community-stop{display:flex;gap:15px;padding:13px 0;border-bottom:1px solid #edf0ea}
+.community-stop-count{background:#e9f1e7;border-radius:50%;height:33px;width:33px;display:grid;place-items:center;font-weight:700;color:#305946;flex-shrink:0}
+.community-stop>div{min-width:0}
+.community-stop h3{font-size:17px;margin-bottom:5px}
+.community-stop p{white-space:pre-line;margin:10px 0 0;line-height:1.68}
+.community-stop-meta{display:flex;gap:11px;flex-wrap:wrap;color:#62786d;font-size:12px}
+.community-stop-meta span{display:inline-flex;align-items:center;gap:5px}
+.community-owner-actions{display:flex;flex-wrap:wrap;gap:7px 12px;border-top:1px solid #e3eae0;padding-top:12px;margin-top:12px;align-items:center}
+.community-owner-actions button{font-size:12px;display:inline-flex;align-items:center;gap:5px;color:#376951;text-decoration:underline;text-underline-offset:3px}
+.community-owner-actions .community-published-status{color:#286b48;display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700}
+.community-detail-share{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 22px;border:1px solid #d8e6d6;border-radius:13px;background:#f6faf3;margin:15px 0}
+.community-detail-share>div:first-child{max-width:650px}
+.community-detail-share strong{font-size:14px;color:#234c3b}
+.community-detail-share p{font-size:12px;margin-top:3px}
+.community-detail-share-actions{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:850px){.community-filters{grid-template-columns:1fr 1fr}.community-filters .searchbox{grid-column:1/-1}.community-detail-share{align-items:stretch;flex-direction:column}}
+@media(max-width:550px){.community-hero,.community-day{padding:17px}.community-filters{gap:10px}.community-filters label>select{font-size:12px}.community-actions button{width:100%}.explore-switch button{padding:10px;font-size:12px}.community-card-body{padding:17px}.community-detail-share{padding:13px}}
