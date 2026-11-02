@@ -21,7 +21,6 @@ import {TupaPremiumHome} from '../components/tupa-premium-home';
 import {TupaPremiumNavigation,type TupaTab} from '../components/tupa-premium-navigation';
 import {TupaPremiumProfile} from '../components/tupa-premium-profile';
 import {tupaEditorialTrip} from '../lib/tupa-featured-plans';
-import {tupaSampleTrip} from '../lib/tupa-demo-sample';
 const empty:Trip={destination:'',additionalDestinations:[],origin:'',start:'',end:'',travelers:2,budget:0,pace:'Equilibrado',transport:'Sin coche',notes:'',links:'',adjustment:'',sources:['official','blogs','forums','youtube']};
 const sourceNames:Record<string,string>={official:'Sitios oficiales',blogs:'Blogs de viajes',forums:'Foros y comunidades',youtube:'YouTube',tiktok:'TikTok'};
 const storageKey='tupa-travel-trips-v1';const safeURL=(url:string)=>{try{const u=new URL(url);return ['https:','http:'].includes(u.protocol)?url:null}catch{return null}};
@@ -47,13 +46,13 @@ const checkStatus=async()=>{
 };
 const loadLocal=()=>{try{
  const stored=localStorage.getItem(storageKey);
- const raw=stored===null?[tupaSampleTrip()]:JSON.parse(stored);
+ const raw=stored===null?[]:JSON.parse(stored);
  const items=Array.isArray(raw)?raw.filter(p=>p&&p.trip&&p.id):[];
  if(stored===null)localStorage.setItem(storageKey,JSON.stringify(items));
  setPlans(items);
  const draft=localStorage.getItem('tupa-travel-current-v1');
  if(draft)setTrip({...empty,...JSON.parse(draft)});
- }catch{setMessage('No pudimos recuperar los viajes de prueba. Podés crear uno nuevo.')}};
+ }catch{setMessage('No pudimos recuperar tus viajes locales. Podés crear uno nuevo.')}};
 const reloadAccount=async()=>{const current=getCurrentSession();setSession(current);await checkStatus();if(current){setPlans(await listCloudTrips());setMessage('Tus viajes están sincronizados con tu cuenta.')}else{loadLocal();setMessage('Sesión cerrada. Tus viajes de invitado siguen en este dispositivo.')}};
 useEffect(()=>{checkStatus();let mounted=true;const unsubscribe=subscribeAuth(s=>{if(mounted)setSession(s)});if(!cloudReady){loadLocal();setAuthLoaded(true)}else{restoreAuth().then(async()=>{if(!mounted)return;await reloadAccount()}).catch(e=>{if(mounted){setError('No pudimos sincronizar tu cuenta: '+(e instanceof Error?e.message:'error de conexión')+'. Reintentá al ingresar.');if(!getCurrentSession())loadLocal()}}).finally(()=>{if(mounted)setAuthLoaded(true)})}return()=>{mounted=false;unsubscribe();abortRef.current?.abort()}},[]);
 useEffect(()=>{const back=(e:Event)=>{if(tab!=='guides'){e.preventDefault();setTab(tab==='detail'?'saved':'guides')}};window.addEventListener('viaja-back',back);return()=>window.removeEventListener('viaja-back',back)},[tab]);
