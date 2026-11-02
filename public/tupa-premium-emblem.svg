@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 600 600" role="img" aria-labelledby="title desc">
+<title id="title">Tupã Travel</title><desc id="desc">Emblema circular azul petróleo y dorado, con sol, avión, mar y el nombre Tupã Travel.</desc>
+<defs>
+ <radialGradient id="ocean" cx=".50" cy=".35" r=".75"><stop stop-color="#124653"/><stop offset=".62" stop-color="#062e38"/><stop offset="1" stop-color="#031f29"/></radialGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b77836"/><stop offset=".23" stop-color="#ffe3ad"/><stop offset=".52" stop-color="#d5a961"/><stop offset=".78" stop-color="#fff0ca"/><stop offset="1" stop-color="#a77430"/></linearGradient>
+ <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="8" flood-color="#001318" flood-opacity=".4"/></filter>
+</defs>
+<circle cx="300" cy="300" r="297" fill="url(#ocean)"/>
+<circle cx="300" cy="300" r="291" fill="none" stroke="url(#gold)" stroke-width="8"/>
+<circle cx="300" cy="300" r="280" fill="none" stroke="#d8ac65" stroke-width="1.4" opacity=".75"/>
+<g fill="none" stroke="url(#gold)" stroke-linecap="round" stroke-linejoin="round" filter="url(#shadow)">
+ <path d="M226 179 Q239 118 297 118 Q354 118 365 178" stroke-width="7"/>
+ <path d="M243 167 Q268 147 297 149 Q331 146 351 166" stroke-width="2.3" opacity=".7"/>
+ <g stroke-width="4">
+  <path d="M297 107 V78"/><path d="M273 108 L264 80"/><path d="M250 121 L230 98"/>
+  <path d="M233 141 L207 128"/><path d="M222 165 L195 164"/>
+  <path d="M323 108 L334 80"/><path d="M348 121 L370 98"/>
+  <path d="M366 141 L392 128"/>
+ </g>
+ <path d="M204 197 Q260 218 314 196 Q340 187 365 191" stroke-width="5"/>
+ <path d="M211 214 Q260 198 306 215 Q334 224 362 208" stroke-width="6"/>
+ <path d="M228 228 Q274 210 311 228 Q338 238 362 226" stroke-width="4"/>
+ <path d="M248 239 Q288 232 323 243" stroke-width="2.5"/>
+</g>
+<path d="M348 165 L385 148 L407 126 L420 127 L404 150 L424 155 L434 143 L440 149 L429 170 L414 165 L411 192 L401 196 L398 166 L385 172 L379 185 L371 188 L375 168 Z" fill="url(#gold)" stroke="#f6d49a" stroke-width="1.5" transform="rotate(-10 397 160)"/>
+<text x="300" y="371" font-family="Georgia,'Times New Roman',serif" font-size="132" font-weight="400" letter-spacing="-7" text-anchor="middle" fill="#f3deb8">Tupã</text>
+<g fill="url(#gold)" stroke="none">
+<path d="M98 419 H179" stroke="#d6a764" stroke-width="2"/>
+<path d="M424 419 H502" stroke="#d6a764" stroke-width="2"/>
+</g>
+<text x="300" y="429" font-family="Arial,Helvetica,sans-serif" font-size="36" letter-spacing="15" text-anchor="middle" fill="#d8af71">TRAVEL</text>
+</svg>
