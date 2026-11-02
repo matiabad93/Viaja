@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+// @ts-ignore Node >=22 TS stripping
+import {tupaSampleTrip} from '../lib/tupa-demo-sample.ts';
+const read=(path:string)=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
+const vite=read('vite.portable.config.ts'),app=read('app/page.tsx'),css=read('app/globals.css');
+const html=read('portable/index.html'),manifest=JSON.parse(read('public/manifest.webmanifest'));
+const logo=read('public/tupa-travel-logo.svg'),banner=read('components/tupa-demo-banner.tsx');
+assert.ok(vite.includes("__VIAJA_SUPABASE_URL__:JSON.stringify('')"),'Agency demo may not connect to Viaja database');
+assert.ok(vite.includes("__VIAJA_SUPABASE_PUBLIC_KEY__:JSON.stringify('')"),'No authentication against production');
+assert.ok(!vite.includes('ovagewbmrirzrlvbvtbw'),'Production Supabase project must not appear in the demo build config');
+assert.ok(app.includes("const storageKey='tupa-demo-trips-v1'"),'Agency trips have own local storage namespace');
+assert.ok(app.includes("'tupa-demo-current-v1'"),'Agency drafts have own local namespace');
+assert.ok(!app.includes("<AccountControl session={session}"),'Demo cannot expose production sign-up UI');
+assert.ok(app.includes('<TupaDemoBanner'),'Agency-branded presentation exists');
+assert.ok(app.includes('tupa-travel-logo.svg'),'Agency logo appears in shell');
+assert.ok(banner.includes('https://tupatravel.com.ar/')&&banner.includes('https://www.instagram.com/tupatravel/'),'Only user-provided official links');
+assert.ok(banner.includes('Propuesta tecnológica demostrativa'),'Agency branding is explicitly labeled unofficial demo');
+assert.ok(css.includes('.tupa-presentation')&&css.includes('.tupa-topbar'),'Branded CSS compiled');
+assert.ok(logo.includes('data:image/webp;base64,'),'Original user-supplied logo embedded locally, no image hotlink');
+assert.ok(html.includes('Tupã Travel · Demo de planificación')&&html.includes('noindex,nofollow'),'Distinct title and search exclusion');
+assert.equal(manifest.name,'Tupã Travel · Demo de planificación');
+const sample=tupaSampleTrip();
+assert.equal(sample.trip.destination,'Roma, Italia');
+assert.equal(sample.itinerary?.length,3);
+assert.ok(sample.itinerary?.every(d=>d.activities.length>=3),'Useful, editable example');
+assert.ok(sample.trip.notes.includes('No es un paquete'),'No invented offers or reservations');
+console.log('PASS: isolated Tupã Travel branded demo, official links, real supplied logo and sample itinerary');
