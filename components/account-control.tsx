@@ -1,11 +1,11 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
-import {cloudReady,logIn,register,logOut,sendRecovery,changePassword,recoveryPending,importLocalTrips,getSocialProviderAvailability,beginSocialSignIn,type ViajaSession} from '../lib/supabase-client';
+import {cloudReady,logIn,register,logOut,sendRecovery,changePassword,recoveryPending,importLocalTrips,getSocialProviderAvailability,beginSocialSignIn,type Tupã TravelSession} from '../lib/supabase-client';
 import {unavailableSocialProviders,socialProviders,type SocialAvailability,type SocialProvider} from '../lib/social-auth';
 import {UserRound,LogOut,CloudUpload,X,LoaderCircle} from 'lucide-react';
 
-export function AccountControl({session,onReload,onError}:{session:ViajaSession|null;onReload:()=>Promise<void>;onError:(message:string)=>void}){
+export function AccountControl({session,onReload,onError}:{session:Tupã TravelSession|null;onReload:()=>Promise<void>;onError:(message:string)=>void}){
  const [open,setOpen]=useState(false);
  const [mode,setMode]=useState<'login'|'signup'|'recover'|'password'>('login');
  const [email,setEmail]=useState('');
@@ -85,7 +85,7 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
    <UserRound size={16}/> {session?(session.user.email||'Mi cuenta'):'Entrar / Registrarme'}
   </button>
   {open&&typeof document!=='undefined'&&createPortal(<div className="viaja-account-backdrop" role="presentation" onMouseDown={(e)=>{if(e.target===e.currentTarget)closeDialog()}}>
-   <section ref={dialogRef} className="viaja-account-dialog" role="dialog" aria-modal="true" aria-label={session?'Mi cuenta':'Acceder a Viaja'}>
+   <section ref={dialogRef} className="viaja-account-dialog" role="dialog" aria-modal="true" aria-label={session?'Mi cuenta':'Acceder a Tupã Travel'}>
     <button className="viaja-account-close" type="button" onClick={closeDialog} aria-label="Cerrar"><X size={20}/></button>
     {session?<><h2>Mi cuenta</h2><p className="viaja-account-subtitle">Sesión iniciada como <strong>{session.user.email||'usuario'}</strong>. Tus viajes se guardan en Supabase.</p>
       <button type="button" className="viaja-account-action" disabled={busy} onClick={importTrips}><CloudUpload size={17}/> Importar viajes anteriores de este dispositivo</button>
@@ -110,7 +110,7 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
             {!availableProviders[provider]&&<small>{socialStatusLoading?'Comprobando…':'Próximamente'}</small>}
           </button>)}
         </div>
-        <p className="viaja-social-explainer">Gmail utiliza el inicio de sesión seguro de Google. Viaja no accede a tus mensajes ni a tu bandeja de entrada.</p>
+        <p className="viaja-social-explainer">Gmail utiliza el inicio de sesión seguro de Google. Tupã Travel no accede a tus mensajes ni a tu bandeja de entrada.</p>
         <div className="viaja-social-separator"><span>o continuá con tu correo</span></div>
       </div>}
       <form onSubmit={run}>
@@ -125,7 +125,7 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
       </div>
     </>}
     {notice&&<p className="viaja-account-notice" role="status">{notice}</p>}
-    <p className="viaja-account-help">No compartas tu contraseña. La cuenta pertenece a Viaja y utiliza Supabase Auth.</p>
+    <p className="viaja-account-help">No compartas tu contraseña. La cuenta pertenece a Tupã Travel y utiliza Supabase Auth.</p>
    </section>
   </div>,document.body)}
  </div>;
