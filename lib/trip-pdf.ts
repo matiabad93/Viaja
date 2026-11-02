@@ -17,8 +17,9 @@ export function buildTripPdf(plan:Plan):Uint8Array{
  const sub=(s:string)=>{room(30);y-=5;line(s,11,true,0,18)};
  const data=(k:string,v:string)=>line(k+': '+v,10,false,0,16);
  const trip=plan.trip,days=itineraryOf(plan),expenses=plan.expenses||[];
- add('0.12 0.28 0.22 rg 0 775 596 67 re f');
- add('1 1 1 rg BT /F2 27 Tf 1 0 0 1 48 801 Tm (viaja.) Tj ET');
+ add('0.02 0.19 0.21 rg 0 775 596 67 re f');
+ add('0.82 0.66 0.43 RG 1.8 w 48 781 m 547 781 l S');
+ add('0.98 0.88 0.69 rg BT /F2 23 Tf 1 0 0 1 48 802 Tm '+escaped('Tupã Travel')+' Tj ET');
  y=747;line(trip.destination||'Mi viaje',24,true,0,31);
  line((trip.start||'Sin fecha')+' - '+(trip.end||'Sin regreso')+' | '+trip.travelers+' viajeros',10,false,0,18);
  heading('Resumen del viaje');
@@ -29,6 +30,7 @@ export function buildTripPdf(plan:Plan):Uint8Array{
  days.forEach((day,i)=>{
   const date=trip.start?new Date(Date.parse(trip.start)+i*86400000).toISOString().slice(0,10):'Fecha sin definir';
   room(70);sub('Día '+(i+1)+' · '+date);line(day.title||'Día libre',10,false,0,18);
+  if(day.advice)line('Cómo organizar el día: '+day.advice,9,false,12,14);
   if(!day.activities.length)line('Sin actividades registradas.',9,false,12,15);
   day.activities.forEach((a,j)=>{room(68);sub((j+1)+'. '+(a.time||'Flexible')+' - '+a.title);
    if(a.duration)line('Duración: '+a.duration,9,false,12,14);
@@ -58,7 +60,7 @@ export function buildTripPdf(plan:Plan):Uint8Array{
  const pagesId=object(''),refs:number[]=[];
  pages.forEach((commands,i)=>{
   commands.push('0.7 0.74 0.7 RG 0.5 w 48 44 m 547 44 l S');
-  commands.push('0.4 0.48 0.42 rg BT /F1 8 Tf 1 0 0 1 48 29 Tm (Viaja - itinerario personal) Tj ET');
+  commands.push('0.4 0.48 0.42 rg BT /F1 8 Tf 1 0 0 1 48 29 Tm (Tupa Travel - itinerario personal) Tj ET');
   commands.push('0.4 0.48 0.42 rg BT /F1 8 Tf 1 0 0 1 487 29 Tm '+escaped('Página '+(i+1)+'/'+pages.length)+' Tj ET');
   const stream=commands.join('\n')+'\n';
   const contentId=object('<< /Length '+stream.length+' >>\nstream\n'+stream+'endstream');
@@ -75,6 +77,6 @@ export function buildTripPdf(plan:Plan):Uint8Array{
 }
 export function downloadTripPdf(plan:Plan){
  const bytes=buildTripPdf(plan),blob=new Blob([bytes as BlobPart],{type:'application/pdf'}),url=URL.createObjectURL(blob);
- const a=document.createElement('a');a.href=url;a.download='viaja-'+plan.trip.destination.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').slice(0,45)+'.pdf';
+ const a=document.createElement('a');a.href=url;a.download='tupa-travel-'+plan.trip.destination.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').slice(0,45)+'.pdf';
  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);
 }
