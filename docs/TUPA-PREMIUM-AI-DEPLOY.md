@@ -56,3 +56,25 @@ Aún requiere consentimiento comercial para publicarla oficialmente con la marca
 - RPC de cuota rechaza un `user_id` nulo; test SQL correcto.
 - Auditores informan índices sin uso (esperado al estrenar tablas) y ausencia intencional de política de lectura en `ai_usage`.
 - **Pendiente:** proyecto Cloudflare Pages propio, variables build/runtime y secretos, configuración de redirección Auth y prueba de generación real con Gemini. No se reutilizan secretos existentes de Viaja.
+
+
+## 5. Publicación automática desde GitHub, SIN ChatGPT Work
+
+Este repositorio tiene un workflow exclusivo para Tupã en `.github/workflows/tupa-cloudflare-publish.yml`. Se ejecuta en **push a `tupa-travel-v1` únicamente si** la variable del repositorio `TUPA_RELEASE_ENABLED` tiene el valor `true`. `main` y Viaja no se modifican. El workflow usa la configuración Wrangler `wrangler.jsonc`, crea/reutiliza solo el proyecto Pages `tupa-travel`, verifica la clave de Gemini con un endpoint de solo lectura, carga secretos de backend, publica y valida `/api/status`.
+
+### Configuración única, directamente en tus paneles (NO escribir claves en chats ni commits)
+
+1. En **GitHub → matiabad93/Viaja → Settings → Secrets and variables → Actions → Repository secrets**, crear exactamente estos cuatro secretos:
+   - `TUPA_CF_API_TOKEN`: token de Cloudflare restringido a la cuenta y permisos de **Cloudflare Pages Edit**, desde el panel Cloudflare → API Tokens.
+   - `TUPA_CF_ACCOUNT_ID`: identificador de la cuenta Cloudflare correspondiente a ese token.
+   - `TUPA_GEMINI_API_KEY`: clave **nueva y exclusiva** de Tupã creada en Google AI Studio. Revisar límites del plan y facturación antes de usarla.
+   - `TUPA_SUPABASE_SECRET_KEY`: clave de servidor **secret** (no la publishable ni anon) del proyecto Supabase `gerfdhhzpncqzunqyhmp`, obtenida desde su panel API Keys.
+2. Revisar los posibles costes/consumos y los permisos del token. En GitHub → **Settings → Secrets and variables → Actions → Variables**, crear `TUPA_RELEASE_ENABLED` con valor `true` únicamente cuando se autorice el lanzamiento.
+3. Hacer un nuevo commit solo en `tupa-travel-v1` para disparar el workflow. Si estás usando ChatGPT en esta conversación, avisar **«Ya configuré los cuatro secretos y habilité TUPA_RELEASE_ENABLED»**; entonces puedo realizar el commit y comprobar el run desde GitHub.
+4. Comprobar `https://tupa-travel.pages.dev/` y `https://tupa-travel.pages.dev/api/status`. El endpoint sin token debe indicar `reason: authentication_required` (IA habilitada, acceso protegido); si dice `configuration_incomplete`, hay claves o variables incompletas. Después verificar un login y una generación real de Gemini.
+
+**Importante:** el workflow no crea ni habilita una clave de Gemini por sí mismo; tampoco configura el proveedor de OAuth Google o los redirects de Auth de Supabase. Estas acciones deben realizarse en sus paneles. La URL final puede variar si el subdominio `tupa-travel.pages.dev` ya está ocupado; el workflow falla en ese caso y debe ajustarse explícitamente antes de publicar.
+
+El workflow se activa por `push` con una variable de autorización porque los flujos `workflow_dispatch` que solo existen en una rama no predeterminada no se pueden disparar desde la UI de GitHub sin publicar también el workflow en `main`. No modificamos `main` para resolverlo.
+
+**Estado de verificación:** código y CI comprobados. Publicación real, credenciales de Gemini y prueba funcional autenticada siguen pendientes hasta completar estos pasos. No atribuir a Tupã tráfico o facturación de Viaja.
