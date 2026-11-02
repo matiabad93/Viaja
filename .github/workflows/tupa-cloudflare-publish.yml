@@ -1,0 +1,149 @@
+name: Tupã Travel — publicar en Cloudflare (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      approve_release:
+        description: "Confirmo publicar Tupã y haber revisado límites/costes de Gemini y Cloudflare"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tupa-cloudflare-production
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/tupa-travel-v1' && inputs.approve_release == true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Descargar exclusivamente la rama de Tupã
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar dependencias sin scripts de terceros
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verificar TypeScript y contratos de aislamiento
+        run: |
+          npx tsc --noEmit
+          node --experimental-strip-types tests/tupa-demo.test.mts
+      - name: Compilar aplicación con credenciales públicas SOLO de Tupã
+        env:
+          TUPA_SUPABASE_URL: https://gerfdhhzpncqzunqyhmp.supabase.co
+          TUPA_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Khn-7eUl5Ud3nKPeGLn9cA_C_C8wxGz
+        run: |
+          npm run build:demo
+          test -f web-dist/index.html
+          test -f web-dist/tupa-premium-emblem.svg
+      - name: Comprobar secretos necesarios, sin imprimirlos
+        env:
+          CF_TOKEN: ${{ secrets.TUPA_CF_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.TUPA_CF_ACCOUNT_ID }}
+          GEMINI_KEY: ${{ secrets.TUPA_GEMINI_API_KEY }}
+          SUPABASE_SECRET: ${{ secrets.TUPA_SUPABASE_SECRET_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in CF_TOKEN CF_ACCOUNT GEMINI_KEY SUPABASE_SECRET; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Falta el secreto de GitHub para $name; no se publicó nada."
+              exit 1
+            fi
+          done
+          echo "Los cuatro secretos requeridos están definidos."
+      - name: Verificar la clave de Gemini y el modelo sin consumir generaciones
+        env:
+          GEMINI_KEY: ${{ secrets.TUPA_GEMINI_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS --retry 2 --max-time 25             -H "x-goog-api-key: $GEMINI_KEY"             "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000"             | node -e '
+              let body="";process.stdin.on("data",c=>body+=c);
+              process.stdin.on("end",()=>{
+                const result=JSON.parse(body);
+                if(!Array.isArray(result.models)||!result.models.some(m=>m.name==="models/gemini-3.1-flash-lite"&&m.supportedGenerationMethods?.includes("generateContent")))
+                  {console.error("No está disponible Gemini 3.1 Flash Lite con esta clave.");process.exit(1);}
+                console.log("Clave Gemini y modelo verificados sin generar contenido.");
+              });'
+      - name: Crear o verificar proyecto exclusivo de Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.TUPA_CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TUPA_CF_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler pages project list --json > /tmp/tupa-pages-projects.json
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const value=JSON.parse(fs.readFileSync("/tmp/tupa-pages-projects.json","utf8"));
+            const projects=Array.isArray(value)?value:value.result??value.projects;
+            if(!Array.isArray(projects))throw Error("No se pudo verificar la lista de proyectos Pages");
+            const project=projects.find(p=>p.name==="tupa-travel");
+            if(project && project.production_branch && project.production_branch!=="tupa-travel-v1")
+              throw Error("El proyecto tupa-travel existe con otra rama de producción; no modificarlo");
+            fs.writeFileSync("/tmp/tupa-project-state",project?"exists":"create");
+          '
+          if [[ "$(cat /tmp/tupa-project-state)" == "create" ]]; then
+            npx wrangler pages project create tupa-travel --production-branch tupa-travel-v1
+          fi
+      - name: Configurar exclusivamente secretos del runtime de Tupã
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.TUPA_CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TUPA_CF_ACCOUNT_ID }}
+          GEMINI_KEY: ${{ secrets.TUPA_GEMINI_API_KEY }}
+          SUPABASE_SECRET: ${{ secrets.TUPA_SUPABASE_SECRET_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          trap 'rm -f /tmp/tupa-runtime-secrets.json' EXIT
+          node --input-type=module -e '
+            import fs from "node:fs";
+            fs.writeFileSync("/tmp/tupa-runtime-secrets.json",JSON.stringify({
+              TUPA_SUPABASE_URL:"https://gerfdhhzpncqzunqyhmp.supabase.co",
+              TUPA_SUPABASE_PUBLISHABLE_KEY:"sb_publishable_Khn-7eUl5Ud3nKPeGLn9cA_C_C8wxGz",
+              TUPA_SUPABASE_SECRET_KEY:process.env.SUPABASE_SECRET,
+              TUPA_GEMINI_API_KEY:process.env.GEMINI_KEY,
+              TUPA_AI_PROVIDER:"gemini",
+              TUPA_GEMINI_KEY_ROTATED:"true",
+              TUPA_AI_ENABLED:"true"
+            }));
+          '
+          npx wrangler pages secret bulk /tmp/tupa-runtime-secrets.json --project-name tupa-travel
+      - name: Publicar sin modificar Viaja
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.TUPA_CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TUPA_CF_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler pages deploy web-dist             --project-name=tupa-travel             --branch=tupa-travel-v1             --commit-hash="$GITHUB_SHA"
+      - name: Verificar API real publicada de Tupã
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 18); do
+            if curl -fsS --max-time 10 "https://tupa-travel.pages.dev/api/status"               | node -e '
+                  let s="";process.stdin.on("data",c=>s+=c);
+                  process.stdin.on("end",()=>{
+                    const x=JSON.parse(s);
+                    if(x.reason!=="authentication_required"||x.provider!=="Gemini")
+                      {console.error("API no configurada, o ruta Pages Functions ausente");process.exit(1);}
+                    console.log("Backend de Gemini protegido por autenticación y publicado.");
+                  });'
+            then
+              echo "https://tupa-travel.pages.dev" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::El despliegue no respondió correctamente en /api/status"
+          exit 1
