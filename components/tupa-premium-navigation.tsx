@@ -1,12 +1,12 @@
 'use client';
 import {useState} from 'react';
-import {CalendarDays,Compass,Home,Menu,UserRound,Suitcase,X} from 'lucide-react';
+import {CalendarDays,Compass,Home,Menu,UserRound,Briefcase,X} from 'lucide-react';
 export type TupaTab='home'|'planner'|'saved'|'detail'|'guides'|'profile'|'admin';
 type Tab=TupaTab;
 const links:{tab:Tab;label:string;short:string;Icon:typeof Home}[]=[
  {tab:'home',label:'Inicio',short:'Inicio',Icon:Home},
  {tab:'planner',label:'Planificar',short:'Planificar',Icon:CalendarDays},
- {tab:'saved',label:'Mis viajes',short:'Mis viajes',Icon:Suitcase},
+ {tab:'saved',label:'Mis viajes',short:'Mis viajes',Icon:Briefcase},
  {tab:'guides',label:'Explorar',short:'Explorar',Icon:Compass},
  {tab:'profile',label:'Mi perfil',short:'Mi perfil',Icon:UserRound}
 ];
