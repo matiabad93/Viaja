@@ -10,9 +10,10 @@ declare const __VIAJA_SUPABASE_URL__: string;
 declare const __VIAJA_SUPABASE_PUBLIC_KEY__: string;
 const url = typeof __VIAJA_SUPABASE_URL__ === 'string' ? __VIAJA_SUPABASE_URL__.replace(/\/+$/,'') : '';
 const key = typeof __VIAJA_SUPABASE_PUBLIC_KEY__ === 'string' ? __VIAJA_SUPABASE_PUBLIC_KEY__ : '';
+const recoveryKey = 'tupa-password-recovery';
 const storageKey = 'tupa-auth-session-v1';
 const authRedirect=()=>browser()?'?redirect_to='+encodeURIComponent(window.location.origin+'/'):'';
-export const cloudReady = Boolean(url && /^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(url) && !url.includes('ovagewbmrirzrlvbvtbw') && key);
+export const cloudReady = Boolean(url === 'https://gerfdhhzpncqzunqyhmp.supabase.co' && key);
 export type ViajaUser = {id:string;email?:string};
 export type ViajaSession = {access_token:string;refresh_token:string;expires_at:number;user:ViajaUser};
 const listeners = new Set<(s:ViajaSession|null)=>void>();
@@ -79,7 +80,7 @@ export async function restoreAuth():Promise<ViajaSession|null> {
       const user=await api<ViajaUser>('/auth/v1/user',{method:'GET'},token);
       const expires=Number(hash.get('expires_in')||3600);
       publish({access_token:token,refresh_token:refreshToken,expires_at:Math.floor(Date.now()/1000)+expires,user});
-      if(hash.get('type')==='recovery') window.sessionStorage.setItem('tupa-password-recovery','1');
+      if(hash.get('type')==='recovery') window.sessionStorage.setItem(recoveryKey,'1');
     } finally {window.history.replaceState({},'',window.location.pathname+window.location.search);}
   }
   if(!current) {
@@ -130,6 +131,7 @@ export async function logIn(email:string,password:string) {
 }
 export async function logOut() {
   const token=current?.access_token;
+  if(browser())window.sessionStorage.removeItem(recoveryKey);
   publish(null);
   if(token)try {await api('/auth/v1/logout',{method:'POST'},token);}catch {}
 }
@@ -137,13 +139,13 @@ export async function sendRecovery(email:string) {
   await api('/auth/v1/recover'+authRedirect(),{method:'POST',body:JSON.stringify({email})});
 }
 export function recoveryPending():boolean {
-  return browser()&&window.sessionStorage.getItem('viaja-password-recovery')==='1';
+  return browser()&&window.sessionStorage.getItem(recoveryKey)==='1';
 }
 export async function changePassword(password:string) {
   const token=await accessToken();
   if(!token)throw Error('El enlace ha vencido. Solicitá uno nuevo.');
   await api('/auth/v1/user',{method:'PUT',body:JSON.stringify({password})},token);
-  if(browser())window.sessionStorage.removeItem('viaja-password-recovery');
+  if(browser())window.sessionStorage.removeItem(recoveryKey);
 }
 async function db<T=JSONValue>(path:string,init:RequestInit={}):Promise<T> {
   const token=await accessToken();
