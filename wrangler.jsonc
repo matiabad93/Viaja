@@ -1,0 +1,6 @@
+{
+  "name": "tupa-travel",
+  "pages_build_output_dir": "./web-dist",
+  "compatibility_date": "2026-05-15",
+  "compatibility_flags": ["nodejs_compat"]
+}
