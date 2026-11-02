@@ -41,7 +41,8 @@ export function normalizeGeminiIdeas(data:unknown,start:string,days:number):Gemi
  }
  // For a same-sized response, repair a malformed model date by array position
  // while preserving the user's dates. Never bring in extra out-of-range days.
- if(raw.days.length===days)for(const date of expected)if(!selected.has(date)&&unmatched.length)selected.set(date,unmatched.shift()!);
+ let repairedDates=0;
+ if(raw.days.length===days)for(const date of expected)if(!selected.has(date)&&unmatched.length){selected.set(date,unmatched.shift()!);repairedDates++;}
  let removed=0,missing=0;
  const normalized:DayIdea[]=expected.map((date,i)=>{
   const day=selected.get(date);
@@ -89,6 +90,7 @@ export function normalizeGeminiIdeas(data:unknown,start:string,days:number):Gemi
  if(total===0)throw Error('Gemini no propuso ninguna actividad utilizable.');
  const warnings:string[]=[];
  if(missing>0)warnings.push('Gemini no completó '+missing+' días del rango; quedaron pendientes de organizar.');
+ if(repairedDates>0)warnings.push('Se ajustaron '+repairedDates+' fechas que Gemini escribió incorrectamente al rango elegido en el formulario. Revisá los días antes de reservar.');
  if(removed>0)warnings.push('Se omitieron '+removed+' actividades con horarios, duraciones o datos incompatibles.');
  if(normalized.some(d=>d.activities.length===0))
   warnings.push('Los días sin actividades pueden corresponder a llegadas o salidas; revisá y completá los que lo necesiten.');
