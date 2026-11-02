@@ -4,6 +4,7 @@
  * No third-party SDK is needed to bundle this client.
  */
 import type {Plan} from './travel';
+import {publicTripSnapshot,type CommunityTrip} from './community-trips';
 import {buildSocialAuthorizationUrl,parseSocialProviderSettings,unavailableSocialProviders,type SocialProvider,type SocialAvailability} from './social-auth';
 
 declare const __VIAJA_SUPABASE_URL__: string;
@@ -190,3 +191,45 @@ if(browser())window.addEventListener('storage',event=>{
   if(event.key!==storageKey)return;
   try {const data=event.newValue?JSON.parse(event.newValue):null;current=data?.user?.id?data:null;listeners.forEach(fn=>fn(current));}catch {}
 });
+
+/** A trip is private until its owner explicitly confirms publication. */
+export async function publishCommunityTrip(plan:Plan):Promise<CommunityTrip>{
+ const owner=current?.user.id;
+ if(!owner)throw Error('Iniciá sesión para publicar un viaje.');
+ const payload=publicTripSnapshot(plan);
+ // Ensure the source plan exists and belongs to the current user before creating
+ // a public snapshot. The database enforces this again through FK + RLS.
+ await saveCloudTrip(plan);
+ const rows=await db<CommunityTrip[]>('community_trips?on_conflict=source_trip_id&select=id,title,destination,days_count,pace,transport,content,published_at',{
+  method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},
+  body:JSON.stringify({...payload,source_trip_id:plan.id,user_id:owner,published:true,published_at:new Date().toISOString()})
+ });
+ if(!Array.isArray(rows)||!rows[0]?.id)throw Error('No pudimos confirmar la publicación. Volvé a intentarlo.');
+ return rows[0];
+}
+export async function unpublishCommunityTrip(sourceTripId:string):Promise<void>{
+ if(!current)throw Error('Iniciá sesión para retirar esta publicación.');
+ if(!/^[0-9a-f-]{36}$/i.test(sourceTripId))throw Error('Viaje inválido.');
+ await db('community_trips?source_trip_id=eq.'+encodeURIComponent(sourceTripId)+'&user_id=eq.'+encodeURIComponent(current.user.id),{
+  method:'DELETE',headers:{Prefer:'return=minimal'}
+ });
+}
+export async function listMyCommunityTrips():Promise<Record<string,string>>{
+ const owner=current?.user.id;
+ if(!owner)return {};
+ const rows=await db<{source_trip_id:string;id:string}[]>('community_trips?select=source_trip_id,id&user_id=eq.'+encodeURIComponent(owner)+'&published=eq.true&limit=250');
+ return Object.fromEntries((rows||[]).filter(row=>row.id&&row.source_trip_id).map(row=>[row.source_trip_id,row.id]));
+}
+/** Public catalogue: never reads the private trips table or exposes account email. */
+export async function listCommunityTrips():Promise<CommunityTrip[]>{
+ if(!cloudReady)return [];
+ const cols='id,title,destination,days_count,pace,transport,content,published_at';
+ const rows=await api<CommunityTrip[]>('/rest/v1/community_trips?select='+cols+'&published=eq.true&order=published_at.desc&limit=100');
+ return Array.isArray(rows)?rows:[];
+}
+export async function getCommunityTrip(id:string):Promise<CommunityTrip|null>{
+ if(!cloudReady||!/^[0-9a-f-]{36}$/i.test(id))return null;
+ const cols='id,title,destination,days_count,pace,transport,content,published_at';
+ const rows=await api<CommunityTrip[]>('/rest/v1/community_trips?select='+cols+'&published=eq.true&id=eq.'+encodeURIComponent(id)+'&limit=1');
+ return Array.isArray(rows)?rows[0]||null:null;
+}
