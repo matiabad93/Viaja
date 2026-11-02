@@ -2,7 +2,7 @@
 import {useEffect,useState} from 'react';
 import {UserRound,ShieldCheck,Download,Briefcase,HeartHandshake,ExternalLink,Check} from 'lucide-react';
 import type {Plan} from '../lib/travel';
-export function TupaPremiumProfile({plans,onOpenTrips}:{plans:Plan[];onOpenTrips:()=>void}){
+export function TupaPremiumProfile({plans,cloud,authEnabled,onOpenTrips}:{plans:Plan[];cloud:boolean;authEnabled:boolean;onOpenTrips:()=>void}){
  const [name,setName]=useState('');
  const [saved,setSaved]=useState(false);
  useEffect(()=>{try{setName(localStorage.getItem('tupa-profile-name-v1')||'')}catch{}},[]);
@@ -18,20 +18,20 @@ export function TupaPremiumProfile({plans,onOpenTrips}:{plans:Plan[];onOpenTrips
   <div className="tupa-profile-grid">
    <article className="tupa-profile-card">
     <div className="tupa-profile-avatar"><UserRound size={32}/></div><h2>Tu perfil de viaje</h2>
-    <p>Tu nombre se guarda en este dispositivo. Todavía no es una cuenta sincronizada.</p>
+    <p>Tu nombre de preferencia se conserva en este dispositivo. La cuenta permite sincronizar los viajes.</p>
     <label htmlFor="tupa-profile-name">Cómo querés que te llamemos</label>
     <input id="tupa-profile-name" maxLength={70} placeholder="Tu nombre" value={name} onChange={e=>{setName(e.target.value);setSaved(false)}}/>
     <button type="button" className="tupa-gold-btn" onClick={persist}>{saved?<Check size={18}/>:<UserRound size={18}/>} {saved?'Preferencia guardada':'Guardar preferencia'}</button>
    </article>
    <article className="tupa-profile-card">
     <div className="tupa-profile-avatar"><Briefcase size={32}/></div><h2>Tus itinerarios</h2>
-    <p>Tenés <strong>{plans.length}</strong> {plans.length===1?'viaje guardado':'viajes guardados'} en este navegador.</p>
+    <p>Tenés <strong>{plans.length}</strong> {plans.length===1?'viaje guardado':'viajes guardados'} {cloud?'sincronizados con tu cuenta.':'guardados en este navegador.'}</p>
     <button type="button" className="tupa-outline-btn" onClick={onOpenTrips}><Briefcase size={18}/>Ver mis viajes</button>
     <button type="button" className="tupa-outline-btn" onClick={download}><Download size={18}/>Exportar mis viajes (JSON)</button>
    </article>
    <article className="tupa-profile-card">
     <div className="tupa-profile-avatar"><ShieldCheck size={32}/></div><h2>Privacidad de tus viajes</h2>
-    <p>En esta primera versión los viajes se guardan localmente en el navegador. Si borrás los datos del sitio o cambiás de dispositivo, pueden perderse. Exportalos para conservar una copia.</p>
+    <p>{cloud?'Tu cuenta sincroniza tus itinerarios con la base de datos exclusiva de Tupã Travel. También podés exportarlos como respaldo.':authEnabled?'Estás usando viajes locales. Iniciá sesión desde la cabecera para sincronizarlos. Si borrás los datos del navegador, podrían perderse.':'Los viajes se guardan localmente hasta que se conecte la infraestructura propia de Tupã Travel. Exportalos para conservarlos.'}</p>
     <div className="tupa-profile-safe"><ShieldCheck size={18}/> Sin conexión a la base de datos de Viaja</div>
    </article>
    <article className="tupa-profile-card">
