@@ -1,13 +1,8 @@
 name: Tupã Travel — publicar en Cloudflare (manual)
 
 on:
-  workflow_dispatch:
-    inputs:
-      approve_release:
-        description: "Confirmo publicar Tupã y haber revisado límites/costes de Gemini y Cloudflare"
-        required: true
-        default: false
-        type: boolean
+  push:
+    branches: [tupa-travel-v1]
 
 permissions:
   contents: read
@@ -18,7 +13,7 @@ concurrency:
 
 jobs:
   publish:
-    if: github.ref == 'refs/heads/tupa-travel-v1' && inputs.approve_release == true
+    if: github.ref == 'refs/heads/tupa-travel-v1' && vars.TUPA_RELEASE_ENABLED == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
