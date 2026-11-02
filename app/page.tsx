@@ -32,11 +32,11 @@ const [publicationIds,setPublicationIds]=useState<Record<string,string>>({});
 const [pendingPublish,setPendingPublish]=useState<Plan|null>(null);
 const [pendingUnpublish,setPendingUnpublish]=useState<Plan|null>(null);
 const [publicationBusy,setPublicationBusy]=useState(false);
-const [exploreMode,setExploreMode]=useState<'guides'|'community'>(()=>typeof window!=='undefined'&&new URLSearchParams(window.location.search).has('viaje')?'community':'community');
+const [exploreMode,setExploreMode]=useState<'guides'|'community'>(()=>typeof window!=='undefined'&&new URLSearchParams(window.location.search).has('viaje')?'community':'guides');
 const [sharedLinkId]=useState(()=>typeof window!=='undefined'?new URLSearchParams(window.location.search).get('viaje')||'':'');
 const [guideTarget,setGuideTarget]=useState<string|null>(null);
 const [guideNavigationId,setGuideNavigationId]=useState(0);
-const showGuide=(id?:string)=>{setExploreMode(id?'guides':'community');setGuideTarget(id||null);setGuideNavigationId(n=>n+1);setTab('guides');setError('');window.scrollTo(0,0)};
+const showGuide=(id?:string)=>{setExploreMode('guides');setGuideTarget(id||null);setGuideNavigationId(n=>n+1);setTab('guides');setError('');window.scrollTo(0,0)};
 const statusRequestRef=useRef(0);const checkStatus=async()=>{const requestId=++statusRequestRef.current;setReady(null);setStatusError(false);try{const token=await accessToken();const r=await requestAPI('/api/status',{headers:token?{Authorization:'Bearer '+token}:{}});if(!r.ok)throw Error();const j=await r.json() as {ready?:boolean;admin?:boolean;mode?:string;reason?:string};if(requestId!==statusRequestRef.current)return;setAdmin(j.admin===true);setReady(j.ready===true);setAiMode(j.mode||'researched');setAiStatusReason(j.reason||'')}catch{if(requestId===statusRequestRef.current){setStatusError(true);setAiStatusReason('connection_failed')}}};
 const loadLocal=()=>{try{const raw=JSON.parse(localStorage.getItem(storageKey)||'[]');setPlans(Array.isArray(raw)?raw.filter(p=>p&&p.trip&&p.id):[]);const draft=localStorage.getItem('viaja-ai-current');if(draft)setTrip({...empty,...JSON.parse(draft)})}catch{setMessage('No pudimos recuperar los viajes guardados. Podés crear uno nuevo.')}};
 const reloadAccount=async()=>{const current=getCurrentSession();setSession(current);await checkStatus();if(current){
