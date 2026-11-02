@@ -21,8 +21,8 @@ try{
   await page.route('**/rest/v1/community_trips?*',route=>route.fulfill({status:200,contentType:'application/json',
    body:JSON.stringify(route.request().url().includes('id=eq.')?[example]:[example])}));
   await page.goto(origin,{waitUntil:'domcontentloaded'});
-  // Public discovery is the default Explore landing; avoid testing header hit-target here.
-  await page.getByRole('button',{name:'Viajes compartidos'}).waitFor({state:'visible'});
+  // Public journeys are a new Explore category; existing editorial guides remain default.
+  await page.getByRole('button',{name:'Viajes compartidos'}).click();
   await page.getByRole('heading',{name:'Ideas que se comparten.'}).waitFor({state:'visible'});
   await page.getByRole('heading',{name:'Colmar y Alsacia'}).waitFor({state:'visible'});
   await page.getByRole('textbox',{name:'Buscar viajes compartidos'}).fill('Mad');
