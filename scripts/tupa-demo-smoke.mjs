@@ -21,7 +21,7 @@ try{
   assert.ok(await logo.evaluate(el=>el instanceof HTMLImageElement&&el.complete&&el.naturalWidth>0),'Premium emblem loads');
   assert.ok(await page.getByRole('button',{name:/Descubrir destino/}).isVisible(),'Santorini CTA is visible');
   assert.ok(await page.getByRole('button',{name:/Ver itinerario/}).isVisible(),'Colmar editorial CTA is visible');
-  const saved=await page.evaluate(()=>localStorage.getItem('tupa-demo-trips-v1'));
+  const saved=await page.evaluate(()=>localStorage.getItem('tupa-travel-trips-v1'));
   assert.ok(saved,'First visit seeds isolated travel storage');
   assert.ok(JSON.parse(saved).some(p=>p.trip.destination==='Roma, Italia'),'Editable sample Rome trip exists');
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
@@ -29,7 +29,7 @@ try{
   await page.screenshot({path:'artifacts/tupa-demo/'+viewport.name+'-premium-home.png',fullPage:true});
   await page.getByRole('button',{name:/Ver itinerario/}).click();
   await page.getByText('Colmar, Francia').first().waitFor({state:'visible',timeout:12000});
-  const trips=await page.evaluate(()=>JSON.parse(localStorage.getItem('tupa-demo-trips-v1')||'[]'));
+  const trips=await page.evaluate(()=>JSON.parse(localStorage.getItem('tupa-travel-trips-v1')||'[]'));
   assert.ok(trips.some(p=>p.trip.destination==='Colmar, Francia'&&p.itinerary?.length===3),'Featured CTA opens a persistent editable Colmar trip');
   await nav.getByRole('button',{name:/Mis viajes/}).click();
   await page.getByText('Colmar, Francia').first().waitFor({state:'visible'});
