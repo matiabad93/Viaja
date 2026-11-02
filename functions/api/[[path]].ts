@@ -1,3 +1,3 @@
-import {secureAIGateway,type ViajaAIEnv} from '../../server/ai-gateway';
-export const onRequest:PagesFunction<ViajaAIEnv> = async ({request,env}) =>
+import {secureAIGateway,type TupaAIEnv} from '../../server/ai-gateway';
+export const onRequest:PagesFunction<TupaAIEnv> = async ({request,env}) =>
  secureAIGateway(request,env||{});
