@@ -15,7 +15,7 @@ export type TupaAIEnv={
 };
 const response=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const baseUrl=(env:TupaAIEnv)=>env.TUPA_SUPABASE_URL?.replace(/\/+$/,'')||'';
-const isolatedProject=(env:TupaAIEnv)=>/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(baseUrl(env)) && !baseUrl(env).includes('ovagewbmrirzrlvbvtbw');
+const isolatedProject=(env:TupaAIEnv)=>baseUrl(env)==='https://gerfdhhzpncqzunqyhmp.supabase.co';
 const publicKey=(env:TupaAIEnv)=>env.TUPA_SUPABASE_PUBLISHABLE_KEY||'';
 type AIProvider='gemini'|'openai'|'unsupported';
 const provider=(env:TupaAIEnv):AIProvider=>{
