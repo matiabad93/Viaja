@@ -619,3 +619,44 @@ nav.tupa-quick-actions button.tupa-quick-primary small{color:#687069}
 @media(prefers-reduced-motion:reduce){
  .tupa-feature-body button:hover,.tupa-gold-btn:hover{transform:none}
 }
+
+
+/* Premium consistency for inner pages: trips, itinerary, guides and planner. */
+.tupa-premium-app .section-heading{margin-bottom:27px}
+.tupa-premium-app .section-heading h1{font:clamp(35px,4vw,55px)/1.1 Georgia,serif;letter-spacing:-1.2px;color:#13393b}
+.tupa-premium-app .section-heading .eyebrow{color:#a47b42;letter-spacing:2px}
+.tupa-premium-app .section-heading>div>p{font-size:14px;color:#6b736c}
+.tupa-premium-app .journey-toolbar{background:#f6eddf;border:1px solid #ead8b9;padding:14px;border-radius:16px;margin-bottom:15px}
+.tupa-premium-app .journey-card{background:#fffaf1;border:1px solid #e2cba4;border-radius:22px;box-shadow:0 15px 34px #4b382115;overflow:hidden;transition:transform .2s ease,box-shadow .2s ease}
+.tupa-premium-app .journey-card:hover{transform:translateY(-3px);box-shadow:0 18px 40px #4b382125}
+.tupa-premium-app .journey-cover{border-radius:0;overflow:hidden}
+.tupa-premium-app .journey-cover img{object-fit:cover}
+.tupa-premium-app .journey-content{padding:22px}
+.tupa-premium-app .journey-content h2 button{font:clamp(23px,2.3vw,31px)/1.16 Georgia,serif;color:#133e41;text-align:left}
+.tupa-premium-app .journey-content .eyebrow{color:#997644}
+.tupa-premium-app .card-budget{border-color:#ecddc5}
+.tupa-premium-app .journey-content .textbtn{color:#0c4f4d;font-weight:700}
+.tupa-premium-app .filterpills button[aria-pressed=true]{background:#0e4d4b;color:#fff1d8;border-color:#be955d}
+.tupa-premium-app .filterpills button:hover{border-color:#b6905c}
+.tupa-premium-app .trip-banner{border:2px solid #b9955e;border-radius:22px;box-shadow:0 15px 36px #153b332c}
+.tupa-premium-app .trip-banner h1{font:clamp(34px,4.8vw,62px)/1.08 Georgia,serif;letter-spacing:-1px}
+.tupa-premium-app .banner-edit{border-color:#e3c99c;color:#fff2d8}
+.tupa-premium-app .detail-tabs{border-bottom-color:#dbc4a0}
+.tupa-premium-app .detail-tabs button[aria-selected=true],.tupa-premium-app .detail-tabs button.active{color:#985f27;border-bottom-color:#b9884a}
+.tupa-premium-app .trip-detail .surface{border:1px solid #e3d5bf;background:#fffdf9;border-radius:17px;box-shadow:0 5px 18px #42331f0b}
+.tupa-premium-app .trip-detail .day-navigator{border-color:#e0cdb1;background:#fffaf1;border-radius:18px}
+.tupa-premium-app .trip-detail .day-heading h2{font-family:Georgia,serif;color:#143e3d}
+.tupa-premium-app .trip-detail .activity-rail{border-color:#e4d8c2}
+.tupa-premium-app .trip-detail .activity-body h3{color:#15453f}
+.tupa-premium-app .trip-detail .day-practical-guide{border-color:#e3cda5;background:#fff6e5;border-left-color:#c49754}
+.tupa-premium-app .trip-detail .day-practical-guide strong{color:#7f582c}
+.tupa-premium-app .visualguides .hero{border-radius:23px;box-shadow:0 14px 34px #213f3440;border:1px solid #d3ae70}
+.tupa-premium-app .visualguides .hero h1{font-family:Georgia,serif}
+.tupa-premium-app .visualguides .card{border:1px solid #e2ccae;border-radius:18px;box-shadow:0 8px 25px #58432916;background:#fffaf1}
+.tupa-premium-app .visualguides .card h3{color:#174142}
+.tupa-premium-app .visualguides .cardbody{padding:20px}
+.tupa-premium-app .visualguides .sidebar{border-color:#e4d2b7;background:#fffaf2;border-radius:15px}
+.tupa-premium-app .premium-empty{background:#fdfaf2;border:1px dashed #ccb38a;border-radius:20px;padding:40px}
+.tupa-premium-app .premium-empty>svg{color:#ab8151}
+.tupa-premium-app .primary,.tupa-premium-app .form-actions .primary{border-radius:30px}
+.tupa-premium-app button:focus-visible{outline:3px solid #c89b58;outline-offset:3px}
