@@ -404,3 +404,44 @@ html{scroll-padding-top:86px}
 .activity-expanded-guide{margin:14px 0 16px;padding:13px 16px;background:#f8faf6;border-radius:11px;border:1px solid #e2e9de}
 .activity-expanded-guide p{white-space:pre-line;line-height:1.8;margin:8px 0 0}
 @media(max-width:600px){.day-practical-guide{padding:14px}.activity-expanded-guide{padding:12px}}
+
+
+/* Tupã Travel white-label sales demonstration. Only present on demo/tupa-travel. */
+:root{--ink:#213940;--muted:#60757a;--paper:#f7f8f6;--line:#d7e0dd;--green:#213a43;--orange:#c69b65}
+.tupa-topbar{background:#1e3540;color:#e2e7e2;border-bottom-color:#49606b}
+.tupa-topbar nav button{color:#edf1ed}
+.tupa-topbar .navactive:after{background:#d8ae78}
+.tupa-topbar .profile{background:#324d55;color:#f4e9d8}
+.tupa-header-brand{display:flex;align-items:center;gap:10px;min-width:180px}
+.tupa-header-brand img{width:47px;height:51px;object-fit:contain}
+.tupa-header-brand strong{display:block;font:25px/1.05 Georgia,serif;color:#dfe9e5;letter-spacing:-.6px}
+.tupa-header-brand small{display:block;color:#cba778;letter-spacing:1.8px;font-size:8px;margin-top:5px}
+.tupa-header-status{border:1px solid #9bafb0;color:#d9e7e5;border-radius:24px;white-space:nowrap;padding:7px 11px;font-size:11px;letter-spacing:.25px}
+.tupa-presentation{position:relative;overflow:hidden;background:linear-gradient(130deg,#1b313b 0%,#284751 58%,#1d3540 100%);border-radius:25px;color:#f6f2e9;margin:0 0 34px;padding:26px 40px 20px;box-shadow:0 20px 48px #1b313b1b}
+.tupa-presentation:before{content:'';position:absolute;inset:auto -115px -170px auto;width:380px;height:380px;border:1px solid #a2cdf080;border-radius:50%;pointer-events:none}
+.tupa-presentation:after{content:'';position:absolute;right:-100px;top:-260px;width:430px;height:430px;border:1px solid #a2cdf040;border-radius:50%;pointer-events:none}
+.tupa-badge{font-size:10px;color:#dbb17b;letter-spacing:2.1px;display:flex;align-items:center;gap:13px;position:relative;z-index:1}
+.tupa-badge-line{height:1px;width:26px;background:#c9a573;display:inline-block}
+.tupa-presentation-main{display:flex;align-items:center;gap:46px;position:relative;z-index:1;padding:17px 0 24px}
+.tupa-presentation-logo{height:182px;width:170px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 14px 14px #0a1e2380)}
+.tupa-presentation-copy{max-width:680px}
+.tupa-kicker{color:#d9b17d!important;letter-spacing:1.4px;font-weight:600;font-size:11px!important}
+.tupa-presentation h2{color:#fff;font:clamp(29px,3.7vw,49px)/1.12 Georgia,serif;letter-spacing:-1.5px;margin:7px 0 14px}
+.tupa-presentation h2 em{font-weight:400;color:#b6c8c2}
+.tupa-presentation-copy>p:not(.tupa-kicker){color:#dce6e2;font-size:14px;line-height:1.75}
+.tupa-presentation-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:21px}
+.tupa-presentation-actions button,.tupa-presentation-actions a{display:inline-flex;align-items:center;gap:9px;justify-content:center;padding:11px 14px;border:1px solid #8ba2a6a6;border-radius:10px;color:#f4f4ef;font-weight:600;font-size:12px;min-height:42px;transition:transform .15s ease,background .15s ease}
+.tupa-presentation-actions button:hover,.tupa-presentation-actions a:hover{transform:translateY(-2px);background:#43636c}
+.tupa-presentation-actions .tupa-action-primary{color:#1e343b;background:#e5c394;border-color:#e5c394}
+.tupa-presentation-actions .tupa-action-primary:hover{background:#f0d3a9}
+.tupa-presentation-bottom{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;border-top:1px solid #6d89916b;padding-top:15px;position:relative;z-index:1}
+.tupa-presentation-bottom span{display:flex;align-items:center;gap:9px;font-size:11px;color:#d7e4df}
+.tupa-proposal-disclaimer{color:#a9b8b7!important;margin-top:13px;font-size:10px!important;position:relative;z-index:1}
+.tupa-topbar .navactive{color:#fff}
+.tupa-footer{background:#1c333d;color:#cbd9d8;border-top:4px solid #d7b078}
+.tupa-footer p,.tupa-footer small{color:#cbd9d8}
+.tupa-footer-brand{display:flex;gap:12px;align-items:center;font:27px Georgia,serif;color:#f2ecdd}
+.tupa-footer-brand img{object-fit:contain}
+#tupa-planner{scroll-margin-top:22px}
+@media(max-width:850px){.tupa-presentation{padding:22px 24px}.tupa-presentation-main{gap:20px}.tupa-presentation-logo{width:125px;height:137px}.tupa-header-brand{min-width:auto}.tupa-header-status{display:none}}
+@media(max-width:560px){.tupa-topbar{padding:6px 15px!important;min-height:78px}.tupa-header-brand img{width:37px;height:42px}.tupa-header-brand strong{font-size:18px}.tupa-header-brand small{font-size:7px}.tupa-topbar nav{gap:7px}.tupa-topbar nav button{font-size:10px;gap:4px}.tupa-presentation{margin-top:4px;border-radius:16px;padding:18px}.tupa-badge{font-size:8px;letter-spacing:1px}.tupa-badge-line{width:12px}.tupa-presentation-main{flex-direction:column;align-items:flex-start;gap:7px;padding:10px 0 20px}.tupa-presentation-logo{height:115px;width:115px;margin:-2px 0}.tupa-presentation h2{font-size:29px}.tupa-presentation-copy>p:not(.tupa-kicker){font-size:12px}.tupa-presentation-actions{gap:6px}.tupa-presentation-actions button,.tupa-presentation-actions a{font-size:11px;padding:10px}.tupa-presentation-bottom span{font-size:10px}}
