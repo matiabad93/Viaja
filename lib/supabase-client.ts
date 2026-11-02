@@ -10,9 +10,9 @@ declare const __VIAJA_SUPABASE_URL__: string;
 declare const __VIAJA_SUPABASE_PUBLIC_KEY__: string;
 const url = typeof __VIAJA_SUPABASE_URL__ === 'string' ? __VIAJA_SUPABASE_URL__.replace(/\/+$/,'') : '';
 const key = typeof __VIAJA_SUPABASE_PUBLIC_KEY__ === 'string' ? __VIAJA_SUPABASE_PUBLIC_KEY__ : '';
-const storageKey = 'viaja-auth-session-v1';
+const storageKey = 'tupa-auth-session-v1';
 const authRedirect=()=>browser()?'?redirect_to='+encodeURIComponent(window.location.origin+'/'):'';
-export const cloudReady = Boolean(url && /^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(url) && key);
+export const cloudReady = Boolean(url && /^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(url) && !url.includes('ovagewbmrirzrlvbvtbw') && key);
 export type ViajaUser = {id:string;email?:string};
 export type ViajaSession = {access_token:string;refresh_token:string;expires_at:number;user:ViajaUser};
 const listeners = new Set<(s:ViajaSession|null)=>void>();
@@ -32,7 +32,7 @@ export function subscribeAuth(listener:(s:ViajaSession|null)=>void) {
   return () => {listeners.delete(listener);};
 }
 export function getCurrentSession(){return current;}
-function ensureConfigured(){if(!cloudReady)throw Error('Supabase todavía no está configurado en esta versión de Viaja.');}
+function ensureConfigured(){if(!cloudReady)throw Error('Tupã Travel todavía no tiene configurada su base de datos independiente.');}
 type JSONValue = Record<string,any>;
 async function api<T=JSONValue>(path:string,init:RequestInit={},token?:string):Promise<T> {
   ensureConfigured();
@@ -79,7 +79,7 @@ export async function restoreAuth():Promise<ViajaSession|null> {
       const user=await api<ViajaUser>('/auth/v1/user',{method:'GET'},token);
       const expires=Number(hash.get('expires_in')||3600);
       publish({access_token:token,refresh_token:refreshToken,expires_at:Math.floor(Date.now()/1000)+expires,user});
-      if(hash.get('type')==='recovery') window.sessionStorage.setItem('viaja-password-recovery','1');
+      if(hash.get('type')==='recovery') window.sessionStorage.setItem('tupa-password-recovery','1');
     } finally {window.history.replaceState({},'',window.location.pathname+window.location.search);}
   }
   if(!current) {
@@ -171,7 +171,7 @@ export async function deleteCloudTrip(id:string):Promise<void> {
 }
 export async function importLocalTrips():Promise<{imported:number}> {
   if(!browser()||!current)throw Error('Iniciá sesión antes de importar.');
-  const raw=JSON.parse(window.localStorage.getItem('viaja-ai-trips-v1')||'[]');
+  const raw=JSON.parse(window.localStorage.getItem('tupa-travel-trips-v1')||'[]');
   if(!Array.isArray(raw))throw Error('El respaldo local no tiene el formato esperado.');
   if(raw.length>250)throw Error('Hay demasiados viajes para importar en una sola operación.');
   const existing=new Set((await listCloudTrips()).map(p=>p.id));
