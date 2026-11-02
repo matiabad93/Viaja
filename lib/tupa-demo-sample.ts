@@ -1,5 +1,5 @@
-import type {Plan,Trip} from './travel';
-import {newId} from './travel';
+import type {Plan,Trip} from './travel.ts';
+import {newId} from './travel.ts';
 const iso=(date:Date)=>date.toLocaleDateString('sv-SE');
 const exampleDay=(offset:number)=>{const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+((5-d.getDay()+7)%7||7)+offset);return iso(d)};
 export function tupaSampleTrip():Plan{
