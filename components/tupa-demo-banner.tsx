@@ -1,5 +1,5 @@
 'use client';
-import {ArrowUpRight,Compass,Instagram,ShieldCheck,Sparkles} from 'lucide-react';
+import {ArrowUpRight,Compass,Camera,ShieldCheck,Sparkles} from 'lucide-react';
 
 /** Private branded proposal, not a live reservation or official agency website. */
 export function TupaDemoBanner({onPlan}:{onPlan:()=>void}){
@@ -14,7 +14,7 @@ export function TupaDemoBanner({onPlan}:{onPlan:()=>void}){
     <div className="tupa-presentation-actions">
      <button type="button" className="tupa-action-primary" onClick={onPlan}><Compass size={17}/> Crear un viaje de prueba</button>
      <a href="https://tupatravel.com.ar/" target="_blank" rel="noopener noreferrer" className="tupa-action-secondary">Sitio de Tupã Travel <ArrowUpRight size={16}/></a>
-     <a href="https://www.instagram.com/tupatravel/" target="_blank" rel="noopener noreferrer" className="tupa-action-secondary"><Instagram size={16}/> Instagram</a>
+     <a href="https://www.instagram.com/tupatravel/" target="_blank" rel="noopener noreferrer" className="tupa-action-secondary"><Camera size={16}/> Instagram</a>
     </div>
    </div>
   </div>
