@@ -1,7 +1,7 @@
 import {newId,type Plan,type Trip,type Activity,type Day} from './travel.ts';
 const date=(offset:number)=>{const d=new Date();d.setHours(12,0,0,0);const untilFriday=(5-d.getDay()+7)%7||7;d.setDate(d.getDate()+untilFriday+offset);return d.toLocaleDateString('sv-SE')};
 const place=(title:string,location:string,time:string,duration:string,description:string):Activity=>({
- id:newId(),title,location,time,duration,description,scheduleStatus:'estimated'
+ id:newId(),title,location,time,duration,description
 });
 type Editorial='colmar'|'santorini';
 export function tupaEditorialTrip(kind:Editorial):Plan{
