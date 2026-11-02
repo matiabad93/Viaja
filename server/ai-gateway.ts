@@ -101,7 +101,7 @@ export async function secureAIGateway(request:Request,env:TupaAIEnv):Promise<Res
   // The legacy planner expects owner headers from its previous hosting system.
   // Replace client-controlled values with values returned by Supabase Auth.
   if(provider(env)==='gemini'){
-   const result=await geminiFreePlanner(request,{TUPA_GEMINI_API_KEY:env.TUPA_GEMINI_API_KEY});
+   const result=await geminiFreePlanner(request,{GEMINI_API_KEY:env.TUPA_GEMINI_API_KEY});
    success=result.ok;
    return result;
   }
@@ -112,8 +112,8 @@ export async function secureAIGateway(request:Request,env:TupaAIEnv):Promise<Res
   verifiedHeaders.set('oai-authenticated-user-email',user.email||'authenticated@viaja.invalid');
   const verifiedRequest=new Request(request,{headers:verifiedHeaders});
   const result=await plannerAPI(verifiedRequest,{
-   TUPA_OPENAI_API_KEY:env.TUPA_OPENAI_API_KEY,
-   TUPA_OPENAI_MODEL:env.TUPA_OPENAI_MODEL||'gpt-4.1-mini',
+   OPENAI_API_KEY:env.TUPA_OPENAI_API_KEY,
+   OPENAI_MODEL:env.TUPA_OPENAI_MODEL||'gpt-4.1-mini',
    VIAJA_OWNER_EMAIL:user.email||'authenticated@viaja.invalid'
   });
   success=result.ok;
