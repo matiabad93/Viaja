@@ -20,48 +20,83 @@ const failure=(code:string,error:string,status:number,details?:Record<string,str
 type GeminiEnv={GEMINI_API_KEY?:string};
 type ActivityIdea={title:string;description:string;time:string;minutes:number;location:string;estimatedCostEUR?:number;costCategory?:'Actividades'|'Transporte'|'Comida';costNote?:string};
 type DayIdea={date:string;title:string;activities:ActivityIdea[]};
-type GeminiOutput={summary:string;budgetNotes:string;days:DayIdea[]};
+type GeminiOutput={summary:string;budgetNotes:string;days:DayIdea[];warnings:string[]};
 
-function shortText(value:unknown,max:number):string{
- if(typeof value!=='string')throw Error('El modelo devolvió texto inválido.');
- const text=value.trim();
- if(!text||text.length>max)throw Error('El modelo devolvió un texto incompleto.');
- return text;
-}
-function validateIdeas(data:unknown,start:string,days:number):GeminiOutput{
+/** Safely recover a model response without inventing activities or changing booked travel dates.
+ * The fields selected by the user (start/end) are the sole source for calendar dates.
+ * An arrival/departure day can legitimately contain no sightseeing activities.
+ */
+export function normalizeGeminiIdeas(data:unknown,start:string,days:number):GeminiOutput{
  if(!data||typeof data!=='object'||Array.isArray(data))throw Error('Respuesta inesperada.');
  const raw=data as Record<string,unknown>;
- if(!Array.isArray(raw.days)||raw.days.length!==days)throw Error('El modelo devolvió días incompletos.');
- const seen=new Set<string>();
- const output:DayIdea[]=raw.days.map((item,i)=>{
-  if(!item||typeof item!=='object'||Array.isArray(item))throw Error('Día inválido.');
-  const day=item as Record<string,unknown>;
-  const expected=new Date(Date.parse(start)+i*86400000).toISOString().slice(0,10);
-  if(day.date!==expected)throw Error('El modelo devolvió una fecha incorrecta.');
-  if(!Array.isArray(day.activities)||day.activities.length<1||day.activities.length>8)throw Error('Actividades inválidas.');
-  const activities:ActivityIdea[]=day.activities.map(item=>{
-   if(!item||typeof item!=='object'||Array.isArray(item))throw Error('Actividad inválida.');
-   const a=item as Record<string,unknown>;
-   const title=shortText(a.title,110);
-   const description=shortText(a.description,1100);
-   const location=shortText(a.location,150);
-   const time=shortText(a.time,5);
-   if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(time))throw Error('Horario inválido.');
-   const minutes=a.minutes;
-   if(!Number.isInteger(minutes)||Number(minutes)<15||Number(minutes)>480)throw Error('Duración inválida.');
-   if(Number(time.slice(0,2))*60+Number(time.slice(3))+Number(minutes)>=1440)throw Error('El horario excede el día.');
-   const fingerprint=title.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es').trim();
-   if(seen.has(fingerprint))throw Error('Actividades repetidas.');
-   seen.add(fingerprint);
-   const amount=a.estimatedCostEUR;
+ if(!Array.isArray(raw.days)||raw.days.length===0||raw.days.length>31)throw Error('No se recibieron días válidos.');
+ const expected=Array.from({length:days},(_,i)=>new Date(Date.parse(start)+i*86400000).toISOString().slice(0,10));
+ const selected=new Map<string,Record<string,unknown>>(),unmatched:Record<string,unknown>[]=[];
+ for(const entry of raw.days){
+  if(!entry||typeof entry!=='object'||Array.isArray(entry))continue;
+  const day=entry as Record<string,unknown>;
+  const date=typeof day.date==='string'?day.date.trim():'';
+  if(expected.includes(date)&&!selected.has(date))selected.set(date,day);
+  else unmatched.push(day);
+ }
+ // For a same-sized response, repair a malformed model date by array position
+ // while preserving the user's dates. Never bring in extra out-of-range days.
+ if(raw.days.length===days)for(const date of expected)if(!selected.has(date)&&unmatched.length)selected.set(date,unmatched.shift()!);
+ let removed=0,missing=0;
+ const normalized:DayIdea[]=expected.map((date,i)=>{
+  const day=selected.get(date);
+  if(!day)missing++;
+  const rawTitle=typeof day?.title==='string'?day.title.trim():'';
+  const title=(rawTitle||(
+   i===0?'Llegada y primera orientación':
+   i===days-1?'Regreso y traslado':'Día por organizar'
+  )).slice(0,120);
+  const activities:ActivityIdea[]=[];
+  const unique=new Set<string>();
+  const inputs=Array.isArray(day?.activities)?day.activities:[];
+  for(const input of inputs){
+   if(!input||typeof input!=='object'||Array.isArray(input)){removed++;continue;}
+   const value=input as Record<string,unknown>;
+   const name=typeof value.title==='string'?value.title.trim().slice(0,110):'';
+   const clock=typeof value.time==='string'?value.time.trim():'';
+   const match=/^([01]?\d|2[0-3]):([0-5]\d)$/.exec(clock);
+   const duration=Number(value.minutes);
+   if(!name||!match||!Number.isInteger(duration)||duration<15||duration>480){removed++;continue;}
+   const when=Number(match[1])*60+Number(match[2]);
+   // Never generate an endTime >= 24:00, which breaks the daily calendar.
+   const remaining=1439-when;
+   const minutes=Math.min(duration,remaining);
+   if(minutes<15){removed++;continue;}
+   const location=typeof value.location==='string'&&value.location.trim()?value.location.trim().slice(0,150):'Ubicación por confirmar';
+   const fingerprint=(name+'|'+location).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es');
+   // Repeated generic activity titles on DIFFERENT days are valid (e.g. train).
+   if(unique.has(fingerprint)){removed++;continue;}
+   unique.add(fingerprint);
+   if(activities.length>=8){removed++;continue;}
+   const description=typeof value.description==='string'&&value.description.trim()
+    ?value.description.trim().slice(0,1100):'Sugerencia pendiente de detallar; comprobá los horarios y la ubicación.';
+   const amount=value.estimatedCostEUR;
    const estimatedCostEUR=typeof amount==='number'&&Number.isFinite(amount)&&amount>=0&&amount<=1000000?amount:undefined;
-   const costCategory=['Actividades','Transporte','Comida'].includes(String(a.costCategory))?a.costCategory as ActivityIdea['costCategory']:undefined;
-   const costNote=typeof a.costNote==='string'?a.costNote.slice(0,250):undefined;
-   return {title,description,location,time,minutes:Number(minutes),estimatedCostEUR,costCategory,costNote};
-  });
-  return {date:expected,title:shortText(day.title,120),activities};
+   const costCategory=['Actividades','Transporte','Comida'].includes(String(value.costCategory))
+    ?value.costCategory as ActivityIdea['costCategory']:undefined;
+   const costNote=typeof value.costNote==='string'?value.costNote.slice(0,250):undefined;
+   activities.push({title:name,description,time:match[1].padStart(2,'0')+':'+match[2],
+    minutes,location,estimatedCostEUR,costCategory,costNote});
+  }
+  return {date,title,activities};
  });
- return {summary:shortText(raw.summary,2300),budgetNotes:shortText(raw.budgetNotes,1500),days:output};
+ const total=normalized.reduce((sum,d)=>sum+d.activities.length,0);
+ if(total===0)throw Error('Gemini no propuso ninguna actividad utilizable.');
+ const warnings:string[]=[];
+ if(missing>0)warnings.push('Gemini no completó '+missing+' días del rango; quedaron pendientes de organizar.');
+ if(removed>0)warnings.push('Se omitieron '+removed+' actividades con horarios, duraciones o datos incompatibles.');
+ if(normalized.some(d=>d.activities.length===0))
+  warnings.push('Los días sin actividades pueden corresponder a llegadas o salidas; revisá y completá los que lo necesiten.');
+ const summary=typeof raw.summary==='string'&&raw.summary.trim()?raw.summary.trim().slice(0,2300):
+  'Itinerario sugerido pendiente de verificación; las fechas corresponden a las seleccionadas en Viaja.';
+ const budgetNotes=typeof raw.budgetNotes==='string'&&raw.budgetNotes.trim()?raw.budgetNotes.trim().slice(0,1500):
+  'No hay una estimación fiable de gastos. Comprobá transporte, entradas y comidas antes de reservar.';
+ return {summary,budgetNotes,days:normalized,warnings};
 }
 
 function geminiRequest(trip:ReturnType<typeof validateTrip>){
@@ -93,7 +128,10 @@ function geminiRequest(trip:ReturnType<typeof validateTrip>){
  'Agrupá cada día por áreas próximas y ordená las visitas para evitar idas y vueltas innecesarias. Incorporá pausas para comer, caminar y desplazamientos razonables entre lugares, sin afirmar tiempos exactos de trayecto que no podés verificar. Si una zona queda lejos, asignala a otro día o avisá.',
  'Proponé horarios tentativos cronológicos sin solapamientos y con transiciones plausibles; indicá claramente en summary que no son horarios de apertura confirmados ni rutas optimizadas con datos de mapas en tiempo real.',
  'La descripción de cada día debe mencionar la zona geográfica y la lógica del paseo. El resumen general debe explicar las prioridades, el ritmo y los traslados principales. Si el viaje es de varios días, distribuí equilibradamente las visitas para aprovecharlos.',
- 'Toma en serio el origen y transporte del viajero, pero como no hay horas de vuelos/trenes, no supongas llegadas ni salidas específicas: el primer y último día son flexibles para ajustar según billetes.',
+ 'Respetá TODAS las horas que el usuario indique en las notas, especialmente vuelos, llegada al aeropuerto, última salida y noches de alojamiento. Si llega a las 18:30, no programés visitas anteriores a esa hora; si sale en avión a las 06:30, no propongas actividades turísticas esa mañana. Tené en cuenta el tiempo de traslado, equipaje y controles, sin inventar duración de conexiones.',
+ 'El número de noches de alojamiento no equivale a los días del calendario: 3 noches del viernes al lunes abarcan 4 fechas. Los campos start y end son la única fuente de las fechas del itinerario. Si las notas contradicen las fechas seleccionadas, explicalo en summary sin agregar fechas fuera del rango.',
+ 'Para un día dedicado a regresar temprano, permití activities: [] y explicá el traslado en title o summary. No inventes visitas para rellenar esos días; devolvé exactamente una entrada por fecha del intervalo.',
+ 'Tomá en serio el origen y transporte del viajero. Si las notas contienen horas de vuelos, trenes o llegadas, respetalas; si NO contienen horarios, no los inventes. Reservá márgenes suficientes para aeropuerto y conexiones.',
  'Cuando hay varios destinos, distribuí días por ciudad siguiendo estrictamente el orden indicado. Nunca mezclés atracciones de ciudades distintas en un mismo recorrido peatonal; proponé un traslado interurbano como actividad propia (categoría Transporte) con margen de tiempo razonable y sugerí comprobar conexiones antes de pagar.',
  'Verificá que no se regrese sin motivo a barrios visitados antes; agrupá casco antiguo, monumentos contiguos y estaciones de llegada el mismo día. Incluí los puntos imperdibles de cada ciudad antes de rellenar con visitas secundarias.',
  'Para actividades pagas, entradas o trenes y buses necesarios, incluí estimatedCostEUR como estimación aproximada del costo TOTAL DEL GRUPO solo cuando tengas confianza razonable; si no, omití el campo y explicá la incertidumbre en costNote. Nunca inventes un precio exacto ni lo presentes como confirmado.',
@@ -101,7 +139,7 @@ function geminiRequest(trip:ReturnType<typeof validateTrip>){
  'Antes de elegir opciones de pago, compará la suma de gastos estimados con el presupuesto indicado. Si es ajustado, elegí alternativas gratuitas y explicá el riesgo en budgetNotes. Las entradas estimadas no están compradas y no son un gasto realizado.',
  'El presupuesto debe ser orientativo, sin cantidades inventadas ni supuestos de cotizaciones actuales.',
  'Respondé SOLAMENTE un objeto JSON válido con los campos summary, budgetNotes y days.',
- 'Cada día debe contener date (YYYY-MM-DD), title, activities (array de title, description, time HH:MM, minutes entero, location, y opcionalmente estimatedCostEUR, costCategory y costNote).',
+ 'Cada día debe contener date (YYYY-MM-DD), title, activities (array, que puede estar vacía si es un día exclusivamente de llegada o salida). En cada actividad: title, description, time HH:MM, minutes entero, location, y opcionalmente estimatedCostEUR, costCategory y costNote. Las actividades con el mismo título en días distintos son válidas; no repitas el mismo monumento sin motivo.',
  'Devuelve exactamente '+trip.days+' días, de '+trip.start+' a '+trip.end+'.',
  'Toda recomendación está sujeta a verificación independiente antes de reservar o desplazarse.'
  ].join('\n');
@@ -152,8 +190,8 @@ export async function geminiFreePlanner(request:Request,env:GeminiEnv):Promise<R
   let resultData:unknown;
   try{resultData=JSON.parse(resultText)}
   catch{return failure('GEMINI_INVALID_JSON','Gemini devolvió un JSON incompleto. Conservamos el borrador.',502)}
-  try{parsed=validateIdeas(resultData,trip.start,trip.days)}
-  catch(e){return failure('GEMINI_INVALID_ITINERARY','Gemini generó un itinerario con datos inválidos. Probá con menos días.',502,{validation:e instanceof Error?e.message.slice(0,100):'invalid'})}
+  try{parsed=normalizeGeminiIdeas(resultData,trip.start,trip.days)}
+  catch(e){return failure('GEMINI_INVALID_ITINERARY','Gemini no devolvió actividades suficientes para organizar tu viaje. Conservamos el borrador; podés volver a generar sin cambiar las fechas.',502,{validation:e instanceof Error?e.message.slice(0,100):'invalid'})}
   const itinerary=parsed.days.map((d,i)=>({
    id:crypto.randomUUID(),title:'Día '+(i+1)+' — '+d.date+' · '+d.title,
    activities:d.activities.map(a=>({
@@ -174,6 +212,7 @@ export async function geminiFreePlanner(request:Request,env:GeminiEnv):Promise<R
    'Presupuesto orientativo (sin cotizaciones)',
    parsed.budgetNotes,
    '',
+   ...(parsed.warnings.length?['Observaciones de validación',...parsed.warnings,'']:[]),
    'Itinerario tentativo',
    ...parsed.days.flatMap((d,i)=>[
     'Día '+(i+1)+' — '+d.date+' · '+d.title,
@@ -185,7 +224,7 @@ export async function geminiFreePlanner(request:Request,env:GeminiEnv):Promise<R
   ].join('\n');
   return json({
    id:crypto.randomUUID(),trip,itinerary,parts:[{text,annotations:[]}],sources:[],
-   createdAt:new Date().toISOString(),model:FREE_GEMINI_MODEL,kind:'draft',aiMode:'ideas_without_search'
+   createdAt:new Date().toISOString(),model:FREE_GEMINI_MODEL,kind:'draft',aiMode:'ideas_without_search',warnings:parsed.warnings
   });
  }catch(e){
   const timedOut=e instanceof Error&&(e.name==='TimeoutError'||e.name==='AbortError');
