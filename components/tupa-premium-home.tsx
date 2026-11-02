@@ -15,7 +15,7 @@ export function TupaPremiumHome({onPlan,onSaved,onExplore,onColmar,onSantorini}:
    <article className="tupa-feature-hero">
     <img className="tupa-feature-picture"
       src="https://commons.wikimedia.org/wiki/Special:FilePath/Sunset_in_Oia%2C_Santorini.jpg?width=1280"
-      onError={e=>{e.currentTarget.onerror=null;e.currentTarget.src='/demo/colmar.jpg'}}
+      onError={e=>{const image=e.currentTarget;if(!image.dataset.fallback){image.dataset.fallback='1';image.src='https://commons.wikimedia.org/wiki/Special:FilePath/Blue-dome-Santorini.JPG?width=1280'}else{image.style.opacity='0'}}}
       alt="Vista panorámica al atardecer del pueblo de Oia, Santorini"/>
     <div className="tupa-feature-veil"/>
     <div className="tupa-feature-body">
