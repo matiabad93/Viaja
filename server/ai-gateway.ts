@@ -2,38 +2,39 @@ import {destinationsAPI} from './destinations';
 import {plannerAPI,validateTrip} from './planner';
 import {geminiFreePlanner,FREE_GEMINI_MODEL} from './gemini-planner';
 
-export type ViajaAIEnv={
- GEMINI_API_KEY?:string;
- GEMINI_KEY_ROTATED?:string;
- VIAJA_AI_PROVIDER?:string;
- OPENAI_API_KEY?:string;
- OPENAI_MODEL?:string;
- VIAJA_AI_ENABLED?:string;
- SUPABASE_URL?:string;
- SUPABASE_PUBLISHABLE_KEY?:string;
- SUPABASE_SECRET_KEY?:string;
+export type TupaAIEnv={
+ TUPA_GEMINI_API_KEY?:string;
+ TUPA_GEMINI_KEY_ROTATED?:string;
+ TUPA_AI_PROVIDER?:string;
+ TUPA_OPENAI_API_KEY?:string;
+ TUPA_OPENAI_MODEL?:string;
+ TUPA_AI_ENABLED?:string;
+ TUPA_SUPABASE_URL?:string;
+ TUPA_SUPABASE_PUBLISHABLE_KEY?:string;
+ TUPA_SUPABASE_SECRET_KEY?:string;
 };
 const response=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
-const baseUrl=(env:ViajaAIEnv)=>env.SUPABASE_URL||'https://ovagewbmrirzrlvbvtbw.supabase.co';
-const publicKey=(env:ViajaAIEnv)=>env.SUPABASE_PUBLISHABLE_KEY||'';
+const baseUrl=(env:TupaAIEnv)=>env.TUPA_SUPABASE_URL?.replace(/\/+$/,'')||'';
+const isolatedProject=(env:TupaAIEnv)=>/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(baseUrl(env)) && !baseUrl(env).includes('ovagewbmrirzrlvbvtbw');
+const publicKey=(env:TupaAIEnv)=>env.TUPA_SUPABASE_PUBLISHABLE_KEY||'';
 type AIProvider='gemini'|'openai'|'unsupported';
-const provider=(env:ViajaAIEnv):AIProvider=>{
- const selected=env.VIAJA_AI_PROVIDER?.trim().toLowerCase();
+const provider=(env:TupaAIEnv):AIProvider=>{
+ const selected=env.TUPA_AI_PROVIDER?.trim().toLowerCase();
  if(!selected||selected==='gemini')return 'gemini';
  if(selected==='openai')return 'openai';
  return 'unsupported';
 };
-const providerLabel=(env:ViajaAIEnv)=>provider(env)==='gemini'?'Gemini':provider(env)==='openai'?'OpenAI':null;
-const configured=(env:ViajaAIEnv)=>{
+const providerLabel=(env:TupaAIEnv)=>provider(env)==='gemini'?'Gemini':provider(env)==='openai'?'OpenAI':null;
+const configured=(env:TupaAIEnv)=>{
  const selected=provider(env);
  const providerReady=selected==='gemini'
-  ? Boolean(env.GEMINI_API_KEY&&env.GEMINI_KEY_ROTATED==='true')
-  : selected==='openai' ? Boolean(env.OPENAI_API_KEY) : false;
- return env.VIAJA_AI_ENABLED==='true'&&selected!=='unsupported'&&providerReady&&Boolean(env.SUPABASE_SECRET_KEY&&publicKey(env));
+  ? Boolean(env.TUPA_GEMINI_API_KEY&&env.TUPA_GEMINI_KEY_ROTATED==='true')
+  : selected==='openai' ? Boolean(env.TUPA_OPENAI_API_KEY) : false;
+ return env.TUPA_AI_ENABLED==='true'&&selected!=='unsupported'&&providerReady&&isolatedProject(env)&&Boolean(env.TUPA_SUPABASE_SECRET_KEY&&publicKey(env));
 };
 
 type SupabaseUser={id:string;email?:string;role?:string;is_anonymous?:boolean};
-async function resolveUser(request:Request,env:ViajaAIEnv):Promise<SupabaseUser|null>{
+async function resolveUser(request:Request,env:TupaAIEnv):Promise<SupabaseUser|null>{
  const auth=request.headers.get('authorization')||'';
  if(!/^Bearer [A-Za-z0-9._-]+$/.test(auth)||!publicKey(env))return null;
  try{
@@ -47,10 +48,10 @@ async function resolveUser(request:Request,env:ViajaAIEnv):Promise<SupabaseUser|
   return user;
  }catch{return null}
 }
-async function invokeQuota(env:ViajaAIEnv,name:'viaja_reserve_ai_request'|'viaja_finalize_ai_request',payload:unknown){
- if(!env.SUPABASE_SECRET_KEY)throw Error('Quota server is not configured');
+async function invokeQuota(env:TupaAIEnv,name:'tupa_reserve_ai_request'|'tupa_finalize_ai_request',payload:unknown){
+ if(!env.TUPA_SUPABASE_SECRET_KEY)throw Error('Quota server is not configured');
  const res=await fetch(baseUrl(env)+'/rest/v1/rpc/'+name,{
-  method:'POST',headers:{apikey:env.SUPABASE_SECRET_KEY,'Content-Type':'application/json'},
+  method:'POST',headers:{apikey:env.TUPA_SUPABASE_SECRET_KEY,'Content-Type':'application/json'},
   body:JSON.stringify(payload),cache:'no-store',signal:AbortSignal.timeout(9000)
  });
  if(!res.ok)throw Error('Quota store unavailable');
@@ -60,7 +61,7 @@ async function invokeQuota(env:ViajaAIEnv,name:'viaja_reserve_ai_request'|'viaja
 /** The sole public entry point to paid AI: authenticated user, valid payload,
  * atomic usage reservation, and fail-closed handling on errors.
  */
-export async function secureAIGateway(request:Request,env:ViajaAIEnv):Promise<Response>{
+export async function secureAIGateway(request:Request,env:TupaAIEnv):Promise<Response>{
  const path=new URL(request.url).pathname;
  const destinations=await destinationsAPI(request);
  if(destinations)return destinations;
@@ -86,11 +87,11 @@ export async function secureAIGateway(request:Request,env:ViajaAIEnv):Promise<Re
  }catch(e){return response({error:e instanceof Error?e.message:'Datos inválidos'},400)}
  const requestId=crypto.randomUUID();
  let admission;
- try{admission=await invokeQuota(env,'viaja_reserve_ai_request',{p_user_id:user.id,p_request_id:requestId})}
+ try{admission=await invokeQuota(env,'tupa_reserve_ai_request',{p_user_id:user.id,p_request_id:requestId})}
  catch{return response({error:'El control de uso no está disponible. No se realizó ninguna consulta de IA.'},503)}
  if(!admission?.allowed){
   const reason=admission?.reason==='user_daily_limit'?'Alcanzaste las 10 generaciones de IA permitidas cada 24 horas.':
-    admission?.reason==='global_daily_limit'?'Viaja alcanzó su límite diario de investigaciones.':
+    admission?.reason==='global_daily_limit'?'Tupã Travel alcanzó su límite diario de investigaciones.':
     admission?.reason==='request_in_progress'?'Ya hay una investigación reciente en curso.':
     'No se pudo habilitar esta investigación.';
   return response({code:'AI_RATE_LIMIT',error:reason},429);
@@ -100,7 +101,7 @@ export async function secureAIGateway(request:Request,env:ViajaAIEnv):Promise<Re
   // The legacy planner expects owner headers from its previous hosting system.
   // Replace client-controlled values with values returned by Supabase Auth.
   if(provider(env)==='gemini'){
-   const result=await geminiFreePlanner(request,{GEMINI_API_KEY:env.GEMINI_API_KEY});
+   const result=await geminiFreePlanner(request,{TUPA_GEMINI_API_KEY:env.TUPA_GEMINI_API_KEY});
    success=result.ok;
    return result;
   }
@@ -111,16 +112,16 @@ export async function secureAIGateway(request:Request,env:ViajaAIEnv):Promise<Re
   verifiedHeaders.set('oai-authenticated-user-email',user.email||'authenticated@viaja.invalid');
   const verifiedRequest=new Request(request,{headers:verifiedHeaders});
   const result=await plannerAPI(verifiedRequest,{
-   OPENAI_API_KEY:env.OPENAI_API_KEY,
-   OPENAI_MODEL:env.OPENAI_MODEL||'gpt-4.1-mini',
+   TUPA_OPENAI_API_KEY:env.TUPA_OPENAI_API_KEY,
+   TUPA_OPENAI_MODEL:env.TUPA_OPENAI_MODEL||'gpt-4.1-mini',
    VIAJA_OWNER_EMAIL:user.email||'authenticated@viaja.invalid'
   });
   success=result.ok;
   return result;
  }catch{return response({error:'No se pudo completar la investigación. El borrador continúa disponible.'},502)}
  finally{
-  try{await invokeQuota(env,'viaja_finalize_ai_request',{
-   p_request_id:requestId,p_status:success?'completed':'failed',p_model:provider(env)==='gemini'?FREE_GEMINI_MODEL:(env.OPENAI_MODEL||'gpt-4.1-mini')
+  try{await invokeQuota(env,'tupa_finalize_ai_request',{
+   p_request_id:requestId,p_status:success?'completed':'failed',p_model:provider(env)==='gemini'?FREE_GEMINI_MODEL:(env.TUPA_OPENAI_MODEL||'gpt-4.1-mini')
   })}catch{/* The reserved request still counts toward limits if completion update fails. */}
  }
 }
