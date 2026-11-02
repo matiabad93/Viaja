@@ -4,10 +4,10 @@ Este documento corresponde a la rama `tupa-travel-v1`. **No desplegar esta rama 
 
 ## 1. Base de datos y autenticación independientes
 
-1. Crear un **proyecto nuevo** de Supabase para Tupã Travel, en la organización elegida y verificando cualquier coste antes de aprobarlo.
-2. Ejecutar **solo en ese proyecto** `supabase/tupa/setup.sql`. El archivo crea `trips`, `ai_usage`, políticas RLS por propietario y las funciones `tupa_reserve_ai_request` / `tupa_finalize_ai_request`. Nunca ejecutarlo contra `viaja-production`.
-3. En Supabase Authentication habilitar email/password (y confirmación de email) y, si se desea, Google OAuth. Añadir URL HTTPS final y callback `<URL>/` a URL Configuration / redirect URLs.
-4. Obtener Project URL y publishable key desde el proyecto **Tupã**. La publishable key está permitida en el navegador; la secret key queda solamente en el servidor. Verificar que la tabla `trips` es accesible por la Data API (se incluye `GRANT` explícito) y que RLS impide que un usuario lea los viajes de otro.
+1. **COMPLETADO (2026-11-02):** proyecto independiente `tupa-travel-production` creado en la organización `matiabad93's Org` (región `sa-east-1`). Su URL pública es `https://gerfdhhzpncqzunqyhmp.supabase.co`. El coste cotizado para crear el proyecto fue 0 USD/mes.
+2. **COMPLETADO (2026-11-02):** migración `tupa_premium_initial_schema` aplicada únicamente al nuevo proyecto; fuente SQL: `supabase/tupa/setup.sql`. El archivo crea `trips`, `ai_usage`, políticas RLS por propietario y las funciones `tupa_reserve_ai_request` / `tupa_finalize_ai_request`. Nunca ejecutarlo contra `viaja-production`.
+3. **PENDIENTE DE VALIDACIÓN EN EL ENTORNO PUBLICADO:** en Supabase Authentication habilitar email/password (y confirmación de email) y, si se desea, Google OAuth. Añadir URL HTTPS final y callback `<URL>/` a URL Configuration / redirect URLs.
+4. **URL OBTENIDA Y CLAVE PÚBLICA VERIFICADA; NO COMMITTEARLA:** obtener desde el panel de Supabase la publishable key de Tupã para Cloudflare. La publishable key está permitida en el navegador; la secret key queda solamente en el servidor. Verificar que la tabla `trips` es accesible por la Data API (se incluye `GRANT` explícito) y que RLS impide que un usuario lea los viajes de otro.
 
 ## 2. Publicación en Cloudflare Pages independiente
 
@@ -46,3 +46,13 @@ node --experimental-strip-types tests/tupa-demo.test.mts
 ```
 
 Aún requiere consentimiento comercial para publicarla oficialmente con la marca y contenidos de la agencia. El HTML mantiene `noindex` hasta esa aprobación.
+
+## Estado verificado el 2 de noviembre de 2026
+
+- Supabase proyecto `gerfdhhzpncqzunqyhmp`: `ACTIVE_HEALTHY`.
+- RLS activado en `public.trips` y `public.ai_usage`; cuatro políticas por propietario en `trips`.
+- Los roles `anon` y `authenticated` no pueden ejecutar las RPC de cuota; sí el rol de servicio.
+- Usuarios anónimos sin privilegio de lectura sobre viajes ni consumo IA.
+- RPC de cuota rechaza un `user_id` nulo; test SQL correcto.
+- Auditores informan índices sin uso (esperado al estrenar tablas) y ausencia intencional de política de lectura en `ai_usage`.
+- **Pendiente:** proyecto Cloudflare Pages propio, variables build/runtime y secretos, configuración de redirección Auth y prueba de generación real con Gemini. No se reutilizan secretos existentes de Viaja.
