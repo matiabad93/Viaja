@@ -143,10 +143,16 @@ try{
   for(const control of [zoomIn,zoomOut]){
    await control.waitFor();
    await readable(control.locator('span'),control);
-   const box=await control.boundingBox();
-   assert.ok(box.width>=44 && box.height>=44);
-   const mapBounds=await mapPanel.locator('.viaja-osm-map').boundingBox();
-   assert.ok(box.x-mapBounds.x>=14 && box.y-mapBounds.y>=14,'Zoom buttons need a visible inset from map edges: x='+String((box.x-mapBounds.x).toFixed(1))+' y='+String((box.y-mapBounds.y).toFixed(1)));
+   const geometry=await control.evaluate(el=>{
+    const mapEl=el.closest('.viaja-osm-map'),zoom=el.closest('.leaflet-control-zoom');
+    if(!mapEl||!zoom)throw Error('Zoom control detached from map');
+    const b=el.getBoundingClientRect(),m=mapEl.getBoundingClientRect(),style=getComputedStyle(zoom);
+    return {x:b.x-m.x,y:b.y-m.y,width:b.width,height:b.height,
+     marginLeft:parseFloat(style.marginLeft),marginTop:parseFloat(style.marginTop)};
+   });
+   assert.ok(geometry.width>=44&&geometry.height>=44,'Zoom tap area too small: '+JSON.stringify(geometry));
+   assert.ok(geometry.marginLeft>=16&&geometry.marginTop>=16,'Zoom control lacks inset CSS: '+JSON.stringify(geometry));
+   assert.ok(geometry.x>=14&&geometry.y>=14,'Zoom buttons need a visible inset from map edges: '+JSON.stringify(geometry));
    await control.focus();
    await readable(control.locator('span'),control);
    await control.click();
