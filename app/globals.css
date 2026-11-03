@@ -1239,3 +1239,141 @@ html[data-theme="dark"] .viaja-osm-map .leaflet-control-attribution {
 html[data-theme="dark"] .viaja-osm-map .leaflet-control-attribution a {
   color:#bde5cd;
 }
+
+
+/* Viaja UX audit 2026-11-04: selected states and expense filter alignment.
+   A selected tab is not a primary CTA. Do not reuse the bright primary green. */
+html[data-theme="dark"] {
+  --tab-selected-bg:#294b3e;
+  --tab-selected-hover-bg:#345c4c;
+  --tab-selected-text:#f0f5ef;
+  --tab-selected-border:#86c7a6;
+}
+html[data-theme="dark"] :is(
+  .topbar nav button.navactive,
+  .filterpills button[aria-pressed="true"],
+  .day-navigator button[aria-pressed="true"],
+  .explore-switch button[aria-pressed="true"],
+  .visualguides .tabs button[aria-pressed="true"],
+  .chip.selected,
+  .theme-menu button[aria-checked="true"]
+) {
+  background:var(--tab-selected-bg);
+  color:var(--tab-selected-text);
+  border-color:var(--tab-selected-border);
+  box-shadow:inset 0 -2px 0 var(--tab-selected-border);
+  opacity:1;
+}
+html[data-theme="dark"] :is(
+  .topbar nav button.navactive,
+  .filterpills button[aria-pressed="true"],
+  .day-navigator button[aria-pressed="true"],
+  .explore-switch button[aria-pressed="true"],
+  .visualguides .tabs button[aria-pressed="true"],
+  .theme-menu button[aria-checked="true"]
+):hover {
+  background:var(--tab-selected-hover-bg);
+  color:var(--tab-selected-text);
+}
+html[data-theme="dark"] .detail-tabs button[aria-current="page"] {
+  background:var(--tab-selected-bg);
+  color:var(--tab-selected-text);
+  border-bottom-color:var(--tab-selected-border);
+  border-radius:10px 10px 0 0;
+  box-shadow:none;
+}
+html[data-theme="dark"] .detail-tabs button[aria-current="page"] svg,
+html[data-theme="dark"] :is(.filterpills,.day-navigator,.explore-switch,.visualguides .tabs) button[aria-pressed="true"] svg {
+  color:inherit;
+}
+html[data-theme="dark"] .detail-tabs button[aria-current="page"]:hover {
+  background:var(--tab-selected-hover-bg);
+}
+html[data-theme="dark"] .topbar nav button.navactive small {
+  background:var(--surface-raised);
+  color:var(--tab-selected-text);
+  box-shadow:0 0 0 1px var(--tab-selected-border);
+}
+html[data-theme="dark"] .visualguides .tabs button[aria-pressed="false"],
+html[data-theme="dark"] :is(.filterpills,.day-navigator,.explore-switch) button[aria-pressed="false"] {
+  background:var(--surface-muted);
+  color:var(--ink);
+  box-shadow:none;
+}
+html[data-theme="dark"] :is(.filterpills,.day-navigator,.explore-switch,.visualguides .tabs,.detail-tabs) button:focus-visible {
+  outline:3px solid var(--tab-selected-border);
+  outline-offset:2px;
+}
+/* Light mode: selected tabs have a visible, but restrained, accent. */
+html[data-theme="light"] .topbar nav button.navactive {
+  background:var(--surface-muted);
+  color:var(--ink);
+}
+
+/* Filters: align the clear action to control bottoms on desktop and give it a
+   complete row on narrow phones instead of leaving it floating in the flex row. */
+html[data-theme] .expense-filters {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;
+  align-items:end;
+  gap:12px;
+  padding-bottom:20px;
+  min-width:0;
+}
+html[data-theme] .expense-filters label {
+  display:block;
+  min-width:0;
+  width:100%;
+}
+html[data-theme] .expense-filters :is(input,select) {
+  display:block;
+  width:100%;
+  min-width:0;
+  min-height:48px;
+  height:48px;
+  margin:8px 0 0;
+  border-radius:12px;
+  box-sizing:border-box;
+  background:var(--field-bg);
+  color:var(--field-text);
+  border:1px solid var(--field-border);
+}
+html[data-theme] .expense-filters .expense-clear {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  align-self:end;
+  gap:8px;
+  width:auto;
+  min-width:100px;
+  min-height:48px;
+  height:48px;
+  padding:0 16px;
+  border:1px solid var(--field-border);
+  border-radius:12px;
+  box-sizing:border-box;
+  background:var(--surface-muted);
+  color:var(--ink);
+  font-size:13px;
+  font-weight:700;
+  line-height:1.25;
+  white-space:nowrap;
+}
+html[data-theme] .expense-filters .expense-clear:hover {
+  background:var(--surface-raised);
+  border-color:var(--green);
+}
+html[data-theme] .expense-filters .expense-clear:focus-visible {
+  outline:3px solid var(--orange);
+  outline-offset:2px;
+}
+@media (max-width:700px) {
+  html[data-theme] .expense-filters {
+    grid-template-columns:minmax(0,1fr);
+    row-gap:12px;
+  }
+  html[data-theme] .expense-filters .expense-clear {
+    width:100%;
+    justify-self:stretch;
+  }
+}
