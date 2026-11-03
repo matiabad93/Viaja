@@ -76,7 +76,7 @@ if (select count(*) from public.trip_members)<>0 then raise exception 'member da
  exception when raise_exception then
   if sqlerrm <> 'PERMISSION_DENIED' then raise; end if;
  end;
-end $;
+end $$;
 -- Owner revokes editor membership; its RLS access must disappear immediately.
 select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
 select public.viaja_remove_trip_member('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','22222222-2222-4222-8222-222222222222');
