@@ -152,13 +152,16 @@ export async function db<T=JSONValue>(path:string,init:RequestInit={}):Promise<T
   return api<T>('/rest/v1/'+path,init,token);
 }
 export async function listCloudTrips():Promise<Plan[]> {
-  const rows=await db<{user_id:string;version:number;document:Plan}[]>('trips?select=user_id,version,document&order=updated_at.desc&limit=250');
+  const [rows,members]=await Promise.all([
+    db<{user_id:string;version:number;document:Plan}[]>('trips?select=user_id,version,document&order=updated_at.desc&limit=250'),
+    db<{trip_id:string;user_id:string;role:'editor'|'viewer'}[]>('trip_members?select=trip_id,user_id,role&limit=1000')
+  ]);
   if(!Array.isArray(rows))throw Error('No pudimos leer tus viajes.');
-  return rows.map(r=>({...r.document,collaboration:{
-    version:r.version,
-    ownerId:r.user_id,
-    role:r.user_id===current?.user.id?'owner':'viewer' as 'viewer'
-  }})).filter(p=>p&&typeof p.id==='string'&&p.trip);
+  return rows.map(r=>{
+    const team=members.filter(m=>m.trip_id===r.document?.id);
+    const role=r.user_id===current?.user.id?'owner':team.find(m=>m.user_id===current?.user.id)?.role||'viewer';
+    return {...r.document,collaboration:{version:r.version,ownerId:r.user_id,role,memberCount:team.length+1}};
+  }).filter(p=>p&&typeof p.id==='string'&&p.trip);
 }
 /** All writes use a version-checked RPC; a second editor cannot silently overwrite changes. */
 export async function saveCloudTrip(p:Plan):Promise<number> {
@@ -201,7 +204,8 @@ export async function publishCommunityTrip(plan:Plan):Promise<CommunityTrip>{
  const owner=current?.user.id;
  if(!owner)throw Error('Iniciá sesión para publicar un viaje.');
  const payload=publicTripSnapshot(plan);
- // Source must already be saved. Keep its concurrency version unchanged when publishing.
+ // If a brand-new draft has not reached the database, persist it once before publication.
+ if(!plan.collaboration?.version)await saveCloudTrip(plan);
  const rows=await db<CommunityTrip[]>('community_trips?on_conflict=source_trip_id&select=id,title,destination,days_count,pace,transport,content,published_at',{
   method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},
   body:JSON.stringify({...payload,source_trip_id:plan.id,user_id:owner,published:true,published_at:new Date().toISOString()})
