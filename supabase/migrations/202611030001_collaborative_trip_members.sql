@@ -87,9 +87,9 @@ revoke all on function private.viaja_save_shared_trip_impl(uuid,jsonb,integer) f
 grant execute on function private.viaja_save_shared_trip_impl(uuid,jsonb,integer) to authenticated;
 -- Only this SECURITY INVOKER wrapper is exposed by PostgREST; privileged code stays in private schema.
 create or replace function public.viaja_save_shared_trip(p_trip_id uuid,p_document jsonb,p_expected_version integer default null)
-returns integer language sql security invoker set search_path='' as $
+returns integer language sql security invoker set search_path='' as $$
 select private.viaja_save_shared_trip_impl($1,$2,$3)
-$;
+$$;
 revoke all on function public.viaja_save_shared_trip(uuid,jsonb,integer) from public,anon,authenticated;
 grant execute on function public.viaja_save_shared_trip(uuid,jsonb,integer) to authenticated;
 
@@ -114,9 +114,9 @@ revoke all on function private.viaja_create_trip_invite_impl(uuid,text,text) fro
 grant execute on function private.viaja_create_trip_invite_impl(uuid,text,text) to authenticated;
 -- Only this SECURITY INVOKER wrapper is exposed by PostgREST; privileged code stays in private schema.
 create or replace function public.viaja_create_trip_invite(p_trip_id uuid,p_role text,p_email text default null)
-returns text language sql security invoker set search_path='' as $
+returns text language sql security invoker set search_path='' as $$
 select private.viaja_create_trip_invite_impl($1,$2,$3)
-$;
+$$;
 revoke all on function public.viaja_create_trip_invite(uuid,text,text) from public,anon,authenticated;
 grant execute on function public.viaja_create_trip_invite(uuid,text,text) to authenticated;
 
@@ -145,9 +145,9 @@ revoke all on function private.viaja_accept_trip_invite_impl(text) from public,a
 grant execute on function private.viaja_accept_trip_invite_impl(text) to authenticated;
 -- Only this SECURITY INVOKER wrapper is exposed by PostgREST; privileged code stays in private schema.
 create or replace function public.viaja_accept_trip_invite(p_token text)
-returns uuid language sql security invoker set search_path='' as $
+returns uuid language sql security invoker set search_path='' as $$
 select private.viaja_accept_trip_invite_impl($1)
-$;
+$$;
 revoke all on function public.viaja_accept_trip_invite(text) from public,anon,authenticated;
 grant execute on function public.viaja_accept_trip_invite(text) to authenticated;
 
@@ -163,9 +163,9 @@ revoke all on function private.viaja_list_trip_invitations_impl(uuid) from publi
 grant execute on function private.viaja_list_trip_invitations_impl(uuid) to authenticated;
 -- Only this SECURITY INVOKER wrapper is exposed by PostgREST; privileged code stays in private schema.
 create or replace function public.viaja_list_trip_invitations(p_trip_id uuid)
-returns table(id uuid,invite_email text,role text,expires_at timestamptz,accepted_at timestamptz,revoked_at timestamptz) language sql security invoker set search_path='' as $
+returns table(id uuid,invite_email text,role text,expires_at timestamptz,accepted_at timestamptz,revoked_at timestamptz) language sql security invoker set search_path='' as $$
 select * from private.viaja_list_trip_invitations_impl($1)
-$;
+$$;
 revoke all on function public.viaja_list_trip_invitations(uuid) from public,anon,authenticated;
 grant execute on function public.viaja_list_trip_invitations(uuid) to authenticated;
 
@@ -183,9 +183,9 @@ revoke all on function private.viaja_revoke_trip_invite_impl(uuid) from public,a
 grant execute on function private.viaja_revoke_trip_invite_impl(uuid) to authenticated;
 -- Only this SECURITY INVOKER wrapper is exposed by PostgREST; privileged code stays in private schema.
 create or replace function public.viaja_revoke_trip_invite(p_invite_id uuid)
-returns boolean language sql security invoker set search_path='' as $
+returns boolean language sql security invoker set search_path='' as $$
 select private.viaja_revoke_trip_invite_impl($1)
-$;
+$$;
 revoke all on function public.viaja_revoke_trip_invite(uuid) from public,anon,authenticated;
 grant execute on function public.viaja_revoke_trip_invite(uuid) to authenticated;
 
@@ -203,9 +203,9 @@ revoke all on function private.viaja_remove_trip_member_impl(uuid,uuid) from pub
 grant execute on function private.viaja_remove_trip_member_impl(uuid,uuid) to authenticated;
 -- Only this SECURITY INVOKER wrapper is exposed by PostgREST; privileged code stays in private schema.
 create or replace function public.viaja_remove_trip_member(p_trip_id uuid,p_user_id uuid)
-returns boolean language sql security invoker set search_path='' as $
+returns boolean language sql security invoker set search_path='' as $$
 select private.viaja_remove_trip_member_impl($1,$2)
-$;
+$$;
 revoke all on function public.viaja_remove_trip_member(uuid,uuid) from public,anon,authenticated;
 grant execute on function public.viaja_remove_trip_member(uuid,uuid) to authenticated;
 commit;
