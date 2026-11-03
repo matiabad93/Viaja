@@ -1038,3 +1038,204 @@ html[data-theme="dark"] :is(.iconbtn,.secondary):hover {background:var(--surface
 html[data-theme="dark"] .viaja-social-provider:disabled {background:var(--surface);color:var(--muted)}
 html[data-theme="dark"] progress,html[data-theme="dark"] progress::-webkit-progress-bar {background:var(--surface-muted)}
 html[data-theme="dark"] progress::-webkit-progress-value {background:var(--green)}
+
+/* Inset content once at the panel boundary; covers and map tiles stay full-width. */
+:root {--panel-inset:clamp(16px,2vw,28px)}
+.visualguides .guidehead,
+.visualguides .admin,
+.viaja-map-section,
+.calendar-timeline {
+ min-width:0;
+ padding:var(--panel-inset);
+ border:1px solid var(--line);
+ border-radius:var(--radius);
+ background-color:var(--surface);
+}
+.visualguides .guidegrid>* {min-width:0}
+.visualguides .guidehead .tabs {flex-wrap:wrap}
+.visualguides .guidehead .stop>div {min-width:0;overflow-wrap:anywhere}
+.viaja-map-toolbar>* {max-width:100%}
+.viaja-map-toolbar label {flex-wrap:wrap}
+.trip-detail {padding:var(--panel-inset)}
+/* Leaflet supplies its own opaque link styles; set the symbol and surface together. */
+.viaja-osm-map .leaflet-control-zoom {
+ overflow:hidden;
+ border:1px solid var(--field-border);
+ border-radius:10px;
+ box-shadow:var(--shadow-soft);
+}
+.viaja-osm-map .leaflet-control-zoom a {
+ display:grid;
+ place-items:center;
+ width:44px;
+ height:44px;
+ line-height:1;
+ color:var(--ink);
+ background:var(--surface);
+ border-color:var(--field-border);
+}
+.viaja-osm-map .leaflet-control-zoom a span {color:inherit}
+.viaja-osm-map .leaflet-control-zoom a:is(:hover,:focus-visible) {
+ background:var(--surface-muted);
+ color:var(--ink);
+}
+.viaja-osm-map .leaflet-control-zoom a:focus-visible {
+ outline:2px solid var(--green);
+ outline-offset:-4px;
+}
+.viaja-osm-map .leaflet-control-zoom a.leaflet-disabled {
+ color:var(--muted);
+ background:var(--surface-muted);
+ cursor:not-allowed;
+}
+
+
+/* Viaja global spacing system: consistent insets on every major surface.
+   Keep photographic covers and map tiles edge-to-edge; only inset their content. */
+:root {
+  --panel-inset:clamp(19px,2.2vw,30px);
+  --card-inset:clamp(20px,2.2vw,28px);
+  --compact-inset:clamp(16px,1.8vw,22px);
+}
+html[data-theme] :is(
+  .formcard,.edit-panel,.surface,.triptools,.community-hero,.community-day,
+  .community-detail-share,.premium-empty,.visualguides .editor,.visualguides .stop
+) {
+  padding:var(--card-inset);
+  min-width:0;
+}
+html[data-theme] :is(
+  .viaja-map-section,.calendar-timeline,.visualguides .guidehead,.visualguides .admin,
+  .trip-detail
+) {
+  padding:var(--panel-inset);
+  min-width:0;
+}
+html[data-theme] :is(
+  .journey-content,.community-card-body,.visualguides .cardbody,.agenda .activity-card
+) {
+  padding:var(--card-inset);
+  min-width:0;
+}
+html[data-theme] :is(
+  .visualguides .stat,.viaja-map-stop,.calendar-intro,.team-state-banner,
+  .community-disclaimer,.day-practical-guide,.activity-expanded-guide
+) {
+  padding:var(--compact-inset);
+}
+html[data-theme] .visualguides .stat {
+  min-width:0;
+}
+html[data-theme] :is(.viaja-account-dialog,.viaja-confirm-dialog) {
+  padding:var(--card-inset);
+}
+html[data-theme] :is(
+  .viaja-map-toolbar,.formfoot,.card-actions,.community-actions,
+  .community-detail-share-actions,.visualguides .row,.section-heading
+) > * {
+  min-width:0;
+}
+html[data-theme] :is(
+  .viaja-map-toolbar,.community-actions,.community-detail-share-actions
+) :is(.primary,.secondary) {
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+html[data-theme] :is(.detail-tabs,.day-navigator,.filterpills,.visualguides .tabs) {
+  scroll-padding-inline:var(--compact-inset);
+}
+html[data-theme] .viaja-map-list > *,
+html[data-theme] :is(.journey-content,.community-card-body,.visualguides .cardbody) > * {
+  min-width:0;
+}
+html[data-theme] .viaja-map-stop > div {
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+@media(max-width:700px) {
+  :root {
+    --panel-inset:18px;
+    --card-inset:19px;
+    --compact-inset:16px;
+  }
+  html[data-theme] :is(.viaja-map-section,.calendar-timeline,.trip-detail) {
+    max-width:100%;
+  }
+  html[data-theme] .viaja-map-toolbar > :is(button,a,label) {
+    max-width:100%;
+  }
+  html[data-theme] :is(.community-actions,.community-detail-share-actions) {
+    gap:12px;
+  }
+}
+
+/* Leaflet does not inherit theme colors; style the zoom surface, signs and states.
+   The 44px targets remain accessible and the control gets its own map inset. */
+html[data-theme] .viaja-osm-map .leaflet-control-zoom {
+  margin:16px 0 0 16px;
+  border:1px solid var(--field-border);
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:var(--shadow-soft);
+}
+html[data-theme] .viaja-osm-map .leaflet-control-zoom a {
+  display:grid;
+  place-items:center;
+  width:44px;
+  height:44px;
+  padding:0;
+  min-height:44px;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:24px;
+  font-weight:700;
+  line-height:1;
+  text-decoration:none;
+  border-bottom-color:var(--field-border);
+  background-color:var(--surface-raised);
+  color:var(--ink);
+  opacity:1;
+}
+html[data-theme] .viaja-osm-map .leaflet-control-zoom a > span {
+  color:inherit;
+  line-height:1;
+}
+html[data-theme] .viaja-osm-map .leaflet-control-zoom a:is(:hover,:focus-visible) {
+  background-color:var(--surface-muted);
+  color:var(--ink);
+}
+html[data-theme] .viaja-osm-map .leaflet-control-zoom a:focus-visible {
+  outline:3px solid var(--orange);
+  outline-offset:-4px;
+}
+html[data-theme] .viaja-osm-map .leaflet-control-zoom a.leaflet-disabled {
+  background-color:var(--surface-muted);
+  color:var(--muted);
+  opacity:1;
+  cursor:not-allowed;
+}
+html[data-theme="dark"] .viaja-osm-map .leaflet-control-zoom {
+  border-color:#789083;
+  box-shadow:0 3px 14px rgba(0,0,0,.5);
+}
+html[data-theme="dark"] .viaja-osm-map .leaflet-control-zoom a {
+  background-color:#253530;
+  border-bottom-color:#506457;
+  color:#f0f5ef;
+  -webkit-text-fill-color:currentColor;
+}
+html[data-theme="dark"] .viaja-osm-map .leaflet-control-zoom a:is(:hover,:focus-visible) {
+  background-color:#355346;
+  color:#ffffff;
+}
+html[data-theme="dark"] .viaja-osm-map .leaflet-control-zoom a.leaflet-disabled {
+  background-color:#253530;
+  color:#b0c1b7;
+}
+html[data-theme="dark"] .viaja-osm-map .leaflet-control-attribution {
+  background:rgba(27,41,37,.95);
+  color:var(--ink);
+}
+html[data-theme="dark"] .viaja-osm-map .leaflet-control-attribution a {
+  color:#bde5cd;
+}

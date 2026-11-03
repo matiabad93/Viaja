@@ -80,7 +80,7 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
     leaflet.current=L;
     if(map.current){map.current.remove();map.current=null}
     const initial=fallback?[fallback.lat,fallback.lon] as [number,number]:[45,9] as [number,number];
-    const m=L.map(element.current).setView(initial,fallback?11:4);
+    const m=L.map(element.current,{zoomAnimation:false}).setView(initial,fallback?11:4);
     map.current=m;
     setMapReady(true);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>',maxZoom:19}).addTo(m);
