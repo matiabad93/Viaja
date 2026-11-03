@@ -1038,3 +1038,53 @@ html[data-theme="dark"] :is(.iconbtn,.secondary):hover {background:var(--surface
 html[data-theme="dark"] .viaja-social-provider:disabled {background:var(--surface);color:var(--muted)}
 html[data-theme="dark"] progress,html[data-theme="dark"] progress::-webkit-progress-bar {background:var(--surface-muted)}
 html[data-theme="dark"] progress::-webkit-progress-value {background:var(--green)}
+
+/* Inset content once at the panel boundary; covers and map tiles stay full-width. */
+:root {--panel-inset:clamp(16px,2vw,28px)}
+.visualguides .guidehead,
+.visualguides .admin,
+.viaja-map-section,
+.calendar-timeline {
+ min-width:0;
+ padding:var(--panel-inset);
+ border:1px solid var(--line);
+ border-radius:var(--radius);
+ background-color:var(--surface);
+}
+.visualguides .guidegrid>* {min-width:0}
+.visualguides .guidehead .tabs {flex-wrap:wrap}
+.visualguides .guidehead .stop>div {min-width:0;overflow-wrap:anywhere}
+.viaja-map-toolbar>* {max-width:100%}
+.viaja-map-toolbar label {flex-wrap:wrap}
+.trip-detail {padding:var(--panel-inset)}
+/* Leaflet supplies its own opaque link styles; set the symbol and surface together. */
+.viaja-osm-map .leaflet-control-zoom {
+ overflow:hidden;
+ border:1px solid var(--field-border);
+ border-radius:10px;
+ box-shadow:var(--shadow-soft);
+}
+.viaja-osm-map .leaflet-control-zoom a {
+ display:grid;
+ place-items:center;
+ width:44px;
+ height:44px;
+ line-height:1;
+ color:var(--ink);
+ background:var(--surface);
+ border-color:var(--field-border);
+}
+.viaja-osm-map .leaflet-control-zoom a span {color:inherit}
+.viaja-osm-map .leaflet-control-zoom a:is(:hover,:focus-visible) {
+ background:var(--surface-muted);
+ color:var(--ink);
+}
+.viaja-osm-map .leaflet-control-zoom a:focus-visible {
+ outline:2px solid var(--green);
+ outline-offset:-4px;
+}
+.viaja-osm-map .leaflet-control-zoom a.leaflet-disabled {
+ color:var(--muted);
+ background:var(--surface-muted);
+ cursor:not-allowed;
+}

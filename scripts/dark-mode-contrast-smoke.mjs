@@ -114,6 +114,32 @@ try{
   await readable(page.locator('.example-open'));
   await page.getByRole('button',{name:/Abrir guía de Madrid/}).click();
   await page.getByRole('heading',{name:'Madrid imprescindible',exact:true}).waitFor();
+  await page.getByRole('button',{name:/Todas las guías/}).click();
+  const parisCard=page.locator('.visualguides article').filter({has:page.getByRole('heading',{name:'París',exact:true})});
+  await parisCard.getByRole('button',{name:/Explorar/}).click();
+  const panel=page.locator('.guidehead');
+  const inset=async(parent,child)=>{
+   const bounds=await parent.boundingBox(),item=await child.boundingBox();
+   assert.ok(item.x-bounds.x>=15 && bounds.x+bounds.width-item.x-item.width>=15,'Missing horizontal inset');
+   assert.ok(item.y-bounds.y>=15 && bounds.y+bounds.height-item.y-item.height>=15,'Missing vertical inset');
+  };
+  await inset(panel,panel.locator('h1'));
+  await inset(panel,panel.locator('.stop').first());
+  await inset(panel,panel.getByRole('button',{name:/Usar este itinerario/}));
+  const mapPanel=page.locator('.viaja-map-section');
+  await inset(mapPanel,mapPanel.locator('.viaja-map-toolbar'));
+  const zoomIn=mapPanel.locator('.leaflet-control-zoom-in');
+  const zoomOut=mapPanel.locator('.leaflet-control-zoom-out');
+  for(const control of [zoomIn,zoomOut]){
+   await control.waitFor();
+   await readable(control.locator('span'),control);
+   const box=await control.boundingBox();
+   assert.ok(box.width>=44 && box.height>=44);
+   await control.focus();
+   await readable(control.locator('span'),control);
+   await control.click();
+  }
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)<=1,'Guide map overflows viewport');
   await page.getByRole('button',{name:/Mis viajes/}).first().click();
   const badge=page.locator('.topbar nav small');
   assert.equal(await badge.innerText(),'1');
