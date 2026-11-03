@@ -2,6 +2,8 @@
 import {useEffect,useMemo,useState} from 'react';
 import {CalendarDays,Compass,Copy,ArrowLeft,ArrowRight,Search,MapPin,BookmarkPlus,Globe2,Clock3,TrainFront} from 'lucide-react';
 import {getCommunityTrip,listCommunityTrips} from '../lib/supabase-client';
+import {AppSelect} from './design/app-select';
+import {AppInput} from './design/app-input';
 import {communityTripToDraft,type CommunityTrip} from '../lib/community-trips';
 import type {Plan} from '../lib/travel';
 
@@ -65,9 +67,9 @@ export function CommunityTrips({onUse,initialId}:{onUse:(plan:Plan)=>void;initia
   <div className="section-heading"><div><span className="eyebrow">ITINERARIOS DE OTROS VIAJEROS</span><h1>Ideas que se comparten.</h1><p>Explorá viajes publicados voluntariamente, descubrí cómo los organizaron y guardate una copia editable.</p></div>
    <button type="button" className="secondary" onClick={()=>setReload(n=>n+1)}>Actualizar viajes</button></div>
   <div className="community-filters">
-   <label className="searchbox"><Search size={18}/><input aria-label="Buscar viajes compartidos" placeholder="Buscar destino (por ejemplo, Colmar)" value={search} onChange={e=>setSearch(e.target.value)}/></label>
-   <label>Ritmo<select aria-label="Filtrar por ritmo" value={pace} onChange={e=>setPace(e.target.value)}>{['Todos','Tranquilo','Equilibrado','Intenso'].map(k=><option key={k}>{k}</option>)}</select></label>
-   <label>Duración<select aria-label="Filtrar por duración" value={length} onChange={e=>setLength(e.target.value)}><option>Todos</option><option value="1-3">1–3 días</option><option value="4-7">4–7 días</option><option value="8+">8 días o más</option></select></label>
+   <label className="searchbox"><Search size={18} aria-hidden="true"/><AppInput aria-label="Buscar viajes compartidos" placeholder="Buscar destino (por ejemplo, Colmar)" value={search} onChange={e=>setSearch(e.target.value)}/></label>
+   <AppSelect label="Ritmo" value={pace} onChange={setPace} options={['Todos','Tranquilo','Equilibrado','Intenso'].map(k=>({value:k,label:k}))}/>
+   <AppSelect label="Duración" value={length} onChange={setLength} options={[{value:'Todos',label:'Todos'},{value:'1-3',label:'1–3 días'},{value:'4-7',label:'4–7 días'},{value:'8+',label:'8 días o más'}]}/>
   </div>
   <p className="subtle" role="status">{loading?'Buscando viajes compartidos…':visible.length+' viajes publicados'} {notice&&'· '+notice}</p>
   {!loading&&visible.length===0&&<div className="premium-empty"><Globe2 size={37}/><h2>{items.length?'No encontramos ese recorrido.':'La biblioteca está empezando.'}</h2><p>{items.length?'Probá otro destino o quitá los filtros.':'Cuando alguien publique su itinerario, aparecerá aquí. Desde «Mis viajes» podés compartir el tuyo.'}</p></div>}

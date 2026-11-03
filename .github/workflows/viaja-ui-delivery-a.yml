@@ -1,0 +1,57 @@
+name: Viaja — UI delivery A
+on:
+  push:
+    branches: [feat/viaja-ui-delivery-a-20261103, feat/v1-production-release-plan, main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ui-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: TypeScript and core regressions
+        run: |
+          npx tsc --noEmit
+          npm run test:core
+          node --experimental-strip-types tests/ui-delivery-a.test.mts
+          node --experimental-strip-types tests/community-trips.test.mts
+          node --experimental-strip-types tests/collaborative-trips.test.mts
+      - name: Build Cloudflare Pages output
+        run: |
+          npm run build:demo
+          test -f web-dist/index.html
+      - name: Install browser test dependency
+        run: |
+          command -v google-chrome
+          npm install --prefix /tmp/viaja-ui-smoke --no-package-lock --no-audit --no-fund playwright@1.56.1
+      - name: Serve compiled frontend
+        run: |
+          nohup npx vite preview --config vite.portable.config.ts --host 127.0.0.1 --port 4173 > /tmp/viaja-ui-preview.log 2>&1 &
+          for n in $(seq 1 45); do if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then exit 0; fi; sleep 1; done
+          cat /tmp/viaja-ui-preview.log
+          exit 1
+      - name: Verify iPhone and desktop UI
+        run: node scripts/ui-delivery-a-smoke.mjs
+      - name: Verify new frontend really reached Cloudflare
+        if: github.ref == 'refs/heads/feat/v1-production-release-plan' || github.ref == 'refs/heads/main'
+        run: |
+          if [[ "$GITHUB_REF" == 'refs/heads/main' ]]; then
+            node scripts/ui-delivery-a-live-check.mjs https://viaja.pages.dev
+          else
+            node scripts/ui-delivery-a-live-check.mjs https://feat-v1-production-release-p.viaja.pages.dev
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Viaja-UI-Delivery-A
+          path: artifacts/ui-delivery-a/
+          retention-days: 7
