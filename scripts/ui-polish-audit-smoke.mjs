@@ -137,8 +137,13 @@ try{
     assert.ok(Math.abs(clearBox.x+clearBox.width-(groupBox.x+groupBox.width))<=2,
      'Clear button should align with the right edge of expense filters');
    }
-   assert.ok(Math.abs(catBox.y+catBox.height-(dateBox.y+dateBox.height))<=2,
-    'Category and date controls must share their baseline');
+   if(device.width>430){
+    assert.ok(Math.abs(catBox.y+catBox.height-(dateBox.y+dateBox.height))<=2,
+     'Category and date controls must share their baseline in a two-column layout');
+   }else{
+    assert.ok(dateBox.y>=catBox.y+catBox.height-1,
+     'Category and date controls should stack cleanly on narrow phones');
+   }
    await category.selectOption({label:'Comida'});
    await date.fill('2026-11-28');
    await clear.click();
