@@ -1173,7 +1173,7 @@ html[data-theme] .viaja-map-stop > div {
 /* Leaflet does not inherit theme colors; style the zoom surface, signs and states.
    The 44px targets remain accessible and the control gets its own map inset. */
 html[data-theme] .viaja-osm-map .leaflet-control-zoom {
-  margin:16px 0 0 16px;
+  margin:20px 0 0 20px;
   border:1px solid var(--field-border);
   border-radius:12px;
   overflow:hidden;
