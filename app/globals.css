@@ -457,3 +457,33 @@ html{scroll-padding-top:86px}
 .community-detail-share-actions{display:flex;gap:8px;flex-wrap:wrap}
 @media(max-width:850px){.community-filters{grid-template-columns:1fr 1fr}.community-filters .searchbox{grid-column:1/-1}.community-detail-share{align-items:stretch;flex-direction:column}}
 @media(max-width:550px){.community-hero,.community-day{padding:17px}.community-filters{gap:10px}.community-filters label>select{font-size:12px}.community-actions button{width:100%}.explore-switch button{padding:10px;font-size:12px}.community-card-body{padding:17px}.community-detail-share{padding:13px}}
+
+/* Viajes en equipo: share controls remain separate from public catalogue. */
+.trip-team-panel{display:grid;gap:18px;padding:22px 0}
+.trip-team-panel .surface{display:grid;gap:14px;padding:22px}
+.team-state-banner{display:flex;align-items:center;gap:10px;border-radius:14px;padding:13px 16px;background:#e9f3ef;color:#164d3c;font-size:14px;line-height:1.5}
+.team-remote-change{background:#fff3dd;color:#734714;flex-wrap:wrap}
+.team-state-banner>span{flex:1}
+.team-member-row{display:flex;align-items:center;gap:12px;min-height:55px;border-top:1px solid rgba(24,68,54,.1)}
+.team-member-row>span:nth-child(2){flex:1;display:grid;gap:2px}
+.team-member-row strong{font-size:14px}
+.team-member-row small{color:#66756f;font-size:12px}
+.team-role{font-size:11px!important;letter-spacing:.02em;color:#42705a}
+.team-avatar{height:35px;width:35px;flex-shrink:0;display:grid;place-items:center;border-radius:100%;background:#e9f3ef;color:#1e7556}
+.team-invite-form{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:14px;align-items:end}
+.team-invite-form>label{display:grid;gap:7px;font-size:13px;font-weight:600}
+.team-invite-form .primary{grid-column:1/-1;justify-self:start}
+.team-created-link{display:grid;gap:10px;background:#f2f6f3;padding:14px;border-radius:12px}
+.team-created-link label{display:grid;gap:8px;font-size:13px;font-weight:600;min-width:0}
+.team-created-link input{width:100%;min-width:0}
+.team-created-link button{justify-self:start}
+.team-invites{display:grid;gap:9px}
+.team-invites h4{display:flex;gap:8px;align-items:center}
+.team-invite-row{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;border-top:1px solid #edf1ed;padding:8px 0}
+.team-badge{display:inline-flex;gap:6px;align-items:center;padding:5px 9px;margin:8px 0;border-radius:999px;background:#e9f3ef;color:#26694e;font-size:12px;font-weight:700}
+.team-invitation-banner{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:14px 18px;background:#e9f3ef;color:#154f3c;border-radius:14px}
+.team-invitation-banner span{flex:1;min-width:220px}
+.team-invitation-banner button{white-space:nowrap}
+.team-refresh-warning{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;background:#fff3dd;color:#734714;border-radius:12px}
+.team-refresh-warning span{flex:1}
+@media(max-width:680px){.trip-team-panel{padding:12px 0}.team-invite-form{grid-template-columns:1fr}.trip-team-panel .surface{padding:16px}.team-state-banner{align-items:flex-start}.team-invitation-banner button{width:100%}}
