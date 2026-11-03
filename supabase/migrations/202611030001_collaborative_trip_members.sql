@@ -97,7 +97,7 @@ create or replace function private.viaja_create_trip_invite_impl(p_trip_id uuid,
 returns text language plpgsql security definer set search_path='' as $$
 declare token text; normalized_email text;
 begin
- if auth.uid() is null or private.viaja_trip_role(p_trip_id)<>'owner' then raise exception 'OWNER_REQUIRED'; end if;
+ if auth.uid() is null or private.viaja_trip_role(p_trip_id) is distinct from 'owner' then raise exception 'OWNER_REQUIRED'; end if;
  if p_role not in ('editor','viewer') then raise exception 'INVALID_ROLE'; end if;
  normalized_email:=nullif(pg_catalog.lower(pg_catalog.btrim(p_email)),'');
  if normalized_email is not null and (length(normalized_email)>255 or normalized_email !~ '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$') then
@@ -155,7 +155,7 @@ create or replace function private.viaja_list_trip_invitations_impl(p_trip_id uu
 returns table(id uuid,invite_email text,role text,expires_at timestamptz,accepted_at timestamptz,revoked_at timestamptz)
 language plpgsql security definer set search_path='' as $$
 begin
- if private.viaja_trip_role(p_trip_id)<>'owner' then raise exception 'OWNER_REQUIRED'; end if;
+ if private.viaja_trip_role(p_trip_id) is distinct from 'owner' then raise exception 'OWNER_REQUIRED'; end if;
  return query select i.id,i.invite_email,i.role,i.expires_at,i.accepted_at,i.revoked_at
  from public.trip_invitations i where i.trip_id=p_trip_id order by i.created_at desc limit 50;
 end $$;
@@ -193,7 +193,7 @@ create or replace function private.viaja_remove_trip_member_impl(p_trip_id uuid,
 returns boolean language plpgsql security definer set search_path='' as $$
 declare changed integer;
 begin
- if auth.uid() is null or (auth.uid()<>p_user_id and private.viaja_trip_role(p_trip_id)<>'owner') then
+ if auth.uid() is null or (auth.uid()<>p_user_id and private.viaja_trip_role(p_trip_id) is distinct from 'owner') then
   raise exception 'PERMISSION_DENIED'; end if;
  delete from public.trip_members where trip_id=p_trip_id and user_id=p_user_id;
  get diagnostics changed=row_count;
