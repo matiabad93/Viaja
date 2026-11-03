@@ -16,10 +16,20 @@ function contrast(foreground,background){
  return (Math.max(a,b)+0.05)/(Math.min(a,b)+0.05);
 }
 const inset=async(parent,child,min=16)=>{
- const bounds=await parent.boundingBox(),item=await child.boundingBox();
- assert.ok(bounds&&item,'Panel and content must have measurable bounds');
- assert.ok(item.x-bounds.x>=min && bounds.x+bounds.width-item.x-item.width>=min,'Missing horizontal inset on '+(await parent.getAttribute('class')));
- assert.ok(item.y-bounds.y>=min && bounds.y+bounds.height-item.y-item.height>=min,'Missing vertical inset on '+(await parent.getAttribute('class')));
+ // Sample both rectangles in the same browser frame: Leaflet and responsive
+ // image loading can reflow panels between two separate boundingBox() calls.
+ const element=await child.elementHandle();
+ assert.ok(element,'Panel child must exist');
+ const distances=await parent.evaluate((panel,childEl)=>{
+  const b=panel.getBoundingClientRect(),i=childEl.getBoundingClientRect();
+  return {left:i.left-b.left,right:b.right-i.right,top:i.top-b.top,bottom:b.bottom-i.bottom};
+ },element);
+ const label=await parent.getAttribute('class');
+ assert.ok(distances.left>=min && distances.right>=min,
+  'Missing horizontal inset on '+label+': '+JSON.stringify(distances));
+ assert.ok(distances.top>=min && distances.bottom>=min,
+  'Missing vertical inset on '+label+': '+JSON.stringify(distances)+' expected='+min);
+
 };
 try{
  for(const device of [{label:'iphone',width:390,height:844},{label:'desktop',width:1280,height:900}]){
@@ -139,10 +149,16 @@ try{
   for(const control of [zoomIn,zoomOut]){
    await control.waitFor();
    await readable(control.locator('span'),control);
-   const box=await control.boundingBox();
-   assert.ok(box.width>=44 && box.height>=44);
-   const mapBounds=await mapPanel.locator('.viaja-osm-map').boundingBox();
-   assert.ok(box.x-mapBounds.x>=14 && box.y-mapBounds.y>=14,'Zoom buttons need a visible inset from map edges');
+   const geometry=await control.evaluate(el=>{
+    const mapEl=el.closest('.viaja-osm-map'),zoom=el.closest('.leaflet-control-zoom');
+    if(!mapEl||!zoom)throw Error('Zoom control detached from map');
+    const b=el.getBoundingClientRect(),m=mapEl.getBoundingClientRect(),style=getComputedStyle(zoom);
+    return {x:b.x-m.x,y:b.y-m.y,width:b.width,height:b.height,
+     marginLeft:parseFloat(style.marginLeft),marginTop:parseFloat(style.marginTop)};
+   });
+   assert.ok(geometry.width>=44&&geometry.height>=44,'Zoom tap area too small: '+JSON.stringify(geometry));
+   assert.ok(geometry.marginLeft>=16&&geometry.marginTop>=16,'Zoom control lacks inset CSS: '+JSON.stringify(geometry));
+   assert.ok(geometry.x>=14&&geometry.y>=14,'Zoom buttons need a visible inset from map edges: '+JSON.stringify(geometry));
    await control.focus();
    await readable(control.locator('span'),control);
    await control.click();
@@ -186,7 +202,7 @@ try{
    assert.equal(await choice.getAttribute('aria-pressed'),'true');
    const selected=await choice.evaluate(paint);
    const track=await page.locator('.explore-switch').evaluate(paint);
-   assert.ok(contrast(selected.bg,track.bg)>=3);
+   assert.ok(contrast(selected.bg,track.bg)>=3,'Explore tab / track contrast: selected='+JSON.stringify(selected)+' track='+JSON.stringify(track)+' ratio='+contrast(selected.bg,track.bg).toFixed(2));
    assert.ok(contrast(selected.fg,selected.bg)>=4.5);
   }
   assert.deepEqual(errors,[],'No runtime errors');
