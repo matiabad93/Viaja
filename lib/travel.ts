@@ -3,7 +3,7 @@ export type Trip={city?:{id:number;name:string;country:string;region:string;lati
 export type Activity={completed?:boolean;endTime?:string;source?:string;id:string;title:string;description:string;time?:string;duration?:string;location?:string;price?:string;estimatedCostEUR?:number;costCategory?:'Actividades'|'Transporte'|'Comida';costNote?:string;reservation?:string};
 export type Day={id:string;title:string;advice?:string;activities:Activity[]};
 export type Expense={id:string;date:string;label:string;category:string;amount:number;currency?:string;originalAmount?:number;rate?:number;linkedActivityId?:string};
-export type Plan={photos?:DestinationPhoto[] & {collaboration?:{version:number;ownerId:string;role:'owner'|'editor'|'viewer';memberCount?:number}};photoKey?:string;id:string;trip:Trip;kind:'draft'|'researched';createdAt:string;itinerary?:Day[];expenses?:Expense[];parts?:{text:string;annotations:{start:number;end:number;url:string;title:string}[]}[];sources?:{url:string;title:string}[]};
+export type Plan={photos?:DestinationPhoto[];photoKey?:string;id:string;trip:Trip;kind:'draft'|'researched';createdAt:string;itinerary?:Day[];expenses?:Expense[];parts?:{text:string;annotations:{start:number;end:number;url:string;title:string}[]}[];sources?:{url:string;title:string}[];collaboration?:{version:number;ownerId:string;role:'owner'|'editor'|'viewer';memberCount?:number}};
 export const money=(n:number)=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(n);
 export const spent=(p:Plan)=>(p.expenses||[]).reduce((n,e)=>n+Math.round(e.amount*100),0)/100;
 export const outsideBudget=(e:Expense)=>['Vuelos','Aéreo','Aéreos','Alojamiento','Hospedaje'].includes(e.category);
