@@ -9,7 +9,7 @@ import {reviewItineraryFeasibility} from '../lib/trip-feasibility';
 import {TripDateRange} from '../components/trip-date-range';
 import {todayLocal,isoFromDate} from '../lib/date-range';
 import {parisDemo} from '../lib/demo-plan';
-import {newId} from '../lib/travel';
+import {newId,backup} from '../lib/travel';
 import {useEffect,useState,useRef,Fragment} from 'react';
 import {ArrowUpRight,ArrowRight,MapPin,Compass,CalendarDays,Users,Wallet,Bookmark,Globe,Check,Link2,ChevronRight,Download,LoaderCircle,Plus,TrainFront,BookOpen,Sparkles,RotateCcw} from 'lucide-react';
 import {Guides,TripTools} from '../components/travel-hub';
@@ -18,6 +18,7 @@ import {TripsDashboard} from '../components/trips-dashboard';
 import {ConfirmDialog} from '../components/confirm-dialog';
 import {TripDetail} from '../components/trip-detail';
 import {CommunityTrips} from '../components/community-trips';
+import {acceptTripInvite,removeTripMember,fetchTripUpdate} from '../lib/trip-collaboration';
 import {listMyCommunityTrips,publishCommunityTrip,unpublishCommunityTrip} from '../lib/supabase-client';
 import {publicTripSnapshot} from '../lib/community-trips';
 const empty:Trip={destination:'',additionalDestinations:[],origin:'',start:'',end:'',travelers:2,budget:0,pace:'Equilibrado',transport:'Sin coche',notes:'',links:'',adjustment:'',sources:['official','blogs','forums','youtube']};
@@ -36,22 +37,89 @@ const [exploreMode,setExploreMode]=useState<'guides'|'community'>(()=>typeof win
 const [sharedLinkId]=useState(()=>typeof window!=='undefined'?new URLSearchParams(window.location.search).get('viaje')||'':'');
 const [guideTarget,setGuideTarget]=useState<string|null>(null);
 const [guideNavigationId,setGuideNavigationId]=useState(0);
+const [invitationToken]=useState(()=>{
+ if(typeof window==='undefined')return '';
+ const candidate=new URLSearchParams(window.location.search).get('invitacion')||'';
+ if(candidate&&/^[a-f0-9]{64}$/.test(candidate)){window.sessionStorage.setItem('viaja-pending-invitation',candidate);return candidate;}
+ return window.sessionStorage.getItem('viaja-pending-invitation')||'';
+});
+const [invitationDone,setInvitationDone]=useState(false);
+const inviteHandledRef=useRef(false);
+const [remoteChanges,setRemoteChanges]=useState(false);
+const saveQueueRef=useRef<Record<string,Promise<number>>>({});
+const currentTrip=plans.find(p=>p.id===result?.id)||result;
+const refreshActiveTrip=async()=>{
+ const updated=await listCloudTrips();
+ setPlans(updated);
+ const match=updated.find(p=>p.id===result?.id);
+ if(match){delete saveQueueRef.current[match.id];setResult(match);setTrip(match.trip);setRemoteChanges(false);}
+};
+useEffect(()=>{
+ if(!session||tab!=='detail'||!currentTrip?.collaboration)return;
+ let active=true;
+ const check=async()=>{try{
+   const updated=await fetchTripUpdate(currentTrip.id);
+   if(active&&updated?.collaboration&&updated.collaboration.version>(currentTrip.collaboration?.version||0))setRemoteChanges(true);
+ }catch{/* Do not replace unsaved local changes if network is unavailable. */}};
+ const timer=setInterval(()=>void check(),18000);
+ return()=>{active=false;clearInterval(timer)};
+},[session?.user.id,tab,currentTrip?.id,currentTrip?.collaboration?.version]);
 const showGuide=(id?:string)=>{setExploreMode('guides');setGuideTarget(id||null);setGuideNavigationId(n=>n+1);setTab('guides');setError('');window.scrollTo(0,0)};
 const statusRequestRef=useRef(0);const checkStatus=async()=>{const requestId=++statusRequestRef.current;setReady(null);setStatusError(false);try{const token=await accessToken();const r=await requestAPI('/api/status',{headers:token?{Authorization:'Bearer '+token}:{}});if(!r.ok)throw Error();const j=await r.json() as {ready?:boolean;admin?:boolean;mode?:string;reason?:string};if(requestId!==statusRequestRef.current)return;setAdmin(j.admin===true);setReady(j.ready===true);setAiMode(j.mode||'researched');setAiStatusReason(j.reason||'')}catch{if(requestId===statusRequestRef.current){setStatusError(true);setAiStatusReason('connection_failed')}}};
 const loadLocal=()=>{try{const raw=JSON.parse(localStorage.getItem(storageKey)||'[]');setPlans(Array.isArray(raw)?raw.filter(p=>p&&p.trip&&p.id):[]);const draft=localStorage.getItem('viaja-ai-current');if(draft)setTrip({...empty,...JSON.parse(draft)})}catch{setMessage('No pudimos recuperar los viajes guardados. Podés crear uno nuevo.')}};
 const reloadAccount=async()=>{const current=getCurrentSession();setSession(current);await checkStatus();if(current){
+ if(invitationToken&&!inviteHandledRef.current){
+  inviteHandledRef.current=true;
+  try{
+   await acceptTripInvite(invitationToken);
+   setInvitationDone(true);window.sessionStorage.removeItem('viaja-pending-invitation');
+   const url=new URL(window.location.href);url.searchParams.delete('invitacion');window.history.replaceState({},'',url.pathname+url.search+url.hash);
+   setMessage('¡Ya sos parte del equipo! Tu viaje aparece en Mis viajes.');
+   setTab('saved');
+  }catch(e){setError('No pudimos aceptar esta invitación: '+(e instanceof Error?e.message:'enlace inválido o vencido'));}
+ }
  const [savedTrips,publications]=await Promise.all([listCloudTrips(),listMyCommunityTrips()]);
- setPlans(savedTrips);setPublicationIds(publications);setMessage('Tus viajes están sincronizados con tu cuenta.');
+ setPlans(savedTrips);setPublicationIds(publications);
+ setResult(old=>old?savedTrips.find(x=>x.id===old.id)||old:old);
+ if(!invitationToken)setMessage('Tus viajes están sincronizados con tu cuenta.');
  }else{setPublicationIds({});loadLocal();setMessage('Sesión cerrada. Tus viajes de invitado siguen en este dispositivo.')}};
 useEffect(()=>{checkStatus();let mounted=true;const unsubscribe=subscribeAuth(s=>{if(mounted)setSession(s)});if(!cloudReady){loadLocal();setAuthLoaded(true)}else{restoreAuth().then(async()=>{if(!mounted)return;await reloadAccount()}).catch(e=>{if(mounted){setError('No pudimos sincronizar tu cuenta: '+(e instanceof Error?e.message:'error de conexión')+'. Reintentá al ingresar.');if(!getCurrentSession())loadLocal()}}).finally(()=>{if(mounted)setAuthLoaded(true)})}return()=>{mounted=false;unsubscribe();abortRef.current?.abort()}},[]);
 useEffect(()=>{const back=(e:Event)=>{if(tab!=='guides'){e.preventDefault();setTab(tab==='detail'?'saved':'guides')}};window.addEventListener('viaja-back',back);return()=>window.removeEventListener('viaja-back',back)},[tab]);
 const update=(key:keyof Trip,value:any)=>{setTrip(t=>({...t,[key]:value}));setSaved(false)};
-const save=(p:Plan)=>{const next=[p,...plans.filter(x=>x.id!==p.id)];if(session){setPlans(next);setSaved(false);setMessage('Guardando en tu cuenta…');setError('');saveCloudTrip(p).then(()=>{setSaved(true);setMessage('Viaje guardado en tu cuenta.')}).catch(e=>{setError('No se pudo sincronizar el viaje: '+(e instanceof Error?e.message:'error de red')+'. Conservá una copia hasta reintentar.');setSaved(false)});return true}try{localStorage.setItem(storageKey,JSON.stringify(next));setPlans(next);setSaved(true);setMessage('Cambios guardados en este navegador.');setError('');return true}catch{setError('No pudimos guardar los cambios. Exportá el viaje para conservarlo.');return false}};
-const openTrip=(p:Plan,edit=false)=>{setResult(p);setTrip(p.trip);setEditingTrip(edit);setTab('detail');setError('');setMessage('');window.scrollTo(0,0)};
+const save=(p:Plan)=>{
+ if(session&&p.collaboration?.role==='viewer'){setError('Tenés acceso de solo lectura. Pedile permiso de edición al organizador.');return false;}
+ const next=[p,...plans.filter(x=>x.id!==p.id)];
+ if(session){
+  setPlans(next);setSaved(false);setMessage('Guardando en tu cuenta…');setError('');
+  const prior=saveQueueRef.current[p.id]||Promise.resolve(p.collaboration?.version??0);
+  const task=prior.then(version=>saveCloudTrip({...p,collaboration:version?{
+   version,ownerId:p.collaboration?.ownerId||session.user.id,
+   role:p.collaboration?.role||'owner',memberCount:p.collaboration?.memberCount||1
+  }:undefined}));
+  saveQueueRef.current[p.id]=task;
+  task.then(version=>{
+   const info={version,ownerId:p.collaboration?.ownerId||session.user.id,
+    role:p.collaboration?.role||'owner' as const,memberCount:p.collaboration?.memberCount||1};
+   setPlans(current=>current.map(x=>x.id===p.id?{...x,collaboration:info}:x));
+   setResult(current=>current?.id===p.id?{...current,collaboration:info}:current);
+   setRemoteChanges(false);setSaved(true);setMessage('Cambios guardados para todo el equipo.');
+  }).catch(e=>{
+   const detail=e instanceof Error?e.message:'error de red';
+   const conflict=/TRIP_CONFLICT|version|conflict/i.test(detail);
+   setRemoteChanges(conflict);
+   setError(conflict?'Alguien actualizó este viaje antes que vos. Descargá tu copia y cargá los cambios nuevos para evitar sobrescribirlos.':'No se pudo sincronizar el viaje: '+detail+'. Conservá una copia hasta reintentar.');
+   setSaved(false);
+  });
+  return true;
+ }
+ try{localStorage.setItem(storageKey,JSON.stringify(next));setPlans(next);setSaved(true);setMessage('Cambios guardados en este navegador.');setError('');return true}
+ catch{setError('No pudimos guardar los cambios. Exportá el viaje para conservarlo.');return false}
+};
+const openTrip=(p:Plan,edit=false)=>{setRemoteChanges(false);setResult(p);setTrip(p.trip);setEditingTrip(edit);setTab('detail');setError('');setMessage('');window.scrollTo(0,0)};
 const newTrip=()=>{setResult(null);setTrip(empty);setTab('planner');setMessage('');setError('');window.scrollTo(0,0)};
 const deleteTrip=(p:Plan)=>{setPendingDeletion(p)};
 const requestPublish=(p:Plan)=>{
- if(!session){setError('Para publicar un viaje, primero iniciá sesión y guardalo en tu cuenta. Tus viajes locales siguen siendo privados.');window.scrollTo(0,0);return;}
+ if(!session||(p.collaboration?.role&&p.collaboration.role!=='owner')){setError('Solo el organizador puede publicar un itinerario. Para publicar un viaje, primero iniciá sesión y guardalo en tu cuenta. Tus viajes locales siguen siendo privados.');window.scrollTo(0,0);return;}
  try{publicTripSnapshot(p);setPendingPublish(p);setError('')}
  catch(e){setError(e instanceof Error?e.message:'No se pudo preparar la publicación.');window.scrollTo(0,0)}
 };
@@ -79,7 +147,7 @@ const confirmUnpublish=async()=>{
 const copyCommunityTrip=(draft:Plan)=>{
  if(save(draft)){openTrip(draft,true);setMessage('Guardaste una copia independiente. Elegí tus propias fechas y ciudad de salida antes de viajar.');}
 };
-const confirmDeleteTrip=async()=>{const p=pendingDeletion;if(!p||deleting)return;setDeleting(true);try{if(session){await deleteCloudTrip(p.id)}else{localStorage.setItem(storageKey,JSON.stringify(plans.filter(x=>x.id!==p.id))) }setPlans(current=>current.filter(x=>x.id!==p.id));setPublicationIds(current=>{const next={...current};delete next[p.id];return next});setResult(null);setTab('saved');setMessage('Viaje eliminado correctamente.');setPendingDeletion(null)}catch(e){setError('No se pudo eliminar el viaje: '+(e instanceof Error?e.message:'error de conexión'))}finally{setDeleting(false)}};
+const confirmDeleteTrip=async()=>{const p=pendingDeletion;if(!p||deleting)return;setDeleting(true);try{if(session){if(p.collaboration?.role&&p.collaboration.role!=='owner')await removeTripMember(p.id,session.user.id);else await deleteCloudTrip(p.id)}else{localStorage.setItem(storageKey,JSON.stringify(plans.filter(x=>x.id!==p.id))) }setPlans(current=>current.filter(x=>x.id!==p.id));setPublicationIds(current=>{const next={...current};delete next[p.id];return next});setResult(null);setTab('saved');setMessage(p.collaboration?.role&&p.collaboration.role!=='owner'?'Saliste de este viaje compartido.':'Viaje eliminado correctamente.');setPendingDeletion(null)}catch(e){setError('No se pudo eliminar el viaje: '+(e instanceof Error?e.message:'error de conexión'))}finally{setDeleting(false)}};
 const saveDraft=()=>{setError('');setMessage('');
  if((trip.additionalDestinations||[]).some(x=>!x.trim())){setError('Completá o quitá los destinos adicionales vacíos.');return}
  const review=reviewItineraryFeasibility(trip);if(review.blocking.length){setError(review.blocking.join(' '));return}
@@ -110,8 +178,8 @@ const confirmRegeneration=()=>{
 };
 const feasibilityReview=reviewItineraryFeasibility(trip);
 const exportPlan=(p:Plan)=>{const data=`# Viaja · ${p.trip.destination}\n\n${p.trip.start} → ${p.trip.end}\nSalida: ${p.trip.origin}\nRecorrido: ${[p.trip.destination,...(p.trip.additionalDestinations||[])].join(' → ')}\nViajeros: ${p.trip.travelers}\nPresupuesto para gastos diarios: ${p.trip.budget>0?p.trip.budget+' EUR':'Sin definir'} (excluye vuelos y alojamiento; registro manual)\nEstado: ${p.kind==='researched'?'Investigado con IA':'Borrador sin investigar'}\nFecha: ${p.createdAt}\n\n${p.parts?.map(x=>x.text).join('\n\n')||p.trip.notes}\n\n## Fuentes\n${p.sources?.map(s=>`- ${s.title}: ${s.url}`).join('\n')||'Sin fuentes consultadas.'}`;const url=URL.createObjectURL(new Blob([data],{type:'text/markdown;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='viaja-itinerario.md';a.click();setTimeout(()=>URL.revokeObjectURL(url),5000)};
-return <><a className="skip-link" href="#main-content">Saltar al contenido</a><header className="topbar"><a href="/" className="logo">viaja<span>.</span></a><nav aria-label="Navegación principal"><button className={tab==='planner'?'navactive':''} onClick={()=>{setTab('planner');setError('');window.scrollTo(0,0)}}><Compass size={16}/>Planificar</button><button className={tab==='saved'||tab==='detail'?'navactive':''} onClick={()=>{setTab('saved');window.scrollTo(0,0)}}><Bookmark size={16}/>Mis viajes <small>{plans.length}</small></button><button className={tab==="guides"?"navactive":""} onClick={()=>showGuide()}><Globe size={16}/>Explorar destinos</button>{admin&&<button className={tab==="admin"?"navactive":""} onClick={()=>setTab("admin")}>Administración</button>}</nav><AccountControl session={session} onReload={reloadAccount} onError={setError}/></header><main id="main-content"><div className="global-feedback">{error&&<div role="alert" className="error">{error}</div>}{message&&<div role="status" className="message">{message}<button aria-label="Cerrar notificación" onClick={()=>setMessage('')}>×</button></div>}</div>
-{!authLoaded?<p role="status" className="message">Comprobando tu sesión…</p>:tab==='detail'&&result?<TripDetail key={result.id} plan={result} initialEdit={editingTrip} onChange={p=>{if(save(p)){setResult(p);setTrip(p.trip);return true}return false}} onBack={()=>{setTab('saved');window.scrollTo(0,0)}} onAI={p=>{setTrip({...p.trip,adjustment:('Itinerario actual: '+itineraryOf(p).map((d,i)=>'Día '+(i+1)+': '+d.activities.map(a=>a.title).join(', ')).join('; ')).slice(0,650)+'\nCambios que quiero: '});setResult(p);setTab('planner')}} onDelete={()=>deleteTrip(result)} onPublish={requestPublish} onUnpublish={setPendingUnpublish} publishedId={publicationIds[result.id]} publicationBusy={publicationBusy} report={result.parts?.map((part,i)=><Citations key={i} part={part}/>)}/>:tab==='guides'?<section className="explore-all">
+return <><a className="skip-link" href="#main-content">Saltar al contenido</a><header className="topbar"><a href="/" className="logo">viaja<span>.</span></a><nav aria-label="Navegación principal"><button className={tab==='planner'?'navactive':''} onClick={()=>{setTab('planner');setError('');window.scrollTo(0,0)}}><Compass size={16}/>Planificar</button><button className={tab==='saved'||tab==='detail'?'navactive':''} onClick={()=>{setTab('saved');window.scrollTo(0,0)}}><Bookmark size={16}/>Mis viajes <small>{plans.length}</small></button><button className={tab==="guides"?"navactive":""} onClick={()=>showGuide()}><Globe size={16}/>Explorar destinos</button>{admin&&<button className={tab==="admin"?"navactive":""} onClick={()=>setTab("admin")}>Administración</button>}</nav><AccountControl session={session} onReload={reloadAccount} onError={setError}/></header><main id="main-content"><div className="global-feedback">{invitationToken&&!invitationDone&&<div className="team-invitation-banner" role="status"><Users size={19}/><span>{session?'Estamos comprobando tu invitación privada.':'Te invitaron a planificar un viaje en equipo. Iniciá sesión o registrate para aceptarla.'}</span></div>}{remoteChanges&&tab==='detail'&&currentTrip&&<div className="team-refresh-warning" role="status"><RotateCcw size={18}/><span>Hay cambios nuevos de otro colaborador. Descargá una copia si editaste algo antes de actualizar.</span><button type="button" className="secondary" onClick={()=>backup(currentTrip)}>Guardar copia</button><button type="button" className="primary" onClick={()=>void refreshActiveTrip()}>Ver últimos cambios</button></div>}{error&&<div role="alert" className="error">{error}</div>}{message&&<div role="status" className="message">{message}<button aria-label="Cerrar notificación" onClick={()=>setMessage('')}>×</button></div>}</div>
+{!authLoaded?<p role="status" className="message">Comprobando tu sesión…</p>:tab==='detail'&&currentTrip?<TripDetail key={currentTrip.id} plan={currentTrip} initialEdit={editingTrip} onChange={p=>{if(save(p)){setResult(p);setTrip(p.trip);return true}return false}} onRefresh={refreshActiveTrip} onError={setError} onBack={()=>{setTab('saved');window.scrollTo(0,0)}} onAI={p=>{setTrip({...p.trip,adjustment:('Itinerario actual: '+itineraryOf(p).map((d,i)=>'Día '+(i+1)+': '+d.activities.map(a=>a.title).join(', ')).join('; ')).slice(0,650)+'\nCambios que quiero: '});setResult(p);setTab('planner')}} onDelete={()=>deleteTrip(currentTrip)} onPublish={requestPublish} onUnpublish={setPendingUnpublish} publishedId={publicationIds[currentTrip.id]} publicationBusy={publicationBusy} report={currentTrip.parts?.map((part,i)=><Citations key={i} part={part}/>)}/>:tab==='guides'?<section className="explore-all">
 <div className="explore-switch" role="group" aria-label="Explorar destinos"><button type="button" aria-pressed={exploreMode==='community'} className={exploreMode==='community'?'active':''} onClick={()=>setExploreMode('community')}>Viajes compartidos</button><button type="button" aria-pressed={exploreMode==='guides'} className={exploreMode==='guides'?'active':''} onClick={()=>setExploreMode('guides')}>Guías de Viaja</button></div>
 {exploreMode==='community'?<CommunityTrips onUse={copyCommunityTrip} initialId={sharedLinkId||undefined}/>:<Guides key={tab+'-'+guideNavigationId} initialGuideId={tab==='guides'?guideTarget||undefined:undefined} admin={false} onUse={g=>{if(g.id==='paris'){const demo=parisDemo(empty);if(save(demo))openTrip(demo);return}const p:Plan={id:newId(),trip:{...empty,destination:g.title,notes:'Itinerario editorial de 3 días. Adaptar a las fechas del viaje.'},kind:'draft',createdAt:new Date().toISOString(),parts:g.days.map((d,i)=>({text:'Día '+(i+1)+'\n'+d,annotations:[]})),sources:g.sources.map(url=>({url,title:'Fuente de la guía'}))};if(save(p))openTrip(p)}}/>}
 </section>:tab==='admin'?<Guides key={tab+'-'+guideNavigationId} initialGuideId={undefined} admin={admin} onUse={g=>{if(g.id==='paris'){const demo=parisDemo(empty);if(save(demo))openTrip(demo);return}const p:Plan={id:newId(),trip:{...empty,destination:g.title,notes:'Itinerario editorial de 3 días. Adaptar a las fechas del viaje.'},kind:'draft',createdAt:new Date().toISOString(),parts:g.days.map((d,i)=>({text:'Día '+(i+1)+'\n'+d,annotations:[]})),sources:g.sources.map(url=>({url,title:'Fuente de la guía'}))};if(save(p))openTrip(p)}}/>:tab==='planner'?<><div className="intro"><div><div className="eyebrow"><span/>TU PRÓXIMA HISTORIA EMPIEZA ACÁ</div><h1>Vos elegís el destino.<br/><em>El viaje toma forma.</em></h1><p>Un plan a tu medida, con rutas, ideas y fuentes para decidir.<br/>De la primera inspiración al itinerario de cada día.</p></div><div className="inspiration"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Madrid_ciudad.jpg/1280px-Madrid_ciudad.jpg" alt="Vista panorámica de Madrid"/><div><span>INSPIRACIÓN SIN LÍMITES</span><strong>¿Y si esta vez<br/>vamos más allá?</strong><button onClick={example}>Probar con Madrid <ArrowUpRight size={17}/></button></div></div></div>
@@ -140,4 +208,4 @@ return <><a className="skip-link" href="#main-content">Saltar al contenido</a><h
  onConfirm={confirmRegeneration}
  onCancel={()=>setPendingRegeneration(false)}
 />
-<ConfirmDialog open={!!pendingDeletion} title="¿Eliminar este viaje?" description={pendingDeletion?'Vas a eliminar “'+pendingDeletion.trip.destination+'” y todos sus gastos y actividades. Esta acción no se puede deshacer.':''} confirmLabel="Sí, eliminar viaje" busy={deleting} onConfirm={confirmDeleteTrip} onCancel={()=>setPendingDeletion(null)}/></main><footer><span className="logo">viaja<span>.</span></span><p>Planificá con curiosidad. Viajá a tu ritmo.</p><small>En iPhone: Safari → Compartir → Añadir a pantalla de inicio. {session?'Viajes guardados en tu cuenta.':cloudReady?'Sin iniciar sesión, los viajes se guardan en este dispositivo.':'Sincronización en preparación.'} · <a href="/photo-credits.html">Créditos de fotos</a></small></footer></>}
+<ConfirmDialog open={!!pendingDeletion} title={pendingDeletion?.collaboration?.role&&pendingDeletion.collaboration.role!=='owner'?'¿Salir del viaje compartido?':'¿Eliminar este viaje?'} description={pendingDeletion?pendingDeletion.collaboration?.role&&pendingDeletion.collaboration.role!=='owner'?'Dejará de aparecer en tus viajes. El organizador y los demás integrantes conservarán sus cambios.':'Vas a eliminar “'+pendingDeletion.trip.destination+'” y todos sus gastos y actividades. Esta acción no se puede deshacer.':''} confirmLabel={pendingDeletion?.collaboration?.role&&pendingDeletion.collaboration.role!=='owner'?'Sí, salir del viaje':'Sí, eliminar viaje'} busy={deleting} onConfirm={confirmDeleteTrip} onCancel={()=>setPendingDeletion(null)}/></main><footer><span className="logo">viaja<span>.</span></span><p>Planificá con curiosidad. Viajá a tu ritmo.</p><small>En iPhone: Safari → Compartir → Añadir a pantalla de inicio. {session?'Viajes guardados en tu cuenta.':cloudReady?'Sin iniciar sesión, los viajes se guardan en este dispositivo.':'Sincronización en preparación.'} · <a href="/photo-credits.html">Créditos de fotos</a></small></footer></>}

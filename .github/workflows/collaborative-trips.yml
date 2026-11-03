@@ -1,0 +1,55 @@
+name: Viaja — collaborative trips verification
+on:
+  push:
+    branches: [feat/collaborative-trips-20261103]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: viaja_collab_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: TypeScript and collaboration security contracts
+        run: |
+          npx tsc --noEmit
+          node --experimental-strip-types tests/collaborative-trips.test.mts
+          node --experimental-strip-types tests/community-trips.test.mts
+          node --experimental-strip-types tests/social-auth.test.mts
+      - name: Test real PostgreSQL RLS and two-user invitation flow
+        env:
+          PGPASSWORD: test_only
+        run: |
+          set -euo pipefail
+          command -v psql || { sudo apt-get update -qq && sudo apt-get install -y postgresql-client; }
+          export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGDATABASE=viaja_collab_test
+          psql -v ON_ERROR_STOP=1 -f tests/collaborative-db-baseline.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/202611030001_collaborative_trip_members.sql
+          psql -v ON_ERROR_STOP=1 -f tests/collaborative-db-rls.sql
+      - name: Build preview without private keys
+        run: |
+          npm run build:demo
+          test -f web-dist/index.html
+      - name: Test existing travel model
+        run: |
+          npm run test:core
