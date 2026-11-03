@@ -68,7 +68,16 @@ try{
   await page.screenshot({path:'artifacts/ui-delivery-a/dark-fixes/'+device.label+'-planner.png',fullPage:true});
   await page.getByRole('button',{name:'Cerrar calendario'}).click();
 
-  await page.getByRole('button',{name:/Mis viajes/}).click();
+  const navDebug=await page.evaluate(()=>{
+   const target=[...document.querySelectorAll('nav button')].find(el=>el.textContent?.includes('Mis viajes'));
+   const theme=document.querySelector('.theme-trigger');
+   if(!target||!theme)return {error:'no target/theme'};
+   const t=target.getBoundingClientRect(),m=theme.getBoundingClientRect();
+   const hit=document.elementFromPoint(t.x+t.width/2,t.y+t.height/2);
+   return {target:{x:t.x,y:t.y,width:t.width,height:t.height},theme:{x:m.x,y:m.y,width:m.width,height:m.height},interceptor:hit?.outerHTML?.slice(0,150),scrollY:window.scrollY};
+  });
+  console.log('NAV_DIAG '+device.label+': '+JSON.stringify(navDebug));
+  await page.getByRole('button',{name:/Mis viajes/}).click({timeout:5000});
   const search=page.getByRole('textbox',{name:'Buscar mis viajes'});
   await search.waitFor();
   const searchStyle=await search.evaluate(el=>({
