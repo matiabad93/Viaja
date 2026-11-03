@@ -190,7 +190,7 @@ try{
    assert.equal(await choice.getAttribute('aria-pressed'),'true');
    const selected=await choice.evaluate(paint);
    const track=await page.locator('.explore-switch').evaluate(paint);
-   assert.ok(contrast(selected.bg,track.bg)>=3);
+   assert.ok(contrast(selected.bg,track.bg)>=3,'Explore tab / track contrast: selected='+JSON.stringify(selected)+' track='+JSON.stringify(track)+' ratio='+contrast(selected.bg,track.bg).toFixed(2));
    assert.ok(contrast(selected.fg,selected.bg)>=4.5);
   }
   assert.deepEqual(errors,[],'No runtime errors');
