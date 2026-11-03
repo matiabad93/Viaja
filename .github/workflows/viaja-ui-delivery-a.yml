@@ -2,6 +2,8 @@ name: Viaja — UI delivery A
 on:
   push:
     branches: [feat/viaja-ui-delivery-a-20261103, fix/viaja-dark-contrast-input-overlap-20261103, feat/v1-production-release-plan, main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
