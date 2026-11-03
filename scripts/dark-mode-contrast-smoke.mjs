@@ -15,6 +15,12 @@ function contrast(foreground,background){
  const a=luminance(foreground),b=luminance(background);
  return (Math.max(a,b)+0.05)/(Math.min(a,b)+0.05);
 }
+const inset=async(parent,child,min=16)=>{
+ const bounds=await parent.boundingBox(),item=await child.boundingBox();
+ assert.ok(bounds&&item,'Panel and content must have measurable bounds');
+ assert.ok(item.x-bounds.x>=min && bounds.x+bounds.width-item.x-item.width>=min,'Missing horizontal inset on '+(await parent.getAttribute('class')));
+ assert.ok(item.y-bounds.y>=min && bounds.y+bounds.height-item.y-item.height>=min,'Missing vertical inset on '+(await parent.getAttribute('class')));
+};
 try{
  for(const device of [{label:'iphone',width:390,height:844},{label:'desktop',width:1280,height:900}]){
   const ctx=await browser.newContext({viewport:{width:device.width,height:device.height},locale:'es-ES',colorScheme:'dark'});
@@ -30,6 +36,7 @@ try{
   await page.getByRole('button',{name:/Apariencia:/}).waitFor();
   await page.getByRole('button',{name:/Planificar/}).click();
   await page.getByRole('heading',{name:'Contanos tu próximo viaje'}).waitFor();
+  await inset(page.locator('.formcard'),page.locator('.formcard .formtitle'));
 
   const styles=await page.evaluate(()=>{
    const find=selector=>{const el=document.querySelector(selector);if(!el)throw Error('Elemento ausente: '+selector);return el;};
@@ -89,6 +96,7 @@ try{
   await page.getByRole('button',{name:/Mis viajes/}).click({timeout:5000});
   const search=page.getByRole('textbox',{name:'Buscar mis viajes'});
   await search.waitFor();
+  await inset(page.locator('.journey-content').first(),page.locator('.journey-content h2').first());
   const searchStyle=await search.evaluate(el=>({
    outer:getComputedStyle(el.parentElement).backgroundColor,
    inner:getComputedStyle(el).backgroundColor,
@@ -118,16 +126,14 @@ try{
   const parisCard=page.locator('.visualguides article').filter({has:page.getByRole('heading',{name:'París',exact:true})});
   await parisCard.getByRole('button',{name:/Explorar/}).click();
   const panel=page.locator('.guidehead');
-  const inset=async(parent,child)=>{
-   const bounds=await parent.boundingBox(),item=await child.boundingBox();
-   assert.ok(item.x-bounds.x>=15 && bounds.x+bounds.width-item.x-item.width>=15,'Missing horizontal inset');
-   assert.ok(item.y-bounds.y>=15 && bounds.y+bounds.height-item.y-item.height>=15,'Missing vertical inset');
-  };
   await inset(panel,panel.locator('h1'));
   await inset(panel,panel.locator('.stop').first());
   await inset(panel,panel.getByRole('button',{name:/Usar este itinerario/}));
+  await inset(parisCard.locator('.cardbody'),parisCard.locator('.cardbody h3'));
   const mapPanel=page.locator('.viaja-map-section');
   await inset(mapPanel,mapPanel.locator('.viaja-map-toolbar'));
+  await inset(mapPanel,mapPanel.locator('.viaja-osm-map'));
+  await inset(mapPanel,mapPanel.locator('.viaja-map-stop').first());
   const zoomIn=mapPanel.locator('.leaflet-control-zoom-in');
   const zoomOut=mapPanel.locator('.leaflet-control-zoom-out');
   for(const control of [zoomIn,zoomOut]){
@@ -135,6 +141,8 @@ try{
    await readable(control.locator('span'),control);
    const box=await control.boundingBox();
    assert.ok(box.width>=44 && box.height>=44);
+   const mapBounds=await mapPanel.locator('.viaja-osm-map').boundingBox();
+   assert.ok(box.x-mapBounds.x>=14 && box.y-mapBounds.y>=14,'Zoom buttons need a visible inset from map edges');
    await control.focus();
    await readable(control.locator('span'),control);
    await control.click();
@@ -148,14 +156,18 @@ try{
   const badgePaint=await badge.evaluate(paint);
   assert.ok(contrast(badgePaint.fg,badgePaint.bg)>=4.5);
   await page.getByRole('button',{name:'Ver viaje →'}).click();
+  await inset(page.locator('.trip-detail'),page.locator('.trip-banner'));
   await page.getByRole('navigation',{name:'Secciones del viaje'}).getByRole('button',{name:'Itinerario'}).click();
   await readable(page.locator('.day-practical-guide strong'),page.locator('.day-practical-guide'));
   await readable(page.locator('.activity-tags span').first());
+  await inset(page.locator('.agenda .activity-card').first(),page.locator('.agenda .activity-card .activity-body').first());
   await readable(page.locator('.day-navigator [aria-pressed=true]').first());
   await page.getByRole('button',{name:'Calendario',exact:true}).click();
+  await inset(page.locator('.calendar-timeline'),page.locator('.calendar-intro'));
   await readable(page.locator('.calendar-intro p'),page.locator('.calendar-intro'));
   await readable(page.locator('.calendar-slot strong').first(),page.locator('.calendar-slot').first());
   await page.getByRole('button',{name:'Gastos',exact:true}).click();
+  await inset(page.locator('.finance-grid .surface').first(),page.locator('.finance-grid .surface h3').first());
   const metrics=page.locator('.metrics > div').first();
   const metricPaint=await metrics.evaluate(paint);
   assert.ok(contrast(metricPaint.fg,metricPaint.bg)>=4.5);
