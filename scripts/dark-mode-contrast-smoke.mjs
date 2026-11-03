@@ -73,8 +73,13 @@ try{
    const theme=document.querySelector('.theme-trigger');
    if(!target||!theme)return {error:'no target/theme'};
    const t=target.getBoundingClientRect(),m=theme.getBoundingClientRect();
+   const nav=target.closest('nav');
+   const navRect=nav.getBoundingClientRect();
+   const navCSS=getComputedStyle(nav);
+   const header=target.closest('header');
+   const headerCSS=getComputedStyle(header);
    const hit=document.elementFromPoint(t.x+t.width/2,t.y+t.height/2);
-   return {target:{x:t.x,y:t.y,width:t.width,height:t.height},theme:{x:m.x,y:m.y,width:m.width,height:m.height},interceptor:hit?.outerHTML?.slice(0,150),scrollY:window.scrollY};
+   return {target:{x:t.x,y:t.y,width:t.width,height:t.height},theme:{x:m.x,y:m.y,width:m.width,height:m.height},nav:{y:navRect.y,height:navRect.height,position:navCSS.position,top:navCSS.top,bottom:navCSS.bottom,display:navCSS.display},header:{transform:headerCSS.transform,filter:headerCSS.filter,backdrop:headerCSS.backdropFilter,position:headerCSS.position},viewport:window.innerHeight,interceptor:hit?.outerHTML?.slice(0,150),scrollY:window.scrollY};
   });
   console.log('NAV_DIAG '+device.label+': '+JSON.stringify(navDebug));
   await page.getByRole('button',{name:/Mis viajes/}).click({timeout:5000});
