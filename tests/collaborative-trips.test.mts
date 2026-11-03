@@ -25,7 +25,7 @@ assert.match(sql,/version=p_expected_version/);
 assert.match(sql,/private\.viaja_trip_role/);
 assert.match(sql,/revoke all on function public\.viaja_accept_trip_invite/);
 assert.match(sql,/grant execute on function public\.viaja_accept_trip_invite\(text\) to authenticated/);
-assert.match(sql,/role='viewer'/);
+assert.match(sql,/r='viewer'/);
 assert.match(client,/rpc\/viaja_save_shared_trip/);
 assert.match(client,/trip_members\?select/);
 assert.match(client,/collaboration:/);
