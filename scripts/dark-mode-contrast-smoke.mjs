@@ -146,7 +146,7 @@ try{
    const box=await control.boundingBox();
    assert.ok(box.width>=44 && box.height>=44);
    const mapBounds=await mapPanel.locator('.viaja-osm-map').boundingBox();
-   assert.ok(box.x-mapBounds.x>=14 && box.y-mapBounds.y>=14,'Zoom buttons need a visible inset from map edges');
+   assert.ok(box.x-mapBounds.x>=14 && box.y-mapBounds.y>=14,'Zoom buttons need a visible inset from map edges: x='+String((box.x-mapBounds.x).toFixed(1))+' y='+String((box.y-mapBounds.y).toFixed(1)));
    await control.focus();
    await readable(control.locator('span'),control);
    await control.click();
