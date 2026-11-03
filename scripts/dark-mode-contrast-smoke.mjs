@@ -18,7 +18,11 @@ function contrast(foreground,background){
 try{
  for(const device of [{label:'iphone',width:390,height:844},{label:'desktop',width:1280,height:900}]){
   const ctx=await browser.newContext({viewport:{width:device.width,height:device.height},locale:'es-ES',colorScheme:'dark'});
-  await ctx.addInitScript(()=>localStorage.setItem('viaja-theme','dark'));
+  await ctx.addInitScript(()=>{
+   localStorage.setItem('viaja-theme','dark');
+   const trip={destination:'Colmar',additionalDestinations:[],origin:'Barcelona',start:'2026-11-27',end:'2026-11-30',travelers:2,budget:0,pace:'Equilibrado',transport:'Sin coche',sources:[],notes:'',links:'',adjustment:''};
+   localStorage.setItem('viaja-ai-trips-v1',JSON.stringify([{id:'visual-colmar',kind:'draft',createdAt:'2026-11-03T00:00:00Z',trip}]));
+  });
   const page=await ctx.newPage();
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
@@ -96,6 +100,35 @@ try{
   await search.fill('Colmar');
   await page.screenshot({path:'artifacts/ui-delivery-a/dark-fixes/'+device.label+'-my-trips.png',fullPage:true});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)<=1,'No horizontal overflow');
+  const badge=page.locator('.topbar nav small');
+  assert.equal(await badge.innerText(),'1');
+  assert.ok(await badge.isVisible());
+  const paint=el=>({fg:getComputedStyle(el).color,bg:getComputedStyle(el).backgroundColor});
+  const badgePaint=await badge.evaluate(paint);
+  assert.ok(contrast(badgePaint.fg,badgePaint.bg)>=4.5);
+  await page.getByRole('button',{name:'Ver viaje →'}).click();
+  await page.getByRole('button',{name:'Gastos',exact:true}).click();
+  const metrics=page.locator('.metrics > div').first();
+  const metricPaint=await metrics.evaluate(paint);
+  assert.ok(contrast(metricPaint.fg,metricPaint.bg)>=4.5);
+  const card=await page.locator('.trip-detail').boundingBox();
+  const stats=await metrics.boundingBox();
+  assert.ok(stats.x-card.x>=14,'Metrics need a gutter inside the trip card');
+  await page.getByRole('button',{name:'Agregar gasto'}).click();
+  const amountField=await page.locator('.edit-panel input').first().evaluate(paint);
+  assert.ok(contrast(amountField.fg,amountField.bg)>=4.5);
+  assert.equal(amountField.bg,colors.darkField);
+  await page.screenshot({path:'artifacts/ui-delivery-a/dark-fixes/'+device.label+'-expenses.png'});
+  await page.getByRole('button',{name:'Explorar destinos'}).click();
+  for(const name of ['Guías de Viaja','Viajes compartidos']){
+   const choice=page.getByRole('button',{name,exact:true});
+   await choice.click();
+   assert.equal(await choice.getAttribute('aria-pressed'),'true');
+   const selected=await choice.evaluate(paint);
+   const track=await page.locator('.explore-switch').evaluate(paint);
+   assert.ok(contrast(selected.bg,track.bg)>=3);
+   assert.ok(contrast(selected.fg,selected.bg)>=4.5);
+  }
   assert.deepEqual(errors,[],'No runtime errors');
   await ctx.close();
   console.log('PASS '+device.label+' dark forms, icon/text spacing, date picker, planner contrast and My Trips search');
