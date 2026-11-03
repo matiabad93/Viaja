@@ -37,15 +37,19 @@ jobs:
         with:
           node-version: '22'
       - name: Comprobar credenciales sin exponerlas
+        id: credentials
         shell: bash
         run: |
           set -euo pipefail
           if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
-            echo "::error::Faltan Cloudflare Pages API token y/o account ID en GitHub Actions secrets. Guardarlos como VIAJA_CF_API_TOKEN y VIAJA_CF_ACCOUNT_ID (no pegar valores en los commits ni en el chat)."
-            exit 1
+            echo "::warning::Despliegue omitido: falta el token y/o account ID de Cloudflare. Guardarlos como VIAJA_CF_API_TOKEN y VIAJA_CF_ACCOUNT_ID en GitHub Actions secrets; no pegarlos en chats ni commits."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          echo "available=true" >> "$GITHUB_OUTPUT"
           echo "Cloudflare Pages auth inputs present; proceeding with existing viaja project."
       - name: Compilar exactamente el cliente de Viaja
+        if: steps.credentials.outputs.available == 'true'
         run: |
           set -euo pipefail
           npm ci --ignore-scripts --no-audit --no-fund
@@ -57,6 +61,7 @@ jobs:
             exit 1
           fi
       - name: Publicar EN EL PROYECTO EXISTENTE viaja
+        if: steps.credentials.outputs.available == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -66,4 +71,5 @@ jobs:
             --commit-hash "$GITHUB_SHA" \
             --commit-message "Viaja: corrección de contraste e iconos en modo oscuro"
       - name: Verificar que Cloudflare sirva los nuevos estilos
+        if: steps.credentials.outputs.available == 'true'
         run: node scripts/ui-delivery-a-live-check.mjs https://viaja.pages.dev
