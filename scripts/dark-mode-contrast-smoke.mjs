@@ -19,7 +19,11 @@ const inset=async(parent,child,min=16)=>{
  const bounds=await parent.boundingBox(),item=await child.boundingBox();
  assert.ok(bounds&&item,'Panel and content must have measurable bounds');
  assert.ok(item.x-bounds.x>=min && bounds.x+bounds.width-item.x-item.width>=min,'Missing horizontal inset on '+(await parent.getAttribute('class')));
- assert.ok(item.y-bounds.y>=min && bounds.y+bounds.height-item.y-item.height>=min,'Missing vertical inset on '+(await parent.getAttribute('class')));
+ assert.ok(item.y-bounds.y>=min && bounds.y+bounds.height-item.y-item.height>=min,
+  'Missing vertical inset on '+(await parent.getAttribute('class'))+
+  ' top='+String((item.y-bounds.y).toFixed(1))+
+  ' bottom='+String((bounds.y+bounds.height-item.y-item.height).toFixed(1))+
+  ' expected='+String(min));
 };
 try{
  for(const device of [{label:'iphone',width:390,height:844},{label:'desktop',width:1280,height:900}]){
