@@ -1250,10 +1250,16 @@ html[data-theme="dark"] .viaja-osm-map .leaflet-control-attribution a {
   --tab-hover-bg:var(--surface-muted);
 }
 html[data-theme="dark"] {
-  --tab-active-bg:#315844;
+  --tab-active-bg:#43785a;
   --tab-active-ink:#f5fbf7;
   --tab-active-border:#7fab89;
   --tab-hover-bg:#294135;
+}
+/* The destination switch needs a darker track so selected vs. unselected
+   meets a 3:1 UI-component contrast difference without a white active fill. */
+html[data-theme="dark"] .explore-switch {
+  background-color:#162219;
+  border-color:var(--line);
 }
 /* The same visual language covers the main nav, destination tabs, journey filters,
    day selectors and trip-detail sections. ARIA is the source of truth for selection. */
