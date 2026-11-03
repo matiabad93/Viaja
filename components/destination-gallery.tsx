@@ -5,7 +5,7 @@ import {PHOTO_SOURCE_VERSION} from '../server/tourism-photos';
 import {useEffect,useState,useRef} from 'react';
 import type {Plan,DestinationPhoto} from '../lib/travel';
 
-export function DestinationGallery({plan,onChange}:{plan:Plan;onChange:(p:Plan)=>boolean}){
+export function DestinationGallery({plan,onChange,readOnly=false}:{plan:Plan;onChange:(p:Plan)=>boolean;readOnly?:boolean}){
  const latest=useRef(plan);latest.current=plan;
  const change=useRef(onChange);change.current=onChange;
  const city=plan.trip.city?.name||plan.trip.destination.replace(/ · copia$/,'').split(',')[0].replace(/ esencial| entre miradores| y Alsacia| imprescindible/i,'');
@@ -23,7 +23,7 @@ export function DestinationGallery({plan,onChange}:{plan:Plan;onChange:(p:Plan)=
    // are not resurrected by account sync or a return to the detail screen.
    const stored=latest.current.photos||[];
    if(stored.map(p=>p.source).join('|')!==curated.map(p=>p.source).join('|')){
-    change.current({...latest.current,photos:curated,photoKey:key});
+    if(!readOnly)change.current({...latest.current,photos:curated,photoKey:key});
    }
    return;
   }
@@ -46,7 +46,7 @@ export function DestinationGallery({plan,onChange}:{plan:Plan;onChange:(p:Plan)=
     if(controller.signal.aborted)return;
     setPhotos(j.photos);
     setState(j.photos.length<3?'Hay pocas fotografías verificadas para este destino.':'');
-    change.current({...latest.current,photos:j.photos,photoKey:key});
+    if(!readOnly)change.current({...latest.current,photos:j.photos,photoKey:key});
    })
    .catch(e=>{if(!controller.signal.aborted)setState(e.message||'No se pudieron cargar las fotos.')});
   return()=>controller.abort();
