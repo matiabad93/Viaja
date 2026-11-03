@@ -204,8 +204,8 @@ export async function publishCommunityTrip(plan:Plan):Promise<CommunityTrip>{
  const owner=current?.user.id;
  if(!owner)throw Error('Iniciá sesión para publicar un viaje.');
  const payload=publicTripSnapshot(plan);
- // If a brand-new draft has not reached the database, persist it once before publication.
- if(!plan.collaboration?.version)await saveCloudTrip(plan);
+ // Never race with a pending save or bump the shared-trip version while publishing.
+ if(!plan.collaboration?.version)throw Error('Esperá a que el viaje termine de guardarse en tu cuenta antes de publicarlo.');
  const rows=await db<CommunityTrip[]>('community_trips?on_conflict=source_trip_id&select=id,title,destination,days_count,pace,transport,content,published_at',{
   method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},
   body:JSON.stringify({...payload,source_trip_id:plan.id,user_id:owner,published:true,published_at:new Date().toISOString()})
