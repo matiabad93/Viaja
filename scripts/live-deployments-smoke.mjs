@@ -31,6 +31,7 @@ async function inspect({host,expected,app}){
  if(!script.ok)throw Error('Script HTTP '+script.status);
  const content=await script.text();
  if(!content.includes(expected))throw Error('JS antiguo o incompleto: '+scriptUrl.pathname);
+ if(app==='Viaja'&&!content.includes('viaja-theme'))throw Error('Frontend no actualizado con Entrega A: '+scriptUrl.pathname);
  return {host,app,bundle:scriptUrl.pathname,length:content.length};
 }
 for(let attempt=1;attempt<=5;attempt++){
