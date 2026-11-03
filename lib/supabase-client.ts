@@ -146,24 +146,28 @@ export async function changePassword(password:string) {
   await api('/auth/v1/user',{method:'PUT',body:JSON.stringify({password})},token);
   if(browser())window.sessionStorage.removeItem('viaja-password-recovery');
 }
-async function db<T=JSONValue>(path:string,init:RequestInit={}):Promise<T> {
+export async function db<T=JSONValue>(path:string,init:RequestInit={}):Promise<T> {
   const token=await accessToken();
   if(!token)throw Error('Iniciá sesión para guardar o consultar tus viajes.');
   return api<T>('/rest/v1/'+path,init,token);
 }
 export async function listCloudTrips():Promise<Plan[]> {
-  const rows=await db<{document:Plan}[]>('trips?select=document&order=updated_at.desc&limit=250');
+  const rows=await db<{user_id:string;version:number;document:Plan}[]>('trips?select=user_id,version,document&order=updated_at.desc&limit=250');
   if(!Array.isArray(rows))throw Error('No pudimos leer tus viajes.');
-  return rows.map(r=>r.document).filter(p=>p&&typeof p.id==='string'&&p.trip);
+  return rows.map(r=>({...r.document,collaboration:{
+    version:r.version,
+    ownerId:r.user_id,
+    role:r.user_id===current?.user.id?'owner':'viewer' as 'viewer'
+  }})).filter(p=>p&&typeof p.id==='string'&&p.trip);
 }
-export async function saveCloudTrip(p:Plan):Promise<void> {
-  const owner=current?.user.id;
-  if(!owner)throw Error('Iniciá sesión para guardar.');
+/** All writes use a version-checked RPC; a second editor cannot silently overwrite changes. */
+export async function saveCloudTrip(p:Plan):Promise<number> {
+  if(!current?.user.id)throw Error('Iniciá sesión para guardar.');
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(p.id))throw Error('Identificador de viaje inválido.');
-  await db('trips?on_conflict=id',{
+  const {collaboration,...document}=p;
+  return db<number>('rpc/viaja_save_shared_trip',{
     method:'POST',
-    headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
-    body:JSON.stringify({id:p.id,user_id:owner,document:p,schema_version:1})
+    body:JSON.stringify({p_trip_id:p.id,p_document:document,p_expected_version:collaboration?.version??null})
   });
 }
 export async function deleteCloudTrip(id:string):Promise<void> {
@@ -197,9 +201,7 @@ export async function publishCommunityTrip(plan:Plan):Promise<CommunityTrip>{
  const owner=current?.user.id;
  if(!owner)throw Error('Iniciá sesión para publicar un viaje.');
  const payload=publicTripSnapshot(plan);
- // Ensure the source plan exists and belongs to the current user before creating
- // a public snapshot. The database enforces this again through FK + RLS.
- await saveCloudTrip(plan);
+ // Source must already be saved. Keep its concurrency version unchanged when publishing.
  const rows=await db<CommunityTrip[]>('community_trips?on_conflict=source_trip_id&select=id,title,destination,days_count,pace,transport,content,published_at',{
   method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},
   body:JSON.stringify({...payload,source_trip_id:plan.id,user_id:owner,published:true,published_at:new Date().toISOString()})
