@@ -732,3 +732,11 @@ html[data-theme="dark"] :is(.viaja-account-trigger,.account-trigger){background:
 @media(prefers-reduced-motion:reduce){
  html[data-theme] body,.theme-trigger,.visualguides .favorite-button,.visualguides .favorite-button svg{transition:none!important}
 }
+
+/* Mobile fixed navigation is also a sibling inside the sticky header.
+   Keep appearance/account clickable above its stacking layer. */
+@media(max-width:800px){
+ .topbar .header-actions{position:relative;z-index:80}
+ .topbar .theme-switcher{position:relative;z-index:81}
+ .topbar nav{z-index:50}
+}
