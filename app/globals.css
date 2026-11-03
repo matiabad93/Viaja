@@ -1402,3 +1402,9 @@ html[data-theme] .expense-filters .clear-filters:focus-visible {
 html[data-theme] .visualguides .guidehead {
   padding-bottom:calc(var(--panel-inset) + 16px);
 }
+
+
+/* Keep location cards and attribution comfortably inside the map panel. */
+html[data-theme] .viaja-map-section {
+  padding-bottom:calc(var(--panel-inset) + 20px);
+}
