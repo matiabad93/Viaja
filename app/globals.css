@@ -740,3 +740,11 @@ html[data-theme="dark"] :is(.viaja-account-trigger,.account-trigger){background:
  .topbar .theme-switcher{position:relative;z-index:81}
  .topbar nav{z-index:50}
 }
+
+/* Keep decorative location icons from covering typed text in unified fields. */
+html[data-theme] .inputicon input{padding-left:39px}
+/* Editorial cards had a more specific generic button padding rule. */
+.visualguides .card button.favorite-button.is-compact{
+ width:40px;min-width:40px;height:40px;min-height:40px;
+ padding:0;display:inline-flex;align-items:center;justify-content:center;
+}
