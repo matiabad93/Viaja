@@ -124,12 +124,12 @@ try{
   await page.getByRole('heading',{name:'Madrid imprescindible',exact:true}).waitFor();
   await page.getByRole('button',{name:/Todas las guías/}).click();
   const parisCard=page.locator('.visualguides article').filter({has:page.getByRole('heading',{name:'París',exact:true})});
+  await inset(parisCard.locator('.cardbody'),parisCard.locator('.cardbody h3'));
   await parisCard.getByRole('button',{name:/Explorar/}).click();
   const panel=page.locator('.guidehead');
   await inset(panel,panel.locator('h1'));
   await inset(panel,panel.locator('.stop').first());
   await inset(panel,panel.getByRole('button',{name:/Usar este itinerario/}));
-  await inset(parisCard.locator('.cardbody'),parisCard.locator('.cardbody h3'));
   const mapPanel=page.locator('.viaja-map-section');
   await inset(mapPanel,mapPanel.locator('.viaja-map-toolbar'));
   await inset(mapPanel,mapPanel.locator('.viaja-osm-map'));
