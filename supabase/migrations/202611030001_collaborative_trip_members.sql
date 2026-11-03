@@ -57,7 +57,7 @@ create policy viaja_members_read_team on public.trip_members for select to authe
 using(private.viaja_trip_role(trip_id) is not null);
 
 -- Owner and editors save with compare-and-swap; viewers cannot write.
-create or replace function public.viaja_save_shared_trip(p_trip_id uuid,p_document jsonb,p_expected_version integer default null)
+create or replace function private.viaja_save_shared_trip_impl(p_trip_id uuid,p_document jsonb,p_expected_version integer default null)
 returns integer language plpgsql security definer set search_path='' as $$
 declare v integer; r text;
 begin
@@ -83,10 +83,17 @@ begin
  if v is null then raise exception 'TRIP_CONFLICT'; end if;
  return v;
 end $$;
+revoke all on function private.viaja_save_shared_trip_impl(uuid,jsonb,integer) from public,anon,authenticated;
+grant execute on function private.viaja_save_shared_trip_impl(uuid,jsonb,integer) to authenticated;
+-- Only this SECURITY INVOKER wrapper is exposed by PostgREST; privileged code stays in private schema.
+create or replace function public.viaja_save_shared_trip(p_trip_id uuid,p_document jsonb,p_expected_version integer default null)
+returns integer language sql security invoker set search_path='' as $
+select private.viaja_save_shared_trip_impl($1,$2,$3)
+$;
 revoke all on function public.viaja_save_shared_trip(uuid,jsonb,integer) from public,anon,authenticated;
 grant execute on function public.viaja_save_shared_trip(uuid,jsonb,integer) to authenticated;
 
-create or replace function public.viaja_create_trip_invite(p_trip_id uuid,p_role text,p_email text default null)
+create or replace function private.viaja_create_trip_invite_impl(p_trip_id uuid,p_role text,p_email text default null)
 returns text language plpgsql security definer set search_path='' as $$
 declare token text; normalized_email text;
 begin
@@ -103,10 +110,17 @@ begin
  values(p_trip_id,auth.uid(),md5(token),normalized_email,p_role);
  return token;
 end $$;
+revoke all on function private.viaja_create_trip_invite_impl(uuid,text,text) from public,anon,authenticated;
+grant execute on function private.viaja_create_trip_invite_impl(uuid,text,text) to authenticated;
+-- Only this SECURITY INVOKER wrapper is exposed by PostgREST; privileged code stays in private schema.
+create or replace function public.viaja_create_trip_invite(p_trip_id uuid,p_role text,p_email text default null)
+returns text language sql security invoker set search_path='' as $
+select private.viaja_create_trip_invite_impl($1,$2,$3)
+$;
 revoke all on function public.viaja_create_trip_invite(uuid,text,text) from public,anon,authenticated;
 grant execute on function public.viaja_create_trip_invite(uuid,text,text) to authenticated;
 
-create or replace function public.viaja_accept_trip_invite(p_token text)
+create or replace function private.viaja_accept_trip_invite_impl(p_token text)
 returns uuid language plpgsql security definer set search_path='' as $$
 declare inv public.trip_invitations%rowtype; account_email text;
 begin
@@ -127,10 +141,17 @@ begin
  update public.trip_invitations set accepted_at=now() where id=inv.id;
  return inv.trip_id;
 end $$;
+revoke all on function private.viaja_accept_trip_invite_impl(text) from public,anon,authenticated;
+grant execute on function private.viaja_accept_trip_invite_impl(text) to authenticated;
+-- Only this SECURITY INVOKER wrapper is exposed by PostgREST; privileged code stays in private schema.
+create or replace function public.viaja_accept_trip_invite(p_token text)
+returns uuid language sql security invoker set search_path='' as $
+select private.viaja_accept_trip_invite_impl($1)
+$;
 revoke all on function public.viaja_accept_trip_invite(text) from public,anon,authenticated;
 grant execute on function public.viaja_accept_trip_invite(text) to authenticated;
 
-create or replace function public.viaja_list_trip_invitations(p_trip_id uuid)
+create or replace function private.viaja_list_trip_invitations_impl(p_trip_id uuid)
 returns table(id uuid,invite_email text,role text,expires_at timestamptz,accepted_at timestamptz,revoked_at timestamptz)
 language plpgsql security definer set search_path='' as $$
 begin
@@ -138,10 +159,17 @@ begin
  return query select i.id,i.invite_email,i.role,i.expires_at,i.accepted_at,i.revoked_at
  from public.trip_invitations i where i.trip_id=p_trip_id order by i.created_at desc limit 50;
 end $$;
+revoke all on function private.viaja_list_trip_invitations_impl(uuid) from public,anon,authenticated;
+grant execute on function private.viaja_list_trip_invitations_impl(uuid) to authenticated;
+-- Only this SECURITY INVOKER wrapper is exposed by PostgREST; privileged code stays in private schema.
+create or replace function public.viaja_list_trip_invitations(p_trip_id uuid)
+returns table(id uuid,invite_email text,role text,expires_at timestamptz,accepted_at timestamptz,revoked_at timestamptz) language sql security invoker set search_path='' as $
+select * from private.viaja_list_trip_invitations_impl($1)
+$;
 revoke all on function public.viaja_list_trip_invitations(uuid) from public,anon,authenticated;
 grant execute on function public.viaja_list_trip_invitations(uuid) to authenticated;
 
-create or replace function public.viaja_revoke_trip_invite(p_invite_id uuid)
+create or replace function private.viaja_revoke_trip_invite_impl(p_invite_id uuid)
 returns boolean language plpgsql security definer set search_path='' as $$
 declare changed integer;
 begin
@@ -151,10 +179,17 @@ begin
  get diagnostics changed=row_count;
  return changed=1;
 end $$;
+revoke all on function private.viaja_revoke_trip_invite_impl(uuid) from public,anon,authenticated;
+grant execute on function private.viaja_revoke_trip_invite_impl(uuid) to authenticated;
+-- Only this SECURITY INVOKER wrapper is exposed by PostgREST; privileged code stays in private schema.
+create or replace function public.viaja_revoke_trip_invite(p_invite_id uuid)
+returns boolean language sql security invoker set search_path='' as $
+select private.viaja_revoke_trip_invite_impl($1)
+$;
 revoke all on function public.viaja_revoke_trip_invite(uuid) from public,anon,authenticated;
 grant execute on function public.viaja_revoke_trip_invite(uuid) to authenticated;
 
-create or replace function public.viaja_remove_trip_member(p_trip_id uuid,p_user_id uuid)
+create or replace function private.viaja_remove_trip_member_impl(p_trip_id uuid,p_user_id uuid)
 returns boolean language plpgsql security definer set search_path='' as $$
 declare changed integer;
 begin
@@ -164,6 +199,13 @@ begin
  get diagnostics changed=row_count;
  return changed=1;
 end $$;
+revoke all on function private.viaja_remove_trip_member_impl(uuid,uuid) from public,anon,authenticated;
+grant execute on function private.viaja_remove_trip_member_impl(uuid,uuid) to authenticated;
+-- Only this SECURITY INVOKER wrapper is exposed by PostgREST; privileged code stays in private schema.
+create or replace function public.viaja_remove_trip_member(p_trip_id uuid,p_user_id uuid)
+returns boolean language sql security invoker set search_path='' as $
+select private.viaja_remove_trip_member_impl($1,$2)
+$;
 revoke all on function public.viaja_remove_trip_member(uuid,uuid) from public,anon,authenticated;
 grant execute on function public.viaja_remove_trip_member(uuid,uuid) to authenticated;
 commit;
