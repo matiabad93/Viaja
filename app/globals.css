@@ -900,3 +900,14 @@ html[data-theme="dark"] .city-results [role="option"].city-result-option[aria-se
 }
 html[data-theme="dark"] .city-results small,
 html[data-theme="dark"] .city-results p{color:var(--muted)}
+
+/* A backdrop-filter creates the containing block for fixed descendants.
+ * Disable it on the sticky mobile header so the bottom tab bar is truly viewport-fixed. */
+@media (max-width:800px){
+ html[data-theme] header.topbar{
+   -webkit-backdrop-filter:none !important;
+   backdrop-filter:none !important;
+   filter:none;
+   transform:none;
+ }
+}
