@@ -1257,7 +1257,7 @@ html[data-theme="dark"] {
 }
 /* The destination switch needs a darker track so selected vs. unselected
    meets a 3:1 UI-component contrast difference without a white active fill. */
-html[data-theme="dark"] .explore-switch {
+html[data-theme="dark"] .explore-all .explore-switch {
   background-color:#162219;
   border-color:var(--line);
 }
