@@ -6,7 +6,7 @@ create schema auth;
 grant usage on schema auth to authenticated;
 create table auth.users (id uuid primary key,email text not null);
 create or replace function auth.uid() returns uuid language sql stable set search_path='' as $$
-select pg_catalog.nullif(pg_catalog.current_setting('request.jwt.claim.sub',true),'')::uuid
+select nullif(pg_catalog.current_setting('request.jwt.claim.sub',true),'')::uuid
 $$;
 grant execute on function auth.uid() to authenticated;
 create table public.trips (
