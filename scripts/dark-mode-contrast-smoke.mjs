@@ -21,7 +21,7 @@ try{
   await ctx.addInitScript(()=>{
    localStorage.setItem('viaja-theme','dark');
    const trip={destination:'Colmar',additionalDestinations:[],origin:'Barcelona',start:'2026-11-27',end:'2026-11-30',travelers:2,budget:0,pace:'Equilibrado',transport:'Sin coche',sources:[],notes:'',links:'',adjustment:''};
-   localStorage.setItem('viaja-ai-trips-v1',JSON.stringify([{id:'visual-colmar',kind:'draft',createdAt:'2026-11-03T00:00:00Z',trip}]));
+   localStorage.setItem('viaja-ai-trips-v1',JSON.stringify([{id:'visual-colmar',kind:'draft',createdAt:'2026-11-03T00:00:00Z',trip,itinerary:[{id:'dia',title:'Centro',advice:'Recorrer a pie',activities:[{id:'plaza',title:'Plaza',description:'Paseo',time:'10:00',duration:'1 h'}]}]}]));
   });
   const page=await ctx.newPage();
   const errors=[];
@@ -100,6 +100,21 @@ try{
   await search.fill('Colmar');
   await page.screenshot({path:'artifacts/ui-delivery-a/dark-fixes/'+device.label+'-my-trips.png',fullPage:true});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)<=1,'No horizontal overflow');
+  await page.getByRole('button',{name:'Planificar',exact:true}).click();
+  const example=page.getByRole('button',{name:'Probar con Madrid'});
+  const readable=async(locator,background=locator)=>{
+   const fg=await locator.evaluate(el=>getComputedStyle(el).color);
+   const bg=await background.evaluate(el=>getComputedStyle(el).backgroundColor);
+   assert.ok(contrast(fg,bg)>=4.5,'Insufficient contrast: '+fg+' on '+bg);
+  };
+  await readable(example);
+  await example.click();
+  assert.equal(await page.getByRole('combobox',{name:'Destino principal'}).inputValue(),'Madrid, España');
+  assert.ok(await page.getByRole('button',{name:'Agregar otro destino'}).isEnabled());
+  await readable(page.locator('.example-open'));
+  await page.getByRole('button',{name:/Abrir guía de Madrid/}).click();
+  await page.getByRole('heading',{name:'Madrid imprescindible',exact:true}).waitFor();
+  await page.getByRole('button',{name:/Mis viajes/}).first().click();
   const badge=page.locator('.topbar nav small');
   assert.equal(await badge.innerText(),'1');
   assert.ok(await badge.isVisible());
@@ -107,6 +122,13 @@ try{
   const badgePaint=await badge.evaluate(paint);
   assert.ok(contrast(badgePaint.fg,badgePaint.bg)>=4.5);
   await page.getByRole('button',{name:'Ver viaje →'}).click();
+  await page.getByRole('navigation',{name:'Secciones del viaje'}).getByRole('button',{name:'Itinerario'}).click();
+  await readable(page.locator('.day-practical-guide strong'),page.locator('.day-practical-guide'));
+  await readable(page.locator('.activity-tags span').first());
+  await readable(page.locator('.day-navigator [aria-pressed=true]').first());
+  await page.getByRole('button',{name:'Calendario',exact:true}).click();
+  await readable(page.locator('.calendar-intro p'),page.locator('.calendar-intro'));
+  await readable(page.locator('.calendar-slot strong').first(),page.locator('.calendar-slot').first());
   await page.getByRole('button',{name:'Gastos',exact:true}).click();
   const metrics=page.locator('.metrics > div').first();
   const metricPaint=await metrics.evaluate(paint);

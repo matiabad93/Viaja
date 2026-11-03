@@ -969,3 +969,72 @@ html[data-theme="dark"] :is(.input-grid,.expense-filters,.edit-panel,.triptools)
  .trip-detail .metrics span {font-size:13px}
  .trip-detail .metrics strong {margin:0;text-align:end}
 }
+
+/* Madrid entry points use the same foreground/background pairs as other actions. */
+.inspiration {background:#193b32}
+.inspiration button {
+ min-height:44px;align-items:center;font-weight:700;
+ background:var(--surface);color:var(--ink);border:1px solid var(--line);
+}
+.inspiration button:hover,.example-guide:hover .example-open {
+ background:var(--green);color:var(--paper);
+}
+.example-guide .example-open {
+ background:var(--surface-muted);border-color:var(--line);color:var(--ink);
+}
+.formcard {scroll-margin-top:90px}
+@media(max-width:700px) {
+ .intro .inspiration {display:block;height:128px;margin-top:16px}
+ .intro .inspiration>div {inset:12px 16px;justify-content:center;gap:8px}
+ .intro .inspiration strong {display:none}
+}
+
+html[data-theme="dark"] {
+ --warn-bg:#423326;--warn-text:#ffd5ac;
+ --error-bg:#482c2b;--error-text:#ffc5c0;
+}
+html[data-theme="dark"] :is(.day-practical-guide,.activity-expanded-guide,.activity-completed,
+ .budget-summary,.trip-feasibility,.community-day-advice,.community-disclaimer,.team-created-link,
+ .viaja-map-stop,.city-results,.viaja-account-dialog,.viaja-confirm-dialog,.visualguides .editor,
+ .visualguides table,.visualguides .stat,.visualguides .maplabel) {
+ background:var(--surface-raised);color:var(--ink);border-color:var(--line);
+}
+html[data-theme="dark"] :is(.activity-rail span,.activity-tags span,.viaja-map-stop-number,
+ .team-avatar,.community-stop-count,.viaja-account-close,.viaja-confirm-close,.viaja-account-action,
+ .viaja-social-provider,.viaja-account-notice,.team-invitation-banner,.visualguides .tip,
+ .visualguides .map,.visualguides .notice,.citation,.cover-arrow,.orb) {
+ background:var(--surface-muted);color:var(--ink);border-color:var(--line);
+}
+html[data-theme="dark"] :is(.activity-expanded-guide strong,.day-practical-guide strong,
+ .trip-feasibility strong,.forecast-panel .section-heading strong,.viaja-account-dialog h2,
+ .community-detail-share strong,.viaja-map-toolbar>label,.activity-completed h3) {color:var(--ink)}
+html[data-theme="dark"] :is(.outcomes small,.formfoot>span,.planning-actions p,.trip-step-hint,
+ .day-practical-guide small,.calendar-intro p,.calendar-hour,.calendar-empty,.calendar-flexible>p,
+ .calendar-flexible small,.viaja-map-attribution,.viaja-map-stop small,.community-day-heading span,
+ .community-stop-meta,.team-member-row small,.photo-grid figcaption,.viaja-account-subtitle,
+ .viaja-account-help,.viaja-social-provider small,.viaja-social-separator,.viaja-social-explainer,
+ .viaja-confirm-dialog p,.visualguides th,.visualguides footer) {color:var(--muted)}
+html[data-theme="dark"] :is(.team-role,.viaja-map-stop>a,.community-owner-actions button,
+ .viaja-account-links button,.day-number,h1 em) {color:var(--green)}
+html[data-theme="dark"] :is(.visualguides,.viaja-account-dialog,.viaja-map-toolbar,.community-link-label)
+ :is(input,select,textarea) {background-color:var(--field-bg);border-color:var(--field-border);color:var(--field-text)}
+html[data-theme="dark"] :is(.trip-feasibility.blocked,.team-refresh-warning,.team-remote-change,
+ .calendar-slot.calendar-slot-overlap) {background:var(--warn-bg);color:var(--warn-text)}
+html[data-theme="dark"] :is(.calendar-slot-overlap em,.trip-feasibility.blocked strong) {color:var(--warn-text)}
+html[data-theme="dark"] .error {background:var(--error-bg);color:var(--error-text)}
+html[data-theme="dark"] :is(.danger-link,.app-field-message) {color:var(--error-text)}
+html[data-theme="dark"] :is(.day-navigator,.filterpills) button[aria-pressed=true],
+html[data-theme="dark"] .visualguides .tabs button.selected,
+html[data-theme="dark"] .topbar nav button.navactive small {
+ background:var(--green);color:var(--paper);
+}
+html[data-theme="dark"] .city-results [role=option].city-result-option {color:var(--ink)}
+html[data-theme="dark"] .city-results [role=option].city-result-option:is(:hover,[aria-selected=true]) {
+ background:var(--surface-muted);
+}
+html[data-theme="dark"] .city-results :is(small,p,.city-result-source,.city-result-country) {color:var(--muted)}
+html[data-theme="dark"] .viaja-social-provider:hover:not(:disabled),
+html[data-theme="dark"] :is(.iconbtn,.secondary):hover {background:var(--surface-raised);color:var(--ink)}
+html[data-theme="dark"] .viaja-social-provider:disabled {background:var(--surface);color:var(--muted)}
+html[data-theme="dark"] progress,html[data-theme="dark"] progress::-webkit-progress-bar {background:var(--surface-muted)}
+html[data-theme="dark"] progress::-webkit-progress-value {background:var(--green)}
