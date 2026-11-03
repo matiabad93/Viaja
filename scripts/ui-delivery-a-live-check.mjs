@@ -21,8 +21,8 @@ for(let attempt=1;attempt<=20;attempt++){
   ]);
   if(!jsResponse.ok||!cssResponse.ok)throw Error('Missing JS/CSS assets');
   const [js,css]=await Promise.all([jsResponse.text(),cssResponse.text()]);
-  if(!js.includes('viaja-theme')||!js.includes('Apariencia:')||!css.includes('favorite-button')||!css.includes('app-select-trigger'))
-    throw Error('Cloudflare still serves a pre-Delivery-A bundle');
+  if(!js.includes('viaja-theme')||!js.includes('Apariencia:')||!css.includes('favorite-button')||!css.includes('app-select-trigger')||!css.includes('padding-inline-start:49px')||!css.includes('trip-calendar-popover'))
+    throw Error('Cloudflare still serves a pre-Delivery-A or pre-dark-contrast-fix bundle');
   console.log('PASS live UI delivery A at '+origin+' JS '+script+' CSS '+style);
   process.exit(0);
  }catch(error){lastError=error instanceof Error?error.message:String(error);console.warn('Cloudflare attempt '+attempt+'/20: '+lastError);}
