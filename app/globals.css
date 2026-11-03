@@ -748,3 +748,154 @@ html[data-theme] .inputicon input{padding-left:39px}
  width:40px;min-width:40px;height:40px;min-height:40px;
  padding:0;display:inline-flex;align-items:center;justify-content:center;
 }
+
+
+/* VIAJA 1.1.1 — dark-mode contrast and decorative icon geometry.
+ * Never place text on top of an absolute icon: keep the text inset
+ * independent of the visual theme, number input or city autocomplete. */
+html[data-theme] .inputicon > svg{
+ position:absolute;
+ top:50%;
+ left:16px;
+ width:18px;
+ height:18px;
+ transform:translateY(-50%);
+ color:var(--muted);
+ pointer-events:none;
+ z-index:1;
+}
+html[data-theme] .formcard .formgrid .inputicon > input,
+html[data-theme] .formcard .formgrid .inputicon .city-combobox > input,
+html[data-theme] .edit-panel .input-grid .inputicon > input,
+html[data-theme] .edit-panel .input-grid .inputicon .city-combobox > input{
+ padding-inline-start:49px;
+}
+html[data-theme] .inputicon:focus-within > svg{color:var(--green)}
+
+/* Search is one control, not a white wrapper surrounding a dark input. */
+html[data-theme] .journey-toolbar .searchbox{
+ display:flex;
+ align-items:center;
+ gap:12px;
+ min-height:54px;
+ padding:0 16px;
+ border:1px solid var(--field-border);
+ border-radius:14px;
+ background:var(--field-bg);
+ color:var(--field-text);
+ box-shadow:0 1px 2px rgba(18,51,37,.04);
+}
+html[data-theme] .journey-toolbar .searchbox:focus-within{
+ border-color:var(--green);
+ box-shadow:0 0 0 3px var(--focus-ring);
+}
+html[data-theme] .journey-toolbar .searchbox > svg{
+ flex:none;
+ color:var(--muted);
+}
+html[data-theme] .journey-toolbar .searchbox > input{
+ flex:1;
+ width:100%;
+ min-width:0;
+ min-height:52px;
+ margin:0;
+ padding:10px 0;
+ border:0;
+ border-radius:0;
+ background:transparent;
+ color:var(--field-text);
+ box-shadow:none;
+}
+html[data-theme] .journey-toolbar .searchbox > input:focus-visible{
+ border:0;
+ box-shadow:none;
+ outline:none;
+}
+
+/* Existing pre-theme cards and date buttons had hard-coded light values.
+ * Scope overrides to dark mode instead of altering the light experience. */
+html[data-theme="dark"] .trip-stops-editor{
+ background:var(--surface-muted);
+ color:var(--ink);
+ border-color:var(--line);
+}
+html[data-theme="dark"] .trip-stops-heading strong,
+html[data-theme="dark"] .trip-stops-editor label,
+html[data-theme="dark"] .trip-date-label{
+ color:var(--ink);
+}
+html[data-theme="dark"] .trip-stops-heading span,
+html[data-theme="dark"] .trip-stops-editor .trip-step-hint,
+html[data-theme="dark"] .trip-stops-editor .fieldhelp{
+ color:var(--muted);
+}
+html[data-theme="dark"] .trip-stops-editor .trip-stop-actions button{
+ background:var(--surface-raised);
+ border-color:var(--field-border);
+ color:var(--ink);
+}
+html[data-theme="dark"] .trip-stops-editor .trip-stop-actions button:disabled{
+ opacity:.52;
+}
+html[data-theme="dark"] .trip-date-range{
+ background:transparent;
+ color:var(--ink);
+ border-color:transparent;
+}
+html[data-theme="dark"] .trip-date-field .date-trigger{
+ background:var(--field-bg);
+ border:1px solid var(--field-border);
+ color:var(--field-text);
+ border-radius:14px;
+ min-height:52px;
+ padding-inline:15px;
+ font-size:14px;
+}
+html[data-theme="dark"] .trip-date-field .date-trigger > span{color:var(--field-text)}
+html[data-theme="dark"] .trip-date-field .date-trigger > svg{color:var(--muted)}
+html[data-theme="dark"] .trip-date-field .date-trigger.active,
+html[data-theme="dark"] .trip-date-field .date-trigger:focus-visible{
+ outline:none;
+ border-color:var(--green);
+ box-shadow:0 0 0 3px var(--focus-ring);
+}
+html[data-theme="dark"] .trip-calendar-popover{
+ background:var(--surface-raised);
+ color:var(--ink);
+ border-color:var(--line);
+}
+html[data-theme="dark"] .trip-calendar-top strong,
+html[data-theme="dark"] .trip-calendar-month strong{color:var(--ink)}
+html[data-theme="dark"] .trip-calendar-top small,
+html[data-theme="dark"] .trip-calendar-hint,
+html[data-theme="dark"] .trip-calendar-days .weekday{color:var(--muted)}
+html[data-theme="dark"] .trip-calendar-month button,
+html[data-theme="dark"] .calendar-close{
+ background:var(--surface-muted);
+ border-color:var(--field-border);
+ color:var(--ink);
+}
+html[data-theme="dark"] .calendar-day{color:var(--ink)}
+html[data-theme="dark"] .calendar-day:hover:not(:disabled):not(.chosen){background:var(--surface-muted)}
+html[data-theme="dark"] .calendar-day.chosen{
+ background:var(--green);
+ color:#10261c;
+}
+html[data-theme="dark"] .calendar-day.between:not(.chosen){background:var(--surface-muted);color:var(--ink)}
+html[data-theme="dark"] .calendar-day:disabled{opacity:.42}
+html[data-theme="dark"] .city-results{
+ background:var(--surface-raised);
+ color:var(--ink);
+ border-color:var(--line);
+ box-shadow:var(--app-menu-shadow);
+}
+html[data-theme="dark"] .city-results [role="option"].city-result-option{
+ color:var(--ink);
+}
+html[data-theme="dark"] .city-results [role="option"].city-result-option:hover,
+html[data-theme="dark"] .city-results [role="option"].city-result-option[aria-selected="true"]{
+ background:var(--surface-muted);
+ color:var(--ink);
+}
+html[data-theme="dark"] .city-results small,
+html[data-theme="dark"] .city-results p{color:var(--muted)}
