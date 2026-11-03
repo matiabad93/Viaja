@@ -1395,3 +1395,9 @@ html[data-theme] .expense-filters .clear-filters:focus-visible {
     width:100%;
   }
 }
+
+
+/* A wrapped guide call-to-action needs a full bottom gutter as well. */
+html[data-theme] .visualguides .guidehead {
+  padding-bottom:calc(var(--panel-inset) + 10px);
+}
