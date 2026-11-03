@@ -1,0 +1,89 @@
+import assert from 'node:assert/strict';
+import {mkdir} from 'node:fs/promises';
+import {chromium} from '/tmp/viaja-ui-smoke/node_modules/playwright/index.mjs';
+
+const base='http://127.0.0.1:4173';
+await mkdir('artifacts/ui-delivery-a/dark-fixes',{recursive:true});
+const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']});
+const colors={darkField:'rgb(30, 48, 41)',darkSurface:'rgb(34, 52, 45)'};
+function luminance(rgb){
+ const matches=rgb.match(/[\d.]+/g)||[];
+ const channels=matches.slice(0,3).map(v=>{const n=Number(v)/255;return n<=0.04045?n/12.92:((n+0.055)/1.055)**2.4;});
+ return channels[0]*0.2126+channels[1]*0.7152+channels[2]*0.0722;
+}
+function contrast(foreground,background){
+ const a=luminance(foreground),b=luminance(background);
+ return (Math.max(a,b)+0.05)/(Math.min(a,b)+0.05);
+}
+try{
+ for(const device of [{label:'iphone',width:390,height:844},{label:'desktop',width:1280,height:900}]){
+  const ctx=await browser.newContext({viewport:{width:device.width,height:device.height},locale:'es-ES',colorScheme:'dark'});
+  await ctx.addInitScript(()=>localStorage.setItem('viaja-theme','dark'));
+  const page=await ctx.newPage();
+  const errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await page.getByRole('button',{name:/Apariencia:/}).waitFor();
+  await page.getByRole('button',{name:/Planificar/}).click();
+  await page.getByRole('heading',{name:'Contanos tu próximo viaje'}).waitFor();
+
+  const styles=await page.evaluate(()=>{
+   const find=selector=>{const el=document.querySelector(selector);if(!el)throw Error('Elemento ausente: '+selector);return el;};
+   const css=el=>getComputedStyle(el);
+   const pane=find('.trip-stops-editor');
+   const heading=find('.trip-stops-heading strong');
+   const date=find('.trip-date-field .date-trigger');
+   const dateText=find('.trip-date-label');
+   const day=Array.from(document.querySelectorAll('.formcard .inputicon > input[type="number"]'));
+   return {
+    panelBackground:css(pane).backgroundColor,panelText:css(heading).color,
+    dateBackground:css(date).backgroundColor,dateColor:css(date).color,dateLabel:css(dateText).color,
+    numeric:day.map(input=>{
+     const icon=input.parentElement?.querySelector(':scope > svg');
+     if(!icon)throw Error('Input numerico sin icono');
+     const inputBox=input.getBoundingClientRect(), iconBox=icon.getBoundingClientRect();
+     return {padding:parseFloat(css(input).paddingLeft),inputX:inputBox.x,iconRight:iconBox.right,
+       textStart:inputBox.left+parseFloat(css(input).paddingLeft),inputForeground:css(input).color,
+       inputBackground:css(input).backgroundColor};
+    })
+   };
+  });
+  assert.notEqual(styles.panelBackground,'rgb(248, 250, 245)','The route panel cannot stay white in dark mode');
+  assert.ok(contrast(styles.panelText,styles.panelBackground)>=4.5,'Route heading needs AA contrast');
+  assert.ok(contrast(styles.dateColor,styles.dateBackground)>=4.5,'Date button needs AA contrast');
+  assert.ok(contrast(styles.dateLabel,styles.panelBackground)>=4.5||contrast(styles.dateLabel,'rgb(27, 41, 37)')>=4.5,'Date labels must be readable');
+  assert.equal(styles.numeric.length,2,'Traveler and budget inputs have visible decorative icons');
+  for(const input of styles.numeric){
+   assert.ok(input.textStart>=input.iconRight+8,'Input text overlaps left icon, gap='+String(input.textStart-input.iconRight));
+   assert.ok(contrast(input.inputForeground,input.inputBackground)>=4.5,'Numbers need AA contrast');
+  }
+  const traveler=page.getByRole('spinbutton',{name:'Viajeros'});
+  await traveler.fill('3');
+  assert.equal(await traveler.inputValue(),'3');
+  await page.getByRole('button',{name:'Fecha de salida'}).click();
+  const popup=page.getByRole('dialog',{name:'Elegir fecha de salida'});
+  await popup.waitFor();
+  const popupStyle=await popup.evaluate(el=>({bg:getComputedStyle(el).backgroundColor,head:getComputedStyle(el.querySelector('.trip-calendar-top strong')).color}));
+  assert.ok(contrast(popupStyle.head,popupStyle.bg)>=4.5,'Calendar popup title requires AA contrast');
+  await page.screenshot({path:'artifacts/ui-delivery-a/dark-fixes/'+device.label+'-planner.png',fullPage:true});
+  await page.getByRole('button',{name:'Cerrar calendario'}).click();
+
+  await page.getByRole('button',{name:/Mis viajes/}).click();
+  const search=page.getByRole('textbox',{name:'Buscar mis viajes'});
+  await search.waitFor();
+  const searchStyle=await search.evaluate(el=>({
+   outer:getComputedStyle(el.parentElement).backgroundColor,
+   inner:getComputedStyle(el).backgroundColor,
+   value:getComputedStyle(el).color,
+   outerBorder:getComputedStyle(el.parentElement).borderColor
+  }));
+  assert.notEqual(searchStyle.outer,'rgb(255, 255, 255)','My Trips search outer container must not be white');
+  assert.ok(contrast(searchStyle.value,searchStyle.outer)>=4.5,'My Trips search text needs AA contrast');
+  await search.fill('Colmar');
+  await page.screenshot({path:'artifacts/ui-delivery-a/dark-fixes/'+device.label+'-my-trips.png',fullPage:true});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)<=1,'No horizontal overflow');
+  assert.deepEqual(errors,[],'No runtime errors');
+  await ctx.close();
+  console.log('PASS '+device.label+' dark forms, icon/text spacing, date picker, planner contrast and My Trips search');
+ }
+}finally{await browser.close()}
