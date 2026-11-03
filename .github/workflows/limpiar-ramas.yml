@@ -1,8 +1,5 @@
 name: Limpiar ramas de Viaja
 on:
-  push:
-    branches: [main]
-    paths: ['.github/workflows/limpiar-ramas.yml']
   pull_request_target:
     branches: [main]
     types: [closed]
@@ -28,15 +25,3 @@ jobs:
           if [[ "$current" == "$HEAD_SHA" ]]; then
             git push --force-with-lease="$ref:$HEAD_SHA" origin ":$ref"
           fi
-  cleanup-synchronized-branches:
-    if: github.event_name == 'push' && github.event.before == '74ab78f519a8f678feda82e4514eefef3a2bebc0'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Eliminar las once ramas sincronizadas con main
-        run: |
-          set -euo pipefail
-          for branch in feat/collaborative-trips-20261103 feat/multidestination-route-budget-ux-20261030 feat/v1-production-release-plan feat/viaja-ui-delivery-a-20261103 fix/city-autocomplete-madrid-guide-20261030 fix/map-and-budget-ux-20261029 fix/multicity-map-location-20261030 fix/travel-photos-dense-itineraries-calendar-20261030 fix/v1-mobile-ux-madrid-guide-20261030 fix/viaja-dark-contrast-input-overlap-20261103 work/v1-ui-fixes-pending-release; do
-            ref="refs/heads/$branch"
-            git push --force-with-lease="$ref:${{ github.event.before }}" origin ":$ref"
-          done
