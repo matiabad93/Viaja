@@ -37,7 +37,12 @@ const [exploreMode,setExploreMode]=useState<'guides'|'community'>(()=>typeof win
 const [sharedLinkId]=useState(()=>typeof window!=='undefined'?new URLSearchParams(window.location.search).get('viaje')||'':'');
 const [guideTarget,setGuideTarget]=useState<string|null>(null);
 const [guideNavigationId,setGuideNavigationId]=useState(0);
-const [invitationToken]=useState(()=>typeof window!=='undefined'?new URLSearchParams(window.location.search).get('invitacion')||'':'');
+const [invitationToken]=useState(()=>{
+ if(typeof window==='undefined')return '';
+ const candidate=new URLSearchParams(window.location.search).get('invitacion')||'';
+ if(candidate&&/^[a-f0-9]{64}$/.test(candidate)){window.sessionStorage.setItem('viaja-pending-invitation',candidate);return candidate;}
+ return window.sessionStorage.getItem('viaja-pending-invitation')||'';
+});
 const [invitationDone,setInvitationDone]=useState(false);
 const inviteHandledRef=useRef(false);
 const [remoteChanges,setRemoteChanges]=useState(false);
@@ -67,7 +72,7 @@ const reloadAccount=async()=>{const current=getCurrentSession();setSession(curre
   inviteHandledRef.current=true;
   try{
    await acceptTripInvite(invitationToken);
-   setInvitationDone(true);
+   setInvitationDone(true);window.sessionStorage.removeItem('viaja-pending-invitation');
    const url=new URL(window.location.href);url.searchParams.delete('invitacion');window.history.replaceState({},'',url.pathname+url.search+url.hash);
    setMessage('¡Ya sos parte del equipo! Tu viaje aparece en Mis viajes.');
    setTab('saved');
@@ -97,7 +102,7 @@ const save=(p:Plan)=>{
     role:p.collaboration?.role||'owner' as const,memberCount:p.collaboration?.memberCount||1};
    setPlans(current=>current.map(x=>x.id===p.id?{...x,collaboration:info}:x));
    setResult(current=>current?.id===p.id?{...current,collaboration:info}:current);
-   setSaved(true);setMessage('Cambios guardados para todo el equipo.');
+   setRemoteChanges(false);setSaved(true);setMessage('Cambios guardados para todo el equipo.');
   }).catch(e=>{
    const detail=e instanceof Error?e.message:'error de red';
    const conflict=/TRIP_CONFLICT|version|conflict/i.test(detail);
