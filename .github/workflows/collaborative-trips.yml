@@ -53,3 +53,5 @@ jobs:
       - name: Test existing travel model
         run: |
           npm run test:core
+      - name: Check actual latest versions on all Cloudflare URLs
+        run: node scripts/live-deployments-smoke.mjs
