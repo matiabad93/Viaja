@@ -487,3 +487,248 @@ html{scroll-padding-top:86px}
 .team-refresh-warning{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;background:#fff3dd;color:#734714;border-radius:12px}
 .team-refresh-warning span{flex:1}
 @media(max-width:680px){.trip-team-panel{padding:12px 0}.team-invite-form{grid-template-columns:1fr}.trip-team-panel .surface{padding:16px}.team-state-banner{align-items:flex-start}.team-invitation-banner button{width:100%}}
+
+
+/* ==========================================================================
+ * VIAJA UI DELIVERY A — shared design tokens, resilient fields and themes.
+ * App-only: Tupã Travel lives on its own branch.
+ * ========================================================================== */
+:root{
+ --surface:#fff;
+ --surface-raised:#fff;
+ --surface-muted:#edf2e9;
+ --field-bg:#fff;
+ --field-border:#cfdcd1;
+ --field-text:#173f35;
+ --field-placeholder:#718377;
+ --focus-ring:rgba(53,114,87,.22);
+ --shadow-soft:0 7px 26px rgba(20,57,42,.06);
+ --favorite-color:#b94a60;
+ --app-menu-shadow:0 20px 52px rgba(22,50,38,.18);
+ --color-scheme-value:light;
+}
+html[data-theme="dark"]{
+ --ink:#f0f5ef;
+ --muted:#b0c1b7;
+ --paper:#101816;
+ --line:#384d44;
+ --green:#8cc8a8;
+ --orange:#e6ab80;
+ --surface:#1b2925;
+ --surface-raised:#253530;
+ --surface-muted:#22342d;
+ --field-bg:#1e3029;
+ --field-border:#506457;
+ --field-text:#f0f5ef;
+ --field-placeholder:#b0c1b7;
+ --focus-ring:rgba(140,200,168,.28);
+ --shadow-soft:0 8px 30px rgba(0,0,0,.25);
+ --favorite-color:#ff91a4;
+ --app-menu-shadow:0 20px 52px rgba(0,0,0,.42);
+ --color-scheme-value:dark;
+}
+html[data-theme]{background:var(--paper);color-scheme:var(--color-scheme-value)}
+html[data-theme] body{background:var(--paper);color:var(--ink);transition:background-color .18s ease,color .18s ease}
+html[data-theme] :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),select,textarea){
+ color:var(--field-text);
+ background-color:var(--field-bg);
+ border:1px solid var(--field-border);
+ border-radius:14px;
+ min-height:52px;
+ padding:12px 15px;
+ margin-top:8px;
+ font-size:16px;
+ line-height:1.35;
+ box-shadow:0 1px 2px rgba(18,51,37,.035);
+ transition:border-color .15s ease,box-shadow .15s ease,background-color .15s ease;
+}
+html[data-theme] :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),select,textarea)::placeholder{color:var(--field-placeholder);opacity:1}
+html[data-theme] :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),select,textarea):focus-visible{
+ outline:none;border-color:var(--green);box-shadow:0 0 0 3px var(--focus-ring);
+}
+html[data-theme] :is(input,select,textarea)[aria-invalid="true"]{border-color:#d46a6a;box-shadow:0 0 0 2px rgba(212,106,106,.12)}
+html[data-theme] :is(input,select,textarea):disabled{opacity:.55;cursor:not-allowed}
+html[data-theme] input[type="checkbox"],html[data-theme] input[type="radio"]{accent-color:var(--green)}
+html[data-theme] select{
+ -webkit-appearance:none;appearance:none;
+ padding-right:42px;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23677d70' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+ background-position:right 14px center;
+ background-repeat:no-repeat;
+ background-size:18px;
+}
+html[data-theme="dark"] select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23b0c1b7' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")}
+html[data-theme] :is(label,.label){color:var(--ink)}
+html[data-theme] .formgrid{column-gap:18px;row-gap:22px}
+html[data-theme] .inputicon svg{top:25px}
+html[data-theme] .community-filters{gap:16px;align-items:end}
+html[data-theme] .community-filters .searchbox{
+ min-height:52px;
+ height:52px;
+ border-radius:14px;
+ border:1px solid var(--field-border);
+ background:var(--field-bg);
+ padding:0 15px;
+ display:flex;
+ gap:10px;
+ box-shadow:0 1px 2px rgba(18,51,37,.035);
+}
+html[data-theme] .community-filters .searchbox:focus-within{border-color:var(--green);box-shadow:0 0 0 3px var(--focus-ring)}
+html[data-theme] .community-filters .searchbox svg{flex-shrink:0;color:var(--muted)}
+html[data-theme] .community-filters .searchbox input{margin:0;min-height:48px;padding:8px 0;border:0;background:transparent;box-shadow:none;outline:0;flex:1}
+html[data-theme] .community-filters .searchbox input:focus-visible{box-shadow:none;border:0}
+.app-field{display:grid;gap:8px;min-width:0}
+.app-field-label{display:block;font-size:13px;font-weight:700;line-height:1.4;color:var(--ink)}
+.app-field-hint{font-size:12px;line-height:1.45;color:var(--muted)}
+.app-field-message{font-size:12px;color:#bb4747;line-height:1.45}
+html[data-theme] .app-select-trigger{
+ width:100%;
+ height:52px;
+ min-height:52px;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ padding:0 15px 0 16px;
+ gap:12px;
+ border:1px solid var(--field-border);
+ border-radius:14px;
+ box-shadow:0 1px 2px rgba(18,51,37,.035);
+ color:var(--field-text);
+ background:var(--field-bg);
+ font-size:16px;
+ font-weight:500;
+ text-align:left;
+ outline:0;
+ transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
+}
+html[data-theme] .app-select-trigger:hover{border-color:var(--green)}
+html[data-theme] .app-select-trigger:focus-visible,html[data-theme] .app-select-trigger[data-state="open"]{border-color:var(--green);box-shadow:0 0 0 3px var(--focus-ring)}
+html[data-theme] .app-select-trigger svg{width:18px;height:18px;opacity:.85;flex-shrink:0;color:var(--muted)}
+.app-select-content{
+ min-width:var(--radix-select-trigger-width);
+ max-height:min(330px,var(--radix-select-content-available-height));
+ overflow-y:auto;
+ border-radius:14px;
+ border:1px solid var(--field-border);
+ background:var(--surface-raised);
+ color:var(--ink);
+ box-shadow:var(--app-menu-shadow);
+ padding:5px;
+ z-index:200;
+}
+.app-select-item{
+ cursor:pointer;
+ min-height:43px;
+ padding:11px 38px 11px 13px;
+ border-radius:9px;
+ color:var(--ink);
+ font-size:14px;
+ background:transparent;
+ outline:none;
+}
+.app-select-item[data-highlighted]{background:var(--surface-muted);color:var(--ink)}
+.app-select-item[data-state="checked"]{font-weight:700}
+.app-select-item [data-slot="select-item-indicator"]{color:var(--green)}
+/* Favorite icons never change size or font metrics between checked states. */
+.visualguides .favorite-button{
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ gap:9px;
+ flex-shrink:0;
+ width:auto;
+ height:40px;
+ min-width:40px;
+ min-height:40px;
+ padding:0 13px;
+ border-radius:12px;
+ background:var(--surface-muted);
+ border:1px solid var(--line);
+ color:var(--ink);
+ font-size:13px;
+ font-weight:600;
+ line-height:1;
+ transition:background-color .14s ease,color .14s ease,border-color .14s ease;
+}
+.visualguides .favorite-button.is-compact{width:40px;padding:0}
+.visualguides .favorite-button svg,.visualguides .favorite-filter svg{width:20px;height:20px;flex:none;transform:none;transition:color .14s ease,fill .14s ease}
+.visualguides .favorite-button.is-active{color:var(--favorite-color);background:var(--surface);border-color:var(--favorite-color)}
+.visualguides .favorite-button:hover,.visualguides .favorite-filter:hover{background:var(--surface-raised);border-color:var(--green)}
+.visualguides .favorite-filter{
+ display:inline-flex;align-items:center;gap:9px;min-height:44px;
+ padding:0 15px;border:1px solid var(--line);border-radius:12px;
+ color:var(--ink);background:var(--surface-muted);font-size:13px;font-weight:600;
+}
+.visualguides .favorite-filter.is-active{color:var(--favorite-color);border-color:var(--favorite-color);background:var(--surface)}
+/* Appearance menu stays within app header and works on mobile. */
+.header-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:0}
+.theme-switcher{position:relative;flex-shrink:0}
+.theme-trigger{
+ display:flex;align-items:center;justify-content:center;gap:8px;
+ min-height:44px;padding:0 12px;border:1px solid var(--line);
+ border-radius:12px;background:var(--surface);color:var(--ink);
+ font-size:12px;font-weight:700;white-space:nowrap;
+}
+.theme-trigger:hover,.theme-trigger[aria-expanded="true"]{background:var(--surface-muted);border-color:var(--green)}
+.theme-trigger svg{flex-shrink:0}
+.theme-menu{
+ position:absolute;right:0;top:calc(100% + 8px);
+ width:206px;z-index:110;display:grid;gap:3px;padding:9px;
+ border:1px solid var(--line);border-radius:15px;
+ background:var(--surface-raised);color:var(--ink);box-shadow:var(--app-menu-shadow);
+}
+.theme-menu-caption{padding:7px 9px 8px;font-size:11px;font-weight:700;letter-spacing:.3px;color:var(--muted)}
+.theme-menu button{
+ display:flex;gap:10px;align-items:center;min-height:44px;width:100%;
+ border-radius:9px;padding:9px 11px;font-size:13px;text-align:left;white-space:nowrap;
+}
+.theme-menu button:hover,.theme-menu button[aria-checked="true"]{background:var(--surface-muted)}
+.theme-menu button span{flex:1}
+.theme-menu button[aria-checked="true"]{font-weight:700}
+@media(max-width:800px){
+ .topbar .header-actions{margin-left:auto;gap:6px}
+ .theme-trigger{height:40px;min-height:40px;padding:0 10px}
+ .theme-trigger span{display:none}
+ .theme-trigger svg:last-child{display:none}
+ .theme-menu{right:0}
+ .community-filters{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+ .community-filters .searchbox{grid-column:1/-1}
+}
+@media(max-width:420px){.theme-trigger{padding:0 9px}.theme-menu{width:194px}}
+/* Broad dark surface pass: preserve photo/hero gradients and brand identity. */
+html[data-theme="dark"] :is(
+ .topbar,.topbar nav,.formcard,.example,.loadingcard,.plan,.savedcard,.savedempty,
+ .surface,.community-card,.community-day,.community-stop,.premium-empty,.emptyresult,
+ .card,.visualguides .card,.visualguides .stop,.visualguides .guidehead,
+ .trip-detail,.edit-panel,.trip-calendar-popover,.calendar-grid,.calendar-timeline,
+ .day-practical-guide,.activity-card,.expense-item,.expense-row,.expense-panel,
+ .journey-card,.trip-card,.modal,.dialog,.modal-card,.viaja-dialog,
+ .viaja-account-modal,.account-modal,.team-member-row,.triptools,.community-detail-share
+){background-color:var(--surface);color:var(--ink);border-color:var(--line)}
+html[data-theme="dark"] :is(
+ .topbar,.topbar nav,.visualguides header,.visualguides footer,
+ .detail-tabs,.community-filters,.explore-switch,.guidegrid,.journeys,
+ .visualguides,.visualguides .grid,.visualguides .cardbody,.trip-banner
+){border-color:var(--line)}
+html[data-theme="dark"] .visualguides :is(.card,.stop,.search,.editor,.notice,.admin,.sidebar,.tablewrap,.guidehead){color:var(--ink)}
+html[data-theme="dark"] :is(.visualguides .muted,.subtle,.community-card-body>p,.community-tags,.eyebrow,.fieldhelp,.planmeta,.calendar-hour,.app-field-hint){color:var(--muted)}
+html[data-theme="dark"] :is(.visualguides button.light,.secondary,.badge,.chip,.explore-switch,.explore-switch button.active,.filterpills button,.team-state-banner,.notice,.connection,.message,.sources,.trip-date-range,.day-navigator button,.calendar-day.between,.calendar-intro){background:var(--surface-muted);color:var(--ink);border-color:var(--line)}
+html[data-theme="dark"] :is(.primary,.visualguides .tabs .selected,.chip.selected){background:#8cc8a8;color:#12281f;border-color:#8cc8a8}
+html[data-theme="dark"] .visualguides :is(.card,.stop){background:var(--surface);border-color:var(--line)}
+html[data-theme="dark"] .visualguides :is(.badge,.tag,.stats,.stat,.tip,.map){color:var(--ink);border-color:var(--line)}
+html[data-theme="dark"] .visualguides .tabs button{background:var(--surface-muted);color:var(--ink)}
+html[data-theme="dark"] :is(.community-card-body h2,.trip-detail h2,.visualguides h1,.visualguides h2,.visualguides h3,.detail-overview h3,.formtitle h2,.savedcard h2){color:var(--ink)}
+html[data-theme="dark"] :is(.status-pill,.community-tags span,.team-badge){background:var(--surface-muted);color:var(--ink);border-color:var(--line)}
+html[data-theme="dark"] .calendar-grid{background:linear-gradient(90deg,#253530 0 80px,#1b2925 80px)}
+html[data-theme="dark"] .calendar-hour>i{background:var(--line)}
+html[data-theme="dark"] .calendar-slot{background:#294a3b;color:#f0f5ef}
+html[data-theme="dark"] .calendar-slot>span,html[data-theme="dark"] .calendar-slot strong{color:#f0f5ef}
+html[data-theme="dark"] .calendar-slot small{color:#c7d7cb}
+html[data-theme="dark"] .trip-calendar-popover{box-shadow:var(--app-menu-shadow)}
+html[data-theme="dark"] .visualguides .favorite-button,html[data-theme="dark"] .visualguides .favorite-filter{background:var(--surface-muted);color:var(--ink);border-color:var(--line)}
+html[data-theme="dark"] .visualguides .favorite-button.is-active,html[data-theme="dark"] .visualguides .favorite-filter.is-active{color:var(--favorite-color);border-color:var(--favorite-color)}
+html[data-theme="dark"] :is(.profile,.visualguides .num){background:var(--surface-muted);color:var(--ink)}
+html[data-theme="dark"] :is(.viaja-account-trigger,.account-trigger){background:var(--surface);color:var(--ink);border-color:var(--line)}
+@media(prefers-reduced-motion:reduce){
+ html[data-theme] body,.theme-trigger,.visualguides .favorite-button,.visualguides .favorite-button svg{transition:none!important}
+}
