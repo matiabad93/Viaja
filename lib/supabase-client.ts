@@ -159,7 +159,7 @@ export async function listCloudTrips():Promise<Plan[]> {
   if(!Array.isArray(rows))throw Error('No pudimos leer tus viajes.');
   return rows.map(r=>{
     const team=members.filter(m=>m.trip_id===r.document?.id);
-    const role=r.user_id===current?.user.id?'owner':team.find(m=>m.user_id===current?.user.id)?.role||'viewer';
+    const role:'owner'|'editor'|'viewer'=r.user_id===current?.user.id?'owner':team.find(m=>m.user_id===current?.user.id)?.role||'viewer';
     return {...r.document,collaboration:{version:r.version,ownerId:r.user_id,role,memberCount:team.length+1}};
   }).filter(p=>p&&typeof p.id==='string'&&p.trip);
 }
