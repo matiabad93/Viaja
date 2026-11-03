@@ -4,6 +4,7 @@
  * No third-party SDK is needed to bundle this client.
  */
 import type {Plan} from './travel';
+import {publicTripSnapshot,type CommunityTrip} from './community-trips';
 import {buildSocialAuthorizationUrl,parseSocialProviderSettings,unavailableSocialProviders,type SocialProvider,type SocialAvailability} from './social-auth';
 
 declare const __VIAJA_SUPABASE_URL__: string;
@@ -145,24 +146,31 @@ export async function changePassword(password:string) {
   await api('/auth/v1/user',{method:'PUT',body:JSON.stringify({password})},token);
   if(browser())window.sessionStorage.removeItem('viaja-password-recovery');
 }
-async function db<T=JSONValue>(path:string,init:RequestInit={}):Promise<T> {
+export async function db<T=JSONValue>(path:string,init:RequestInit={}):Promise<T> {
   const token=await accessToken();
   if(!token)throw Error('Iniciá sesión para guardar o consultar tus viajes.');
   return api<T>('/rest/v1/'+path,init,token);
 }
 export async function listCloudTrips():Promise<Plan[]> {
-  const rows=await db<{document:Plan}[]>('trips?select=document&order=updated_at.desc&limit=250');
+  const [rows,members]=await Promise.all([
+    db<{user_id:string;version:number;document:Plan}[]>('trips?select=user_id,version,document&order=updated_at.desc&limit=250'),
+    db<{trip_id:string;user_id:string;role:'editor'|'viewer'}[]>('trip_members?select=trip_id,user_id,role&limit=1000')
+  ]);
   if(!Array.isArray(rows))throw Error('No pudimos leer tus viajes.');
-  return rows.map(r=>r.document).filter(p=>p&&typeof p.id==='string'&&p.trip);
+  return rows.map(r=>{
+    const team=members.filter(m=>m.trip_id===r.document?.id);
+    const role:'owner'|'editor'|'viewer'=r.user_id===current?.user.id?'owner':team.find(m=>m.user_id===current?.user.id)?.role||'viewer';
+    return {...r.document,collaboration:{version:r.version,ownerId:r.user_id,role,memberCount:team.length+1}};
+  }).filter(p=>p&&typeof p.id==='string'&&p.trip);
 }
-export async function saveCloudTrip(p:Plan):Promise<void> {
-  const owner=current?.user.id;
-  if(!owner)throw Error('Iniciá sesión para guardar.');
+/** All writes use a version-checked RPC; a second editor cannot silently overwrite changes. */
+export async function saveCloudTrip(p:Plan):Promise<number> {
+  if(!current?.user.id)throw Error('Iniciá sesión para guardar.');
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(p.id))throw Error('Identificador de viaje inválido.');
-  await db('trips?on_conflict=id',{
+  const {collaboration,...document}=p;
+  return db<number>('rpc/viaja_save_shared_trip',{
     method:'POST',
-    headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
-    body:JSON.stringify({id:p.id,user_id:owner,document:p,schema_version:1})
+    body:JSON.stringify({p_trip_id:p.id,p_document:document,p_expected_version:collaboration?.version??null})
   });
 }
 export async function deleteCloudTrip(id:string):Promise<void> {
@@ -190,3 +198,44 @@ if(browser())window.addEventListener('storage',event=>{
   if(event.key!==storageKey)return;
   try {const data=event.newValue?JSON.parse(event.newValue):null;current=data?.user?.id?data:null;listeners.forEach(fn=>fn(current));}catch {}
 });
+
+/** A trip is private until its owner explicitly confirms publication. */
+export async function publishCommunityTrip(plan:Plan):Promise<CommunityTrip>{
+ const owner=current?.user.id;
+ if(!owner)throw Error('Iniciá sesión para publicar un viaje.');
+ const payload=publicTripSnapshot(plan);
+ // Never race with a pending save or bump the shared-trip version while publishing.
+ if(!plan.collaboration?.version)throw Error('Esperá a que el viaje termine de guardarse en tu cuenta antes de publicarlo.');
+ const rows=await db<CommunityTrip[]>('community_trips?on_conflict=source_trip_id&select=id,title,destination,days_count,pace,transport,content,published_at',{
+  method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},
+  body:JSON.stringify({...payload,source_trip_id:plan.id,user_id:owner,published:true,published_at:new Date().toISOString()})
+ });
+ if(!Array.isArray(rows)||!rows[0]?.id)throw Error('No pudimos confirmar la publicación. Volvé a intentarlo.');
+ return rows[0];
+}
+export async function unpublishCommunityTrip(sourceTripId:string):Promise<void>{
+ if(!current)throw Error('Iniciá sesión para retirar esta publicación.');
+ if(!/^[0-9a-f-]{36}$/i.test(sourceTripId))throw Error('Viaje inválido.');
+ await db('community_trips?source_trip_id=eq.'+encodeURIComponent(sourceTripId)+'&user_id=eq.'+encodeURIComponent(current.user.id),{
+  method:'DELETE',headers:{Prefer:'return=minimal'}
+ });
+}
+export async function listMyCommunityTrips():Promise<Record<string,string>>{
+ const owner=current?.user.id;
+ if(!owner)return {};
+ const rows=await db<{source_trip_id:string;id:string}[]>('community_trips?select=source_trip_id,id&user_id=eq.'+encodeURIComponent(owner)+'&published=eq.true&limit=250');
+ return Object.fromEntries((rows||[]).filter(row=>row.id&&row.source_trip_id).map(row=>[row.source_trip_id,row.id]));
+}
+/** Public catalogue: never reads the private trips table or exposes account email. */
+export async function listCommunityTrips():Promise<CommunityTrip[]>{
+ if(!cloudReady)return [];
+ const cols='id,title,destination,days_count,pace,transport,content,published_at';
+ const rows=await api<CommunityTrip[]>('/rest/v1/community_trips?select='+cols+'&published=eq.true&order=published_at.desc&limit=100');
+ return Array.isArray(rows)?rows:[];
+}
+export async function getCommunityTrip(id:string):Promise<CommunityTrip|null>{
+ if(!cloudReady||!/^[0-9a-f-]{36}$/i.test(id))return null;
+ const cols='id,title,destination,days_count,pace,transport,content,published_at';
+ const rows=await api<CommunityTrip[]>('/rest/v1/community_trips?select='+cols+'&published=eq.true&id=eq.'+encodeURIComponent(id)+'&limit=1');
+ return Array.isArray(rows)?rows[0]||null:null;
+}

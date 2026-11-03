@@ -1,9 +1,9 @@
 export type DestinationPhoto={url:string;source:string;title:string;author:string;license:string};
 export type Trip={city?:{id:number;name:string;country:string;region:string;latitude:number;longitude:number};destination:string;additionalDestinations?:string[];origin:string;start:string;end:string;travelers:number;budget:number;pace:string;transport:string;notes:string;links:string;adjustment:string;sources:string[]};
 export type Activity={completed?:boolean;endTime?:string;source?:string;id:string;title:string;description:string;time?:string;duration?:string;location?:string;price?:string;estimatedCostEUR?:number;costCategory?:'Actividades'|'Transporte'|'Comida';costNote?:string;reservation?:string};
-export type Day={id:string;title:string;activities:Activity[]};
+export type Day={id:string;title:string;advice?:string;activities:Activity[]};
 export type Expense={id:string;date:string;label:string;category:string;amount:number;currency?:string;originalAmount?:number;rate?:number;linkedActivityId?:string};
-export type Plan={photos?:DestinationPhoto[];photoKey?:string;id:string;trip:Trip;kind:'draft'|'researched';createdAt:string;itinerary?:Day[];expenses?:Expense[];parts?:{text:string;annotations:{start:number;end:number;url:string;title:string}[]}[];sources?:{url:string;title:string}[]};
+export type Plan={photos?:DestinationPhoto[];photoKey?:string;id:string;trip:Trip;kind:'draft'|'researched';createdAt:string;itinerary?:Day[];expenses?:Expense[];parts?:{text:string;annotations:{start:number;end:number;url:string;title:string}[]}[];sources?:{url:string;title:string}[];collaboration?:{version:number;ownerId:string;role:'owner'|'editor'|'viewer';memberCount?:number}};
 export const money=(n:number)=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(n);
 export const spent=(p:Plan)=>(p.expenses||[]).reduce((n,e)=>n+Math.round(e.amount*100),0)/100;
 export const outsideBudget=(e:Expense)=>['Vuelos','Aéreo','Aéreos','Alojamiento','Hospedaje'].includes(e.category);
@@ -34,7 +34,7 @@ export function itineraryOf(p:Plan):Day[]{
  while(days.length<count)days.push({id:'day-'+(days.length+1),title:'Tu día por diseñar',activities:[]});
  return days;
 }
-export function duplicate(p:Plan):Plan{return {...structuredClone(p),id:newId(),createdAt:new Date().toISOString(),trip:{...p.trip,destination:p.trip.destination+' · copia'},expenses:[]}}
+export function duplicate(p:Plan):Plan{return {...structuredClone(p),collaboration:undefined,id:newId(),createdAt:new Date().toISOString(),trip:{...p.trip,destination:p.trip.destination+' · copia'},expenses:[]}}
 export function backup(p:Plan){const url=URL.createObjectURL(new Blob([JSON.stringify(p,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='viaja-viaje.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 
 export function newId(){return globalThis.crypto?.randomUUID?.()||'local-'+Date.now().toString(36)+'-'+Array.from(globalThis.crypto.getRandomValues(new Uint32Array(3))).map(n=>n.toString(36)).join('')}

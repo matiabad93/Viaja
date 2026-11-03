@@ -40,4 +40,47 @@ const invalidOrigin=await get('/api/plan',{method:'POST',headers:{'Content-Type'
 ok(invalidOrigin.response.status===403,'Cross-origin AI request is rejected before calling a provider');
 const anonymousPlan=await get('/api/plan',{method:'POST',headers:{'Content-Type':'application/json',Origin:origin},body:'{}'});
 ok(anonymousPlan.response.status===401,'Unauthenticated AI request is rejected before quota/provider invocation');
+// Verify real, unmocked geocoding responses after the branch deployment lands.
+async function realCityQuery(q,valid){
+ let last='No response';
+ for(let attempt=1;attempt<=5;attempt++){
+  try{
+   const result=await get('/api/cities?'+new URLSearchParams({q}));
+   const body=JSON.parse(result.body);
+   if(result.response.ok&&valid(body))return body;
+   last='HTTP '+result.response.status+'; mode='+(body.mode||'none')+'; count='+(body.cities?.length||0);
+  }catch(e){last=String(e)}
+  if(attempt<5)await new Promise(resolve=>setTimeout(resolve,3500));
+ }
+ throw Error('Live '+q+' geocoding failed: '+last);
+}
+const italianCities=await realCityQuery('Italia',body=>body.mode==='country'&&body.country?.code==='IT'&&body.cities?.length>=2&&body.cities.every(city=>city.countryCode==='IT'&&city.name!=='Italia'));
+ok(italianCities.cities[0].population>=italianCities.cities[1].population,'Italy returns genuine major cities ordered by population');
+const rosario=await realCityQuery('Rosario',body=>body.mode==='city'&&body.cities?.some(city=>city.country==='Argentina'&&city.name==='Rosario'&&/Santa Fe/i.test(city.region)));
+ok(rosario.cities.some(city=>city.name==='Rosario'&&city.country==='Argentina'&&/Santa Fe/i.test(city.region)),'Rosario shows Santa Fe, Argentina in real geocoder data');
+
+async function realMiamiTouristPhotos(){
+ let latest='';
+ for(let attempt=0;attempt<20;attempt++){
+  try{
+   const response=await fetch(new URL('/api/photos?q=Miami&country=Estados%20Unidos&v=scenic-v3',origin),
+    {signal:AbortSignal.timeout(60000),headers:{Accept:'application/json'}});
+   const data=await response.json();
+   if(response.ok&&data.photoStrategy==='scenic-v3'&&Array.isArray(data.photos)&&data.photos.length>=2){
+    const pictures=data.photos;
+    ok(pictures.every(p=>p.title.includes('Miami')&&!/politic|president|handshake|conference|summit|portrait|protest|bakery|seating|neon|\blady\b|restaurant\s+menu/i.test(p.title)),
+     'Miami returns only recognizable tourist landscapes, never political or unrelated portraits');
+    ok(pictures.every(p=>p.source?.startsWith('https://commons.wikimedia.org/wiki/File:')&&p.author&&p.license),
+     'All Miami photos have original Commons URLs, author and license');
+    console.log('[preview] Verified Miami scenic photo subjects: '+pictures.slice(0,8).map(p=>p.title).join(' | '));
+    return;
+   }
+   latest='HTTP '+response.status+'; photoStrategy='+(data.photoStrategy||'none')+'; photos='+(data.photos?.length||0)+'; error='+(data.error||'');
+  }catch(e){latest=String(e)}
+  if(attempt<19)await new Promise(resolve=>setTimeout(resolve,4500));
+ }
+ throw Error('Live Miami tourism photos failed: '+latest);
+}
+await realMiamiTouristPhotos();
+
 console.log('PREVIEW HTTP SMOKE TEST PASSED for '+origin);
