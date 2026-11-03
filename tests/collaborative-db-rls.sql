@@ -5,12 +5,13 @@ select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111'
 do $$ begin
 if (select count(*) from public.trips)<>1 then raise exception 'owner lost trip'; end if;
 end $$;
-select public.viaja_create_trip_invite('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','editor','bob@example.com') as editor_token \gset
+create temporary table collab_test_tokens(key text primary key,token text not null);
+insert into collab_test_tokens values('editor',public.viaja_create_trip_invite('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','editor','bob@example.com'));
 -- A different signed-in user cannot use a recipient-specific invitation.
 select set_config('request.jwt.claim.sub','44444444-4444-4444-8444-444444444444',false);
 do $$ begin
  begin
-  perform public.viaja_accept_trip_invite(:'editor_token');
+  perform public.viaja_accept_trip_invite((select token from collab_test_tokens where key='editor'));
   raise exception 'wrong email unexpectedly accepted';
  exception when raise_exception then
   if sqlerrm <> 'INVITE_EMAIL_MISMATCH' then raise; end if;
@@ -18,7 +19,7 @@ do $$ begin
 end $$;
 -- Bob is the intended editor, accepts once and reads the trip.
 select set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',false);
-select public.viaja_accept_trip_invite(:'editor_token');
+select public.viaja_accept_trip_invite((select token from collab_test_tokens where key='editor'));
 do $$ begin
 if (select count(*) from public.trips)<>1 then raise exception 'editor cannot read'; end if;
 end $$;
@@ -39,9 +40,9 @@ do $$ begin
  end;
 end $$;
 -- Create a separate viewer invitation and accept as Carol.
-select public.viaja_create_trip_invite('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','viewer',null) as viewer_token \gset
+insert into collab_test_tokens values('viewer',public.viaja_create_trip_invite('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','viewer',null));
 select set_config('request.jwt.claim.sub','33333333-3333-4333-8333-333333333333',false);
-select public.viaja_accept_trip_invite(:'viewer_token');
+select public.viaja_accept_trip_invite((select token from collab_test_tokens where key='viewer'));
 do $$ begin
 if (select count(*) from public.trips)<>1 then raise exception 'viewer cannot read'; end if;
  begin
@@ -74,7 +75,7 @@ end $$;
 -- The single-use invitation is not reusable by Bob.
 do $$ begin
  begin
-  perform public.viaja_accept_trip_invite(:'editor_token');
+  perform public.viaja_accept_trip_invite((select token from collab_test_tokens where key='editor'));
   raise exception 'used invitation accepted again';
  exception when raise_exception then
   if sqlerrm <> 'INVITE_EXPIRED' then raise; end if;
