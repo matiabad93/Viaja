@@ -15,6 +15,24 @@ function contrast(foreground,background){
  const a=luminance(foreground),b=luminance(background);
  return (Math.max(a,b)+0.05)/(Math.min(a,b)+0.05);
 }
+const selectedTab=async(locator)=>{
+ await locator.waitFor({state:'visible'});
+ const style=await locator.evaluate(el=>{
+  const root=getComputedStyle(document.documentElement),paint=getComputedStyle(el);
+  return {bg:paint.backgroundColor,fg:paint.color,target:root.getPropertyValue('--tab-selected-bg').trim()};
+ });
+ assert.ok(style.target,'Selected tab token is absent');
+ const expected=await locator.evaluate(el=>{
+  const probe=document.createElement('span');
+  probe.style.background=getComputedStyle(document.documentElement).getPropertyValue('--tab-selected-bg');
+  document.body.appendChild(probe);
+  const result=getComputedStyle(probe).backgroundColor;
+  probe.remove();
+  return result;
+ });
+ assert.equal(style.bg,expected,'Selected tab uses inconsistent background: '+style.bg);
+ assert.ok(contrast(style.fg,style.bg)>=4.5,'Selected tab lacks AA text contrast: '+style.fg+' '+style.bg);
+};
 const inset=async(parent,child,min=16)=>{
  const bounds=await parent.boundingBox(),item=await child.boundingBox();
  assert.ok(bounds&&item,'Panel and content must have measurable bounds');
@@ -105,10 +123,17 @@ try{
   }));
   assert.notEqual(searchStyle.outer,'rgb(255, 255, 255)','My Trips search outer container must not be white');
   assert.ok(contrast(searchStyle.value,searchStyle.outer)>=4.5,'My Trips search text needs AA contrast');
+  await selectedTab(page.locator('.topbar nav button.navactive'));
+  const savedFilters=page.locator('.journey-toolbar .filterpills');
+  await selectedTab(savedFilters.locator('button[aria-pressed="true"]'));
+  await savedFilters.getByRole('button',{name:'Finalizado'}).click();
+  await selectedTab(savedFilters.locator('button[aria-pressed="true"]'));
+  await savedFilters.getByRole('button',{name:'Todos'}).click();
   await search.fill('Colmar');
   await page.screenshot({path:'artifacts/ui-delivery-a/dark-fixes/'+device.label+'-my-trips.png',fullPage:true});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)<=1,'No horizontal overflow');
   await page.getByRole('button',{name:'Planificar',exact:true}).click();
+  await selectedTab(page.locator('.topbar nav button.navactive'));
   const example=page.getByRole('button',{name:'Probar con Madrid'});
   const readable=async(locator,background=locator)=>{
    const fg=await locator.evaluate(el=>getComputedStyle(el).color);
@@ -126,6 +151,8 @@ try{
   const parisCard=page.locator('.visualguides article').filter({has:page.getByRole('heading',{name:'París',exact:true})});
   await inset(parisCard.locator('.cardbody'),parisCard.locator('.cardbody h3'));
   await parisCard.getByRole('button',{name:/Explorar/}).click();
+  await selectedTab(page.locator('.visualguides .tabs button[aria-pressed="true"]'));
+  await page.screenshot({path:'artifacts/ui-delivery-a/dark-fixes/'+device.label+'-guide-selected.png'});
   const panel=page.locator('.guidehead');
   await inset(panel,panel.locator('h1'));
   await inset(panel,panel.locator('.stop').first());
@@ -158,16 +185,39 @@ try{
   await page.getByRole('button',{name:'Ver viaje →'}).click();
   await inset(page.locator('.trip-detail'),page.locator('.trip-banner'));
   await page.getByRole('navigation',{name:'Secciones del viaje'}).getByRole('button',{name:'Itinerario'}).click();
+  await selectedTab(page.locator('.detail-tabs button[aria-current="page"]'));
+  await selectedTab(page.locator('.day-navigator button[aria-pressed="true"]'));
+  await selectedTab(page.locator('.trip-detail .filterpills button[aria-pressed="true"]'));
   await readable(page.locator('.day-practical-guide strong'),page.locator('.day-practical-guide'));
   await readable(page.locator('.activity-tags span').first());
   await inset(page.locator('.agenda .activity-card').first(),page.locator('.agenda .activity-card .activity-body').first());
   await readable(page.locator('.day-navigator [aria-pressed=true]').first());
   await page.getByRole('button',{name:'Calendario',exact:true}).click();
+  await selectedTab(page.locator('.trip-detail .filterpills button[aria-pressed="true"]'));
   await inset(page.locator('.calendar-timeline'),page.locator('.calendar-intro'));
   await readable(page.locator('.calendar-intro p'),page.locator('.calendar-intro'));
   await readable(page.locator('.calendar-slot strong').first(),page.locator('.calendar-slot').first());
   await page.getByRole('button',{name:'Gastos',exact:true}).click();
   await inset(page.locator('.finance-grid .surface').first(),page.locator('.finance-grid .surface h3').first());
+  await selectedTab(page.locator('.detail-tabs button[aria-current="page"]'));
+  const expenseFilters=page.locator('.expense-filters');
+  const clearFilters=page.getByRole('button',{name:'Limpiar filtros de gastos'});
+  const expenseCategory=expenseFilters.getByRole('combobox',{name:'Categoría'});
+  await expenseCategory.selectOption({label:'Comida'});
+  const expenseDate=expenseFilters.locator('input[type=date]');
+  const clearBox=await clearFilters.boundingBox(),categoryBox=await expenseCategory.boundingBox(),dateBox=await expenseDate.boundingBox();
+  assert.ok(clearBox&&categoryBox&&dateBox,'All expense filters must be visible');
+  assert.ok(clearBox.height>=46,'Clear button must have a proper touch target');
+  if(device.width>700){
+   assert.ok(Math.abs(clearBox.y+clearBox.height-(dateBox.y+dateBox.height))<=2,'Desktop clear button bottom must line up with inputs');
+  }else{
+   assert.ok(clearBox.y>=dateBox.y+dateBox.height+8,'Mobile clear button must have its own row');
+   assert.ok(Math.abs(clearBox.x-dateBox.x)<=2&&Math.abs(clearBox.width-dateBox.width)<=2,'Mobile clear button must share input width');
+  }
+  await clearFilters.click();
+  assert.equal(await expenseCategory.inputValue(),'Todas','Clear action must reset the category');
+  assert.equal(await expenseDate.inputValue(),'','Clear action must reset the date');
+  await page.screenshot({path:'artifacts/ui-delivery-a/dark-fixes/'+device.label+'-expense-filters.png'});
   const metrics=page.locator('.metrics > div').first();
   const metricPaint=await metrics.evaluate(paint);
   assert.ok(contrast(metricPaint.fg,metricPaint.bg)>=4.5);
@@ -184,11 +234,14 @@ try{
    const choice=page.getByRole('button',{name,exact:true});
    await choice.click();
    assert.equal(await choice.getAttribute('aria-pressed'),'true');
+   await selectedTab(choice);
    const selected=await choice.evaluate(paint);
    const track=await page.locator('.explore-switch').evaluate(paint);
    assert.ok(contrast(selected.bg,track.bg)>=3);
    assert.ok(contrast(selected.fg,selected.bg)>=4.5);
   }
+  await selectedTab(page.locator('.topbar nav button.navactive'));
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)<=1,'The tabs and expense filters must not overflow');
   assert.deepEqual(errors,[],'No runtime errors');
   await ctx.close();
   console.log('PASS '+device.label+' dark forms, icon/text spacing, date picker, planner contrast and My Trips search');
