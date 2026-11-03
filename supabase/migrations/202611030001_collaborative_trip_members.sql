@@ -63,7 +63,7 @@ declare v integer; r text;
 begin
  if auth.uid() is null or p_trip_id is null or p_document is null or
     pg_catalog.jsonb_typeof(p_document)<>'object' or
-    p_document->>'id' <> p_trip_id::text or
+    (p_document->>'id') is distinct from p_trip_id::text or
     pg_catalog.length(p_document::text)>2000000 then
    raise exception 'INVALID_TRIP_DOCUMENT';
  end if;
