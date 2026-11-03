@@ -1239,3 +1239,153 @@ html[data-theme="dark"] .viaja-osm-map .leaflet-control-attribution {
 html[data-theme="dark"] .viaja-osm-map .leaflet-control-attribution a {
   color:#bde5cd;
 }
+
+
+/* Viaja UI polish 2026-11-04 — selected state and filter layout contract.
+   State colors must be theme-aware: never inherit old #fff / #e7eddf active fills. */
+:root {
+  --tab-active-bg:#214e40;
+  --tab-active-ink:#fff;
+  --tab-active-border:#214e40;
+  --tab-hover-bg:var(--surface-muted);
+}
+html[data-theme="dark"] {
+  --tab-active-bg:#315844;
+  --tab-active-ink:#f5fbf7;
+  --tab-active-border:#7fab89;
+  --tab-hover-bg:#294135;
+}
+/* The same visual language covers the main nav, destination tabs, journey filters,
+   day selectors and trip-detail sections. ARIA is the source of truth for selection. */
+html[data-theme="dark"] :is(
+  .topbar nav button.navactive,
+  .explore-switch button[aria-pressed="true"],
+  .filterpills button[aria-pressed="true"],
+  .day-navigator button[aria-pressed="true"],
+  .visualguides .tabs button[aria-pressed="true"],
+  .detail-tabs button[aria-current="page"]
+) {
+  background-color:var(--tab-active-bg);
+  color:var(--tab-active-ink);
+  box-shadow:inset 0 0 0 1px var(--tab-active-border);
+}
+html[data-theme="dark"] :is(
+  .topbar nav button.navactive,
+  .explore-switch button[aria-pressed="true"],
+  .filterpills button[aria-pressed="true"],
+  .day-navigator button[aria-pressed="true"],
+  .visualguides .tabs button[aria-pressed="true"],
+  .detail-tabs button[aria-current="page"]
+):hover {
+  background-color:#416b52;
+  color:#fff;
+}
+html[data-theme="dark"] .topbar nav button.navactive {
+  border-radius:10px;
+}
+html[data-theme="dark"] .topbar nav button.navactive small {
+  background:#1c3328;
+  color:#f5fbf7;
+}
+html[data-theme="dark"] .detail-tabs button[aria-current="page"] {
+  border-bottom-color:var(--tab-active-border);
+  border-radius:11px 11px 0 0;
+}
+html[data-theme="dark"] .visualguides .sidebar a.active,
+html[data-theme="dark"] .theme-menu button[aria-checked="true"] {
+  background:var(--tab-active-bg);
+  color:var(--tab-active-ink);
+  box-shadow:inset 0 0 0 1px var(--tab-active-border);
+}
+html[data-theme="dark"] :is(
+  .explore-switch button:not([aria-pressed="true"]),
+  .filterpills button:not([aria-pressed="true"]),
+  .day-navigator button:not([aria-pressed="true"]),
+  .visualguides .tabs button:not([aria-pressed="true"]),
+  .detail-tabs button:not([aria-current="page"])
+):hover {
+  background-color:var(--tab-hover-bg);
+  color:var(--ink);
+}
+html[data-theme="dark"] :is(.filterpills,.day-navigator,.detail-tabs,.visualguides .tabs) {
+  scrollbar-color:var(--field-border) transparent;
+}
+html[data-theme="dark"] :is(.filterpills,.day-navigator,.detail-tabs,.visualguides .tabs) button:focus-visible {
+  outline:2px solid var(--orange);
+  outline-offset:-2px;
+}
+
+/* Expense filters share a grid baseline: reset is an ordinary control, not a
+   floating text link. On phones it gets its own full-width row. */
+html[data-theme] .expense-filters {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) max-content;
+  align-items:end;
+  gap:12px;
+  padding-bottom:22px;
+}
+html[data-theme] .expense-filters label {
+  display:grid;
+  gap:8px;
+  align-content:end;
+  min-width:0;
+  font-size:12px;
+  font-weight:700;
+}
+html[data-theme] .expense-filters label > :is(select,input) {
+  width:100%;
+  min-width:0;
+  height:48px;
+  min-height:48px;
+  margin:0;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid var(--field-border);
+  background:var(--field-bg);
+  color:var(--field-text);
+}
+html[data-theme] .expense-filters .clear-filters {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-width:100px;
+  min-height:48px;
+  height:48px;
+  padding:0 14px;
+  margin:0;
+  border:1px solid var(--field-border);
+  border-radius:12px;
+  background:var(--surface-muted);
+  color:var(--ink);
+  font-size:13px;
+  font-weight:700;
+  line-height:1.2;
+  white-space:nowrap;
+}
+html[data-theme] .expense-filters .clear-filters:hover {
+  background:var(--surface-raised);
+  border-color:var(--green);
+}
+html[data-theme] .expense-filters .clear-filters:focus-visible {
+  outline:3px solid var(--orange);
+  outline-offset:2px;
+}
+@media(max-width:1100px) {
+  html[data-theme] .expense-filters {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  html[data-theme] .expense-filters .clear-filters {
+    grid-column:1/-1;
+    justify-self:end;
+  }
+}
+@media(max-width:430px) {
+  html[data-theme] .expense-filters {
+    grid-template-columns:minmax(0,1fr);
+  }
+  html[data-theme] .expense-filters .clear-filters {
+    grid-column:1;
+    width:100%;
+  }
+}
