@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+// @ts-ignore Node 22 type stripping
+import {parseThemePreference,resolveTheme,themeMetaColor,THEME_STORAGE_KEY} from '../lib/theme-preference.ts';
+
+assert.equal(parseThemePreference('dark'),'dark');
+assert.equal(parseThemePreference('light'),'light');
+assert.equal(parseThemePreference('system'),'system');
+assert.equal(parseThemePreference('invalid'),'system');
+assert.equal(parseThemePreference(null),'system');
+assert.equal(resolveTheme('light',true),'light');
+assert.equal(resolveTheme('dark',false),'dark');
+assert.equal(resolveTheme('system',true),'dark');
+assert.equal(resolveTheme('system',false),'light');
+assert.equal(themeMetaColor('dark'),'#101816');
+assert.equal(THEME_STORAGE_KEY,'viaja-theme');
+
+const source=(p:string)=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
+const html=source('portable/index.html');
+const entry=source('portable/main.tsx');
+const styles=source('app/globals.css');
+const guides=source('components/travel-hub.tsx');
+const community=source('components/community-trips.tsx');
+const page=source('app/page.tsx');
+const favorites=source('components/design/favorite-button.tsx');
+const switcher=source('components/theme/theme-switcher.tsx');
+assert.match(html,/data-theme/);
+assert.match(html,/prefers-color-scheme: dark/);
+assert.match(entry,/ThemeProvider/);
+assert.match(page,/ThemeSwitcher/);
+assert.match(guides,/FavoriteButton/);
+assert.doesNotMatch(guides,/(?:'♥'|'♡')/);
+assert.match(favorites,/aria-pressed/);
+assert.match(favorites,/Heart size=\{20\}/);
+assert.match(community,/<AppSelect label="Ritmo"/);
+assert.match(community,/<AppSelect label="Duración"/);
+assert.match(styles,/html\[data-theme="dark"\]/);
+assert.match(styles,/\.favorite-button\.is-compact\{width:40px/);
+assert.match(switcher,/menuitemradio/);
+assert.match(switcher,/\{value:'system'/);
+console.log('PASS delivery A: tokens, light/dark/system, accessible filters and fixed favorites');

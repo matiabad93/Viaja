@@ -3,5 +3,6 @@ import {createRoot} from 'react-dom/client';
 import Home from '../app/page';
 import {PWAStatus} from '../components/pwa-status';
 import {AppErrorBoundary} from '../components/app-error-boundary';
+import {ThemeProvider} from '../components/theme/theme-provider';
 import '../app/globals.css';
-createRoot(document.getElementById('root')!).render(<AppErrorBoundary><PWAStatus/><Home/></AppErrorBoundary>);
+createRoot(document.getElementById('root')!).render(<AppErrorBoundary><ThemeProvider><PWAStatus/><Home/></ThemeProvider></AppErrorBoundary>);

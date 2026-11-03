@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import {PWAStatus} from "../components/pwa-status";
+import {ThemeProvider} from "../components/theme/theme-provider";
 
 export const metadata: Metadata = {
   title: "Viaja · Tu viaje, investigado",
@@ -20,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
-      <body className="antialiased"><PWAStatus/>{children}</body>
+    <html lang="es" suppressHydrationWarning>
+      <body className="antialiased"><ThemeProvider><PWAStatus/>{children}</ThemeProvider></body>
     </html>
   );
 }
