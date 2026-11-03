@@ -22,7 +22,12 @@ async function selected(locator,label,theme){
  await locator.waitFor({state:'visible'});
  const style=await locator.evaluate(el=>{
   const c=getComputedStyle(el),r=el.getBoundingClientRect();
-  return {color:c.color,bg:c.backgroundColor,width:r.width,height:r.height,
+  // Active navigation on desktop/light may rely on an underline; in that case
+  // the effective backdrop is the nearest nontransparent ancestor.
+  let bg=c.backgroundColor,p=el.parentElement;
+  const transparent=value=>value==='transparent'||/^rgba\(.*,[ ]*0(?:\.0+)?\)$/.test(value);
+  while(transparent(bg)&&p){bg=getComputedStyle(p).backgroundColor;p=p.parentElement;}
+  return {color:c.color,bg,width:r.width,height:r.height,
    visible:r.width>0&&r.height>0};
  });
  assert.ok(style.visible,label+' must be visible');
