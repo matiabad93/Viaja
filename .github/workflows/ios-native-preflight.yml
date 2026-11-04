@@ -1,0 +1,62 @@
+name: Viaja - iOS native build validation (manual)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: viaja-ios-preflight
+  cancel-in-progress: false
+jobs:
+  unsigned-ios-preflight:
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Xcode and Apple SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcrun --sdk iphonesimulator --show-sdk-version
+          test "$(xcodebuild -version | awk '/Xcode/{print int($2)}')" -ge 26
+      - name: Build Viaja bundled web app for iOS
+        env:
+          VIAJA_NATIVE: 'true'
+          VIAJA_API_BASE: https://viaja.pages.dev
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build:demo
+          test -s web-dist/index.html
+      - name: Install Capacitor 8 iOS runtime without changing lockfile
+        shell: bash
+        run: |
+          npm ci --prefix mobile --ignore-scripts --no-audit --no-fund
+          npm install --prefix mobile --no-save --no-package-lock --no-audit --no-fund @capacitor/ios@8.6.0
+      - name: Generate native iOS project and synchronize assets
+        working-directory: mobile
+        shell: bash
+        run: |
+          npx cap add ios --packagemanager SPM
+          npx cap sync ios
+      - name: Build for iOS Simulator without distribution credentials
+        working-directory: mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -project ios/App/App.xcodeproj -scheme App \
+            -configuration Debug -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            -derivedDataPath "$RUNNER_TEMP/viaja-ios-build" build
+      - name: Export generated Xcode project for next signing stage
+        uses: actions/upload-artifact@v4
+        with:
+          name: Viaja-iOS-Xcode-Project-Unsigned
+          path: mobile/ios/
+          retention-days: 7
+          if-no-files-found: error
