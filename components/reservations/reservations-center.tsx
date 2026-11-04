@@ -202,6 +202,6 @@ export function ReservationsCenter({
    confirmLabel="Eliminar PDF" danger busy={deletingBusy} onCancel={()=>setDeleting(null)} onConfirm={()=>void erase()}/>
   <ConfirmDialog open={!!extracting} title="¿Analizar este PDF con Gemini?"
    description={extracting?'Se enviará únicamente el archivo “'+extracting.filename+'” a Gemini para leer vuelos o alojamientos. Se permite un máximo de 3 análisis por usuario cada 24 horas. Los datos se mostrarán para revisión y NO se guardarán sin tu confirmación. Podés cancelar y editar manualmente.':''}
-   confirmLabel="Acepto, analizar PDF" busy={extractBusy} onCancel={()=>setExtracting(null)} onConfirm={()=>void runExtraction()}/>
+   confirmLabel="Acepto, analizar PDF" danger={false} busy={extractBusy} onCancel={()=>setExtracting(null)} onConfirm={()=>void runExtraction()}/>
  </section>;
 }
