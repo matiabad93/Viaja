@@ -45,6 +45,7 @@ try{
   await page.goto(base,{waitUntil:'domcontentloaded'});
   await page.getByRole('button',{name:/Apariencia:/}).waitFor();
   await page.getByRole('button',{name:/Planificar/}).click();
+  await page.getByRole('button',{name:/Opciones avanzadas/}).click();
   await page.getByRole('heading',{name:'Contanos tu próximo viaje'}).waitFor();
   await inset(page.locator('.formcard'),page.locator('.formcard .formtitle'));
 
