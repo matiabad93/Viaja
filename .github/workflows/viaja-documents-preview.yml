@@ -6,10 +6,15 @@ on:
       - 'app/**'
       - 'components/**'
       - 'lib/**'
+      - 'server/**'
+      - 'docs/entrega-c-reservas-casos-de-uso.md'
       - 'scripts/documents-browser-smoke.mjs'
+      - 'scripts/reservations-browser-smoke.mjs'
       - 'scripts/logistics-browser-smoke.mjs'
       - 'tests/trip-documents.test.mts'
+      - 'tests/reservation-library.test.mts'
       - 'supabase/migrations/202611040001_trip_documents_private_storage.sql'
+      - 'supabase/migrations/202611040002_reservation_library_private_pdf.sql'
       - '.github/workflows/viaja-documents-preview.yml'
   workflow_dispatch:
 permissions:
@@ -41,6 +46,7 @@ jobs:
           npm run test:core
           node --experimental-strip-types tests/logistics.test.mts
           node --experimental-strip-types tests/trip-documents.test.mts
+          node --experimental-strip-types tests/reservation-library.test.mts
           node --experimental-strip-types tests/community-trips.test.mts
           node --experimental-strip-types tests/collaborative-trips.test.mts
       - name: Compile the exact production web client
@@ -64,6 +70,7 @@ jobs:
         run: |
           node scripts/logistics-browser-smoke.mjs
           node scripts/documents-browser-smoke.mjs
+          node scripts/reservations-browser-smoke.mjs
       - name: Install WebKit (Safari engine)
         run: /tmp/viaja-ui-smoke/node_modules/.bin/playwright install --with-deps webkit
       - name: Safari engine private document and logistics tests
@@ -72,6 +79,7 @@ jobs:
         run: |
           node scripts/logistics-browser-smoke.mjs
           node scripts/documents-browser-smoke.mjs
+          node scripts/reservations-browser-smoke.mjs
       - name: Require Cloudflare credentials before publishing Preview
         run: |
           set -euo pipefail
@@ -92,5 +100,6 @@ jobs:
           name: Viaja-Private-Documents-QA
           path: |
             artifacts/documents-c/
+            artifacts/reservations-c/
             artifacts/logistics-b/
           retention-days: 7
