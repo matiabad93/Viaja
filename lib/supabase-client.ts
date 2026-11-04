@@ -3,9 +3,9 @@
  * Only a publishable key is used here; never use a service_role or sb_secret key.
  * No third-party SDK is needed to bundle this client.
  */
-import type {Plan} from './travel';
-import {publicTripSnapshot,type CommunityTrip} from './community-trips';
-import {buildSocialAuthorizationUrl,parseSocialProviderSettings,unavailableSocialProviders,type SocialProvider,type SocialAvailability} from './social-auth';
+import type {Plan} from './travel.ts';
+import {publicTripSnapshot,type CommunityTrip} from './community-trips.ts';
+import {buildSocialAuthorizationUrl,parseSocialProviderSettings,unavailableSocialProviders,type SocialProvider,type SocialAvailability} from './social-auth.ts';
 
 declare const __VIAJA_SUPABASE_URL__: string;
 declare const __VIAJA_SUPABASE_PUBLIC_KEY__: string;
@@ -190,7 +190,7 @@ export async function saveCloudTrip(p:Plan):Promise<number> {
 }
 export async function deleteCloudTrip(id:string):Promise<void> {
   if(!/^[0-9a-f-]{36}$/i.test(id))throw Error('Identificador inválido.');
-  const {deleteAllTripDocuments}=await import('./trip-documents');
+  const {deleteAllTripDocuments}=await import('./trip-documents.ts');
   await deleteAllTripDocuments(id);
   await db('trips?id=eq.'+encodeURIComponent(id),{method:'DELETE'});
 }
