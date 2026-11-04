@@ -25,6 +25,7 @@ jobs:
           set -euo pipefail
           node --experimental-strip-types tests/security-baseline.test.mts
           node --check scripts/security-documents-e2e.mjs
+          node --experimental-strip-types tests/mobile-store-readiness.test.mts
           node --experimental-strip-types tests/reservation-library.test.mts
           node --experimental-strip-types tests/trip-documents.test.mts
           node --experimental-strip-types tests/collaborative-trips.test.mts
