@@ -11,6 +11,7 @@ on:
       - 'public/**'
       - 'functions/**'
       - 'server/**'
+      - 'scripts/security-production-http-smoke.mjs'
       - 'package.json'
       - 'package-lock.json'
       - 'pnpm-lock.yaml'
@@ -73,3 +74,6 @@ jobs:
       - name: Verificar que Cloudflare sirva los nuevos estilos
         if: steps.credentials.outputs.available == 'true'
         run: node scripts/ui-delivery-a-live-check.mjs https://viaja.pages.dev
+      - name: Validar respuestas HTTP, cabeceras y denegación anónima en producción
+        if: steps.credentials.outputs.available == 'true'
+        run: node scripts/security-production-http-smoke.mjs
