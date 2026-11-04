@@ -22,7 +22,7 @@ try{
   const ctx=await browser.newContext({viewport:{width:device.width,height:device.height},locale:'es-ES',colorScheme:device.theme,acceptDownloads:true});
   await ctx.addInitScript(({plan,theme})=>{
    localStorage.setItem('viaja-theme',theme);
-   localStorage.setItem('viaja-ai-trips-v1',JSON.stringify([plan]));
+   if(!localStorage.getItem('viaja-ai-trips-v1'))localStorage.setItem('viaja-ai-trips-v1',JSON.stringify([plan]));
   },{plan:sample,theme:device.theme});
   const page=await ctx.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
