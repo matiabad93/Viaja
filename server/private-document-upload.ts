@@ -1,4 +1,4 @@
-import {isAllowedApiOrigin} from './origin-policy';
+import {isAllowedApiOrigin} from './origin-policy.ts';
 /**
  * Viaja P1.2 — the only file upload entrypoint.
  * Storage INSERT is denied to browser JWTs by RLS. Only this backend uses
