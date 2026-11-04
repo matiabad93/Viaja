@@ -1,0 +1,35 @@
+name: Viaja — audited production dependencies
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, security/p0-dependency-fixes-20261104]
+permissions:
+  contents: read
+jobs:
+  security-dependencies:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install exact npm lockfile
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Reject high or critical vulnerabilities in web runtime
+        run: npm audit --omit=dev --audit-level=high
+      - name: Verify pnpm lockfile and production dependency advisories
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@11.25.0 --activate
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm audit --prod --audit-level high
+      - name: Ensure app still typechecks and compiles
+        run: |
+          npx tsc --noEmit
+          npm run test:core
+          npm run build:demo
