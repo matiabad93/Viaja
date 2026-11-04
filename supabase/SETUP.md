@@ -57,3 +57,26 @@ Mantener la Site URL en `https://viaja.pages.dev`. No usar una regla global para
 6. Verificar importación de datos locales de forma voluntaria y sin pérdidas.
 
 **Limitaciones actuales:** estos flujos de navegador aún no han sido ejecutados de punta a punta. `ai_usage` es privado de servidor. `/api/plan` sigue deshabilitado; no publicar como 1.0.0 todavía.
+
+
+## Viaja 1.1 — Entrega C: documentos privados (04-11-2026)
+
+La migración aditiva es [202611040001_trip_documents_private_storage.sql](./migrations/202611040001_trip_documents_private_storage.sql). Debe aplicarse solo al proyecto Supabase viaja-production; no modificar el proyecto separado de Tupã Travel. No cambia viajes ni publicaciones existentes.
+
+**Arquitectura:** bucket privado trip-documents (PDF/JPG/PNG/WEBP/ICS, 10 MiB por archivo). Objeto en ruta opaca tripId/documentId/document.ext. Nombre original y relación con alojamiento/transporte en public.trip_documents, con RLS; nunca en public.trips.document, el catálogo comunitario o localStorage.
+
+**Permisos:** dueño y editor pueden listar/subir/consultar/eliminar; lector solo listar/consultar. Invitado sin sesión y terceros no tienen acceso. Se aplican políticas independientes tanto a public.trip_documents como a storage.objects; no hay políticas de UPDATE ni overwrites. La metadata se registra antes de subir para que Storage pueda comprobar permisos. En caso de error de upload se intenta eliminar el registro; el borrado correcto elimina bytes primero y metadata después.
+
+**Enlaces temporales:** Storage emite enlaces firmados de 120 segundos al comprobar JWT y RLS. Un enlace firmado es una credencial bearer: quien lo reciba puede descargar hasta su expiración. Revocar acceso impide obtener nuevos enlaces, pero no invalida los ya emitidos; eliminar el objeto invalida su acceso. No registrar esos enlaces en el documento del viaje ni enviarlos a proveedores de IA. Documentación: https://supabase.com/docs/guides/storage/serving/downloads
+
+**Límites y cuotas:** el cliente comprueba la extensión y firma real del archivo, además de un máximo de 10 MiB. El bucket verifica MIME y tamaño. Las cuotas, posibles cargos por almacenamiento y ancho de banda dependen del plan de Supabase.
+
+**Checklist de aceptación con cuentas reales (además de pruebas automatizadas con mock):**
+1. Dueño/editor suben un PDF y una imagen; reaparecen después de cerrar y abrir sesión.
+2. Lector puede ver/descargar pero no subir/eliminar.
+3. Tercero ajeno y anónimo no pueden consultar, firmar, subir o eliminar.
+4. Previsualizaciones en Safari iPhone, Chrome Android y escritorio; ICS se ofrece como descarga.
+5. Borrar el comprobante y confirmar que la Storage API no lo devuelve; borrar el viaje y verificar limpieza.
+6. Confirmar que una publicación de Explorar destinos no incluye localizadores, URLs firmadas ni documentos.
+
+La lectura automática con IA es una Entrega D distinta y solo podrá ejecutarse tras consentimiento explícito.

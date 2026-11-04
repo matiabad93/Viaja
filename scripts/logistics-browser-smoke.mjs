@@ -34,7 +34,7 @@ try{
   assert.equal(await tabs.getByRole('button').count(),5,'Five trip tabs expected');
   await tabs.getByRole('button',{name:'Logística'}).click();
   await page.getByRole('heading',{name:'La logística de tu viaje'}).waitFor();
-  assert.ok(await page.getByText('Los archivos llegan en la Entrega C.').isVisible());
+  assert.ok(await page.getByText('Iniciá sesión para guardar documentos en la nube.').isVisible());
   await overflow(page);
   // Persist accommodation with a private reference.
   const lodgingSection=page.locator('.logistics-block').filter({has:page.getByRole('heading',{name:'Alojamientos'})});

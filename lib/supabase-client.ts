@@ -3,9 +3,9 @@
  * Only a publishable key is used here; never use a service_role or sb_secret key.
  * No third-party SDK is needed to bundle this client.
  */
-import type {Plan} from './travel';
-import {publicTripSnapshot,type CommunityTrip} from './community-trips';
-import {buildSocialAuthorizationUrl,parseSocialProviderSettings,unavailableSocialProviders,type SocialProvider,type SocialAvailability} from './social-auth';
+import type {Plan} from './travel.ts';
+import {publicTripSnapshot,type CommunityTrip} from './community-trips.ts';
+import {buildSocialAuthorizationUrl,parseSocialProviderSettings,unavailableSocialProviders,type SocialProvider,type SocialAvailability} from './social-auth.ts';
 
 declare const __VIAJA_SUPABASE_URL__: string;
 declare const __VIAJA_SUPABASE_PUBLIC_KEY__: string;
@@ -151,6 +151,21 @@ export async function db<T=JSONValue>(path:string,init:RequestInit={}):Promise<T
   if(!token)throw Error('Iniciá sesión para guardar o consultar tus viajes.');
   return api<T>('/rest/v1/'+path,init,token);
 }
+/** Authenticated Storage requests use the active user's JWT and a publishable key only. */
+export const storageApiBase = url+'/storage/v1';
+export async function storageRequest<T=Record<string,unknown>>(path:string,init:RequestInit={}):Promise<T>{
+ ensureConfigured();
+ const token=await accessToken();
+ if(!token)throw Error('Iniciá sesión para utilizar documentos privados.');
+ const headers=new Headers(init.headers);
+ headers.set('apikey',key);
+ headers.set('Authorization','Bearer '+token);
+ const response=await fetch(storageApiBase+'/'+path.replace(/^\/+/,''),
+  {...init,headers,cache:'no-store'});
+ const data=await response.json().catch(()=>({})) as Record<string,unknown>;
+ if(!response.ok)throw Error(String(data.message||data.error||data.msg||'Error de almacenamiento privado.').slice(0,240));
+ return data as T;
+}
 export async function listCloudTrips():Promise<Plan[]> {
   const [rows,members]=await Promise.all([
     db<{user_id:string;version:number;document:Plan}[]>('trips?select=user_id,version,document&order=updated_at.desc&limit=250'),
@@ -175,6 +190,8 @@ export async function saveCloudTrip(p:Plan):Promise<number> {
 }
 export async function deleteCloudTrip(id:string):Promise<void> {
   if(!/^[0-9a-f-]{36}$/i.test(id))throw Error('Identificador inválido.');
+  const {deleteAllTripDocuments}=await import('./trip-documents.ts');
+  await deleteAllTripDocuments(id);
   await db('trips?id=eq.'+encodeURIComponent(id),{method:'DELETE'});
 }
 export async function importLocalTrips():Promise<{imported:number}> {
