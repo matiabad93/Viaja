@@ -100,7 +100,16 @@ try{
   await page.getByRole('button',{name:'Ver viaje →'}).click();
   await page.getByRole('navigation',{name:'Secciones del viaje'}).getByRole('button',{name:'Logística'}).click();
   await page.getByRole('heading',{name:'Documentos y comprobantes'}).waitFor();
-  await page.getByText('No hay comprobantes todavía.').waitFor();
+  try {
+   await page.getByText('No hay comprobantes todavía.').waitFor({timeout:15000});
+  }catch(error){
+   const snapshot=await page.evaluate(()=>({
+    text:document.body.innerText.slice(0,2200),
+    auth:Boolean(localStorage.getItem('viaja-auth-session-v1')),
+    location:location.href
+   }));
+   throw new Error('Document empty-state not visible; Safari session diagnostic: '+JSON.stringify(snapshot),{cause:error});
+  }
   await noOverflow(page);
   // Client-side file signature validation must reject disguised HTML.
   const fileInput=page.locator('.document-file-input');
