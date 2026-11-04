@@ -8,7 +8,7 @@ const initial=():TransportSegment=>({id:newId(),kind:'flight',company:'',service
 export function TransportForm({value,tripStart,tripEnd,onSave,onCancel}:TransportFormProps){
  const [draft,setDraft]=useState<TransportSegment>(()=>value?{...value}:initial()),[errors,setErrors]=useState<string[]>([]);
  const zones=useId();
- const set=<K extends keyof TransportSegment>(key:K,v:TransportSegment[K])=>{setDraft(d=>({...d,[key]:v}));setErrors([])};
+ const set=<K extends keyof TransportSegment,>(key:K,v:TransportSegment[K])=>{setDraft(d=>({...d,[key]:v}));setErrors([])};
  const submit=(e:React.FormEvent)=>{e.preventDefault();const problems=validateTransport(draft);if(problems.length){setErrors(problems);return}onSave({...draft,origin:draft.origin.trim(),destination:draft.destination.trim(),updatedAt:new Date().toISOString()})};
  const warning=tripDateWarning(draft.departureAt.slice(0,10),draft.arrivalAt.slice(0,10),tripStart,tripEnd);
  return <form className="logistics-form" aria-label={value?'Editar transporte':'Nuevo transporte'} onSubmit={submit}>
