@@ -190,6 +190,8 @@ export async function saveCloudTrip(p:Plan):Promise<number> {
 }
 export async function deleteCloudTrip(id:string):Promise<void> {
   if(!/^[0-9a-f-]{36}$/i.test(id))throw Error('Identificador inválido.');
+  const {deleteAllTripDocuments}=await import('./trip-documents');
+  await deleteAllTripDocuments(id);
   await db('trips?id=eq.'+encodeURIComponent(id),{method:'DELETE'});
 }
 export async function importLocalTrips():Promise<{imported:number}> {
