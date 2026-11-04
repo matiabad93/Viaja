@@ -78,7 +78,7 @@ jobs:
             --branch feat/viaja-ui-logistics-darkmode \
             --commit-hash "$GITHUB_SHA" \
             --commit-message "Viaja 1.1: Logistics preview"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: Viaja-Logistics-Preview-QA

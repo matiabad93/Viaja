@@ -58,7 +58,7 @@ jobs:
           else
             node scripts/ui-delivery-a-live-check.mjs https://feat-v1-production-release-p.viaja.pages.dev
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: Viaja-UI-Delivery-A

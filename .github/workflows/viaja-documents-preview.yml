@@ -94,7 +94,7 @@ jobs:
             --branch feat/viaja-documents-private-storage-c-20261104 \
             --commit-hash "$GITHUB_SHA" \
             --commit-message "Viaja 1.1 Entrega C — Private documents Preview"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: Viaja-Private-Documents-QA

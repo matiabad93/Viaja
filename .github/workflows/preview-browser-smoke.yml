@@ -31,7 +31,7 @@ jobs:
           VIAJA_BROWSER: webkit
         run: node scripts/v1-mobile-ux-smoke.mjs
       - name: Upload screenshot evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: Viaja-Preview-V1-UX-Smoke
