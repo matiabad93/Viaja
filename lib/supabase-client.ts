@@ -151,6 +151,21 @@ export async function db<T=JSONValue>(path:string,init:RequestInit={}):Promise<T
   if(!token)throw Error('Iniciá sesión para guardar o consultar tus viajes.');
   return api<T>('/rest/v1/'+path,init,token);
 }
+/** Authenticated Storage requests use the active user's JWT and a publishable key only. */
+export const storageApiBase = url+'/storage/v1';
+export async function storageRequest<T=Record<string,unknown>>(path:string,init:RequestInit={}):Promise<T>{
+ ensureConfigured();
+ const token=await accessToken();
+ if(!token)throw Error('Iniciá sesión para utilizar documentos privados.');
+ const headers=new Headers(init.headers);
+ headers.set('apikey',key);
+ headers.set('Authorization','Bearer '+token);
+ const response=await fetch(storageApiBase+'/'+path.replace(/^\/+/,''),
+  {...init,headers,cache:'no-store'});
+ const data=await response.json().catch(()=>({})) as Record<string,unknown>;
+ if(!response.ok)throw Error(String(data.message||data.error||data.msg||'Error de almacenamiento privado.').slice(0,240));
+ return data as T;
+}
 export async function listCloudTrips():Promise<Plan[]> {
   const [rows,members]=await Promise.all([
     db<{user_id:string;version:number;document:Plan}[]>('trips?select=user_id,version,document&order=updated_at.desc&limit=250'),
