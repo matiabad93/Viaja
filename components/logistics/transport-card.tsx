@@ -1,6 +1,6 @@
 'use client';
 import {useState} from 'react';
-import {CalendarPlus,Plane,TrainFront,Bus,Ferry,Car,MapPin,Pencil,Trash2,Receipt,ExternalLink,Ban} from 'lucide-react';
+import {CalendarPlus,Plane,TrainFront,Bus,Ship,Car,MapPin,Pencil,Trash2,Receipt,ExternalLink,Ban} from 'lucide-react';
 import type {TransportSegment} from '../../lib/travel';
 import {createTransportEvent,downloadCalendarFile} from '../../lib/calendar-export';
 const names:Record<TransportSegment['kind'],string>={flight:'Vuelo',train:'Tren',bus:'Autobús',ferry:'Ferry',transfer:'Traslado',rental_car:'Coche de alquiler',other:'Transporte'};
@@ -8,7 +8,7 @@ type Props={value:TransportSegment;readOnly:boolean;onEdit:()=>void;onDelete:()=
 export function TransportCard({value:t,readOnly,onEdit,onDelete,onCancel,onLinkExpense,linkedExpense,onError}:Props){
  const [showCode,setShowCode]=useState(false);
  const exportCalendar=()=>{try{downloadCalendarFile([createTransportEvent(t)],t.origin+'-'+t.destination)}catch(e){onError((e as Error).message)}};
- const Icon=t.kind==='flight'?Plane:t.kind==='train'?TrainFront:t.kind==='bus'?Bus:t.kind==='ferry'?Ferry:t.kind==='rental_car'?Car:MapPin;
+ const Icon=t.kind==='flight'?Plane:t.kind==='train'?TrainFront:t.kind==='bus'?Bus:t.kind==='ferry'?Ship:t.kind==='rental_car'?Car:MapPin;
  const format=(s:string)=>s?new Date(s+':00').toLocaleString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Por definir';
  return <article className="logistics-card transport-card">
   <div className="logistics-card-heading"><span className="logistics-card-icon"><Icon size={21}/></span><div><p className="logistics-type">{names[t.kind]}{t.company?' · '+t.company:''}{t.serviceNumber?' · '+t.serviceNumber:''}</p><h4>{t.origin} → {t.destination}</h4></div><span className={'logistics-status status-'+t.status}>{t.status==='confirmed'?'Confirmado':t.status==='cancelled'?'Cancelado':'Planificado'}</span></div>
