@@ -2074,3 +2074,102 @@ html[data-theme] .reservation-quota-status{
 }
 html[data-theme] .reservation-quota-status strong{color:var(--ink)}
 html[data-theme] .reservation-quota-status svg{color:var(--green);flex:none}
+
+
+/* Viaja 2.0: guided planning — isolated from existing advanced planner. */
+.viaja-wizard{--wz-surface:#fff;--wz-soft:#f3f7f1;--wz-text:#163c32;--wz-muted:#566c61;--wz-line:#d6e2d8;--wz-accent:#245c49;max-width:900px;margin:clamp(20px,3vw,44px) auto 72px;background:var(--wz-surface);border:1px solid var(--wz-line);border-radius:24px;overflow:visible;box-shadow:0 18px 60px rgba(19,59,42,.07);color:var(--wz-text)}
+.wizard-header{padding:22px clamp(20px,4vw,40px) 8px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.wizard-brand{display:flex;align-items:center;gap:9px;font-size:16px}
+.wizard-brand>span{font-size:12px;color:var(--wz-muted);font-weight:500;border:1px solid var(--wz-line);padding:5px 10px;border-radius:40px}
+.wizard-advanced{display:flex;align-items:center;gap:8px;min-height:44px;color:var(--wz-accent);font-weight:600;font-size:14px;padding:8px 10px;border-radius:10px}
+.wizard-advanced:hover,.wizard-advanced:focus-visible,.wizard-demo-link:hover{background:var(--wz-soft)}
+.wizard-progress{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:20px clamp(20px,4vw,40px) 24px}
+.wizard-progress-step{display:flex;align-items:center;gap:9px;color:var(--wz-muted);font-size:12px;font-weight:600;position:relative;min-width:0}
+.wizard-progress-step:after{content:'';flex:1;height:3px;background:var(--wz-line);border-radius:99px;min-width:6px}
+.wizard-progress-step:last-child:after{display:none}
+.wizard-progress-dot{display:grid;place-items:center;flex:0 0 31px;width:31px;height:31px;border-radius:50%;background:var(--wz-soft);border:1px solid var(--wz-line)}
+.wizard-progress-step.active{color:var(--wz-accent)}
+.wizard-progress-step.active .wizard-progress-dot,.wizard-progress-step.done .wizard-progress-dot{background:var(--wz-accent);border-color:var(--wz-accent);color:#fff}
+.wizard-content{max-width:740px;margin:0 auto;padding:6px clamp(20px,4vw,42px) 28px;display:grid;gap:22px}
+.wizard-intro{display:grid;gap:10px}
+.wizard-intro h1{font:600 clamp(27px,4vw,39px)/1.17 Georgia,serif;letter-spacing:-.02em}
+.wizard-intro p{color:var(--wz-muted);font-size:16px;line-height:1.55;max-width:630px}
+.wizard-content .eyebrow{color:var(--wz-accent);font-size:11px;letter-spacing:.11em;font-weight:700}
+.wizard-cover{height:160px;position:relative;overflow:hidden;border-radius:16px;margin-bottom:2px;background:var(--wz-soft)}
+.wizard-cover img{width:100%;height:100%;object-fit:cover}
+.wizard-cover:after{content:'';position:absolute;inset:20% 0 0;background:linear-gradient(0deg,rgba(4,22,14,.65),transparent)}
+.wizard-cover span{position:absolute;bottom:14px;left:18px;color:white;font-size:20px;font-weight:700;z-index:1}
+.viaja-wizard .wizard-field{display:grid;gap:9px;font-size:16px;font-weight:650;color:var(--wz-text)}
+.viaja-wizard .wizard-field small{color:var(--wz-muted);font-size:13px;font-weight:400}
+.viaja-wizard input:not([type=range]):not([type=checkbox]),.viaja-wizard select,.viaja-wizard textarea{width:100%;background:var(--wz-surface);color:var(--wz-text);border:1px solid var(--wz-line);border-radius:11px;min-height:50px;padding:12px 13px;font-size:16px;font-weight:400;outline-offset:3px;margin:0}
+.viaja-wizard input::placeholder,.viaja-wizard textarea::placeholder{color:var(--wz-muted);opacity:.85}
+.viaja-wizard textarea{resize:vertical;line-height:1.5}
+.viaja-wizard input[type=range]{width:100%;accent-color:var(--wz-accent);height:25px;margin:3px 0;cursor:pointer}
+.wizard-date-choice{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.wizard-date-choice button,.wizard-option{border:1px solid var(--wz-line);border-radius:12px;background:var(--wz-soft);color:var(--wz-text);padding:13px 14px;min-height:58px;text-align:center;line-height:1.35;font-size:15px}
+.wizard-date-choice button.selected,.wizard-option.selected{border:2px solid var(--wz-accent);background:color-mix(in srgb,var(--wz-accent) 10%,var(--wz-surface));font-weight:700}
+.wizard-dates{display:grid;gap:8px}
+.wizard-small-label{font-size:15px;font-weight:650}
+.viaja-wizard .trip-date-field{min-width:0}
+.viaja-wizard .trip-date-label{font-size:14px;color:var(--wz-muted)}
+.viaja-wizard .date-trigger{min-height:52px;background:var(--wz-surface);color:var(--wz-text);border-color:var(--wz-line);font-size:15px}
+.viaja-wizard .trip-calendar-popover{z-index:120;background:var(--wz-surface);color:var(--wz-text);border-color:var(--wz-line)}
+.viaja-wizard .trip-date-range{grid-column:unset}
+.viaja-wizard .wizard-more-destinations{padding:14px;border:1px solid var(--wz-line);border-radius:12px;background:var(--wz-soft)}
+.viaja-wizard .wizard-more-destinations summary{display:flex;align-items:center;gap:8px;min-height:34px;padding:0;cursor:pointer;font-size:14px;color:var(--wz-accent);font-weight:700}
+.viaja-wizard .wizard-more-destinations[open]{display:grid;gap:16px}
+.viaja-wizard .wizard-more-destinations .trip-stops-editor{margin-top:8px}
+.wizard-demo-link,.wizard-more-link{justify-self:start;display:inline-flex;align-items:center;gap:7px;color:var(--wz-accent);font-size:14px;font-weight:700;padding:10px 12px;border-radius:9px;text-align:left}
+.wizard-interest{display:grid;gap:4px;padding:0 0 13px;border-bottom:1px solid var(--wz-line)}
+.wizard-interest-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.wizard-interest-title label{font-size:16px;color:var(--wz-text);font-weight:600}
+.wizard-interest-title span{font-size:13px;color:var(--wz-muted)}
+.wizard-interest-ends{display:flex;justify-content:space-between;color:var(--wz-muted);font-size:12px}
+.wizard-option-group{display:grid;gap:10px}
+.wizard-option-group legend{font-size:16px;font-weight:700;margin-bottom:12px}
+.wizard-cards{display:grid;gap:10px}
+.wizard-cards.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.wizard-cards.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.wizard-option{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px}
+.wizard-option small{font-size:12px;font-weight:400;color:var(--wz-muted)}
+.wizard-subtle{font-size:13px;color:var(--wz-muted);line-height:1.55}
+.wizard-time-row{display:grid;grid-template-columns:minmax(70px,1fr) minmax(0,1.2fr) minmax(0,1.2fr);align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--wz-line)}
+.wizard-time-row label{font-size:14px;display:grid;gap:5px;color:var(--wz-text)}
+.wizard-time-row strong{font-size:14px}
+.wizard-summary{border:1px solid var(--wz-line);background:var(--wz-soft);border-radius:15px;padding:21px;display:grid;gap:14px}
+.wizard-summary p{display:flex;align-items:center;gap:11px;line-height:1.5;font-size:15px}
+.wizard-summary svg{flex-shrink:0;color:var(--wz-accent)}
+.wizard-result-actions{display:grid;gap:12px}
+.viaja-wizard .wizard-result-actions>.primary,.viaja-wizard .wizard-result-actions>.secondary{width:100%;min-height:54px;font-size:16px;gap:10px}
+.wizard-info{padding:14px 16px;background:var(--wz-soft);border:1px solid var(--wz-line);border-radius:12px;color:var(--wz-muted);font-size:15px;line-height:1.55}
+.wizard-notice{background:var(--wz-soft);color:var(--wz-accent);border:1px solid var(--wz-line);padding:12px;border-radius:12px;font-size:14px;line-height:1.45}
+.wizard-footer{border-top:1px solid var(--wz-line);padding:17px clamp(20px,4vw,40px) 22px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.wizard-footer .primary,.wizard-footer .secondary{min-height:48px;font-size:15px}
+.wizard-footer>span{font-size:13px;color:var(--wz-muted)}
+.wizard-back-to-simple{margin:15px auto;max-width:1120px;padding:0 12px}
+html[data-theme="dark"] .viaja-wizard{--wz-surface:#1b2925;--wz-soft:#263c32;--wz-text:#edf5ed;--wz-muted:#c2d6c8;--wz-line:#50675a;--wz-accent:#a9e0bb;box-shadow:0 18px 60px rgba(0,0,0,.18)}
+html[data-theme="dark"] .viaja-wizard .primary{background:#8cc8a8;color:#102e23;border-color:#8cc8a8}
+html[data-theme="dark"] .viaja-wizard .wizard-progress-dot.active{background:#8cc8a8}
+html[data-theme="dark"] .viaja-wizard .wizard-option.selected,html[data-theme="dark"] .viaja-wizard .wizard-date-choice .selected{background:#354f3f}
+@media(max-width:700px){
+ .viaja-wizard{margin:8px auto 30px;border-radius:17px}
+ .wizard-header{padding:14px 16px 4px;gap:8px}
+ .wizard-brand{font-size:15px;gap:5px}
+ .wizard-brand>span{display:none}
+ .wizard-advanced{font-size:12px;padding:8px 5px}
+ .wizard-progress{padding:16px 14px 20px;gap:0}
+ .wizard-progress-step{justify-content:center;gap:0}
+ .wizard-progress-step:after{position:absolute;top:15px;left:calc(50% + 20px);right:calc(-50% + 20px);width:calc(100% - 40px)}
+ .wizard-progress-name{display:none}
+ .wizard-progress-step.active .wizard-progress-name{display:none}
+ .wizard-content{padding:8px 18px 20px;gap:18px}
+ .wizard-cover{height:140px}
+ .wizard-cards.four{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .wizard-cards.three{grid-template-columns:1fr}
+ .wizard-cards.three>.wizard-option{align-items:flex-start;text-align:left;min-height:60px}
+ .wizard-time-row{gap:7px;grid-template-columns:60px minmax(0,1fr) minmax(0,1fr)}
+ .wizard-time-row input{min-width:0;padding:8px!important}
+ .wizard-date-choice button{font-size:13px;padding:12px 7px}
+ .wizard-footer{padding:14px 17px 19px}
+}
+@media(prefers-reduced-motion:reduce){.viaja-wizard *{scroll-behavior:auto!important;transition:none!important}}
