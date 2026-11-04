@@ -1,5 +1,5 @@
 'use client';
-import {useState} from 'react';
+import {useEffect,useState} from 'react';
 import {BedDouble,Plane,Files,CalendarPlus,LockKeyhole,Plus,Receipt,X,Save,Info} from 'lucide-react';
 import {newId,type Accommodation,type Expense,type Plan,type TransportSegment} from '../../lib/travel';
 import {logisticsOf} from '../../lib/trip-logistics';
@@ -10,13 +10,22 @@ import {TransportForm} from './transport-form';
 import {TransportList} from './transport-list';
 import {ConfirmDialog} from '../confirm-dialog';
 import {DocumentList} from './document-list';
+import {listReservations} from '../../lib/reservation-library';
 
 type ReservationTarget={kind:'accommodation'|'transport';id:string};
 type PendingAction=ReservationTarget&{action:'cancel'|'delete'};
-export function TripLogisticsPanel({plan,onChange,onError,authenticated}:{plan:Plan;onChange:(plan:Plan)=>boolean;onError:(message:string)=>void;authenticated:boolean}){
+export function TripLogisticsPanel({plan,onChange,onError,authenticated,onOpenReservations}:{plan:Plan;onChange:(plan:Plan)=>boolean;onError:(message:string)=>void;authenticated:boolean;onOpenReservations:()=>void}){
  const logistics=logisticsOf(plan),readOnly=plan.collaboration?.role==='viewer';
  const [form,setForm]=useState<ReservationTarget|null>(null);
  const [documentCount,setDocumentCount]=useState(0);
+ const [linkedPdfCount,setLinkedPdfCount]=useState<number|null>(null);
+ useEffect(()=>{
+  if(!authenticated||!plan.collaboration?.version){setLinkedPdfCount(null);return}
+  let active=true;
+  listReservations().then(rows=>{if(active)setLinkedPdfCount(rows.filter(r=>r.linked_trip_id===plan.id).length)})
+   .catch(()=>{if(active)setLinkedPdfCount(null)});
+  return()=>{active=false};
+ },[authenticated,plan.id,plan.collaboration?.version]);
  const [pending,setPending]=useState<PendingAction|null>(null);
  const [link,setLink]=useState<ReservationTarget|null>(null);
  const [expenseId,setExpenseId]=useState(''),[amount,setAmount]=useState(''),[expenseLabel,setExpenseLabel]=useState(''),[expenseDate,setExpenseDate]=useState(plan.trip.start||new Date().toLocaleDateString('sv-SE'));
@@ -96,6 +105,11 @@ export function TripLogisticsPanel({plan,onChange,onError,authenticated}:{plan:P
    <div className="logistics-form-grid"><label>Concepto<input value={expenseLabel} maxLength={120} onChange={e=>setExpenseLabel(e.target.value)}/></label><label>Fecha<input type="date" value={expenseDate} onChange={e=>setExpenseDate(e.target.value)}/></label><label>Importe en EUR<input type="number" min=".01" step=".01" placeholder="0,00" value={amount} onChange={e=>setAmount(e.target.value)}/></label></div>
    <button className="primary" type="button" onClick={createExpense}><Plus size={16}/>Crear gasto y vincular</button>
   </div>}
+  {authenticated&&<section className="logistics-block logistics-linked-reservations">
+   <div className="section-heading compact"><div><h3>Mis PDFs vinculados a este viaje</h3><p className="subtle">Billetes y comprobantes de tu biblioteca personal. Se mantienen privados, incluso si compartís el itinerario.</p></div>
+    <button type="button" className="secondary" onClick={onOpenReservations}>Abrir Reservas →</button></div>
+   <p className="subtle">{linkedPdfCount===null?'Consultá tu biblioteca de reservas para ver tus archivos.':linkedPdfCount===0?'Todavía no vinculaste ningún PDF a este viaje.':linkedPdfCount+' PDF '+(linkedPdfCount===1?'vinculado':'vinculados')+' a este viaje.'}</p>
+  </section>}
   <DocumentList tripId={plan.id} accommodations={logistics.accommodations} transports={logistics.transports}
    authenticated={authenticated} readOnly={readOnly} cloudSaved={Boolean(plan.collaboration?.version)}
    onCountChange={setDocumentCount} onError={onError}/>
