@@ -37,7 +37,7 @@ function scenario(opts:Setup={}){
    assert.equal(headers.get('apikey'),secret,'Privileged Storage must only use backend secret');
    assert.equal(headers.get('Authorization'),null,'Never forward the user JWT into secret Storage POST');
    assert.equal(headers.get('x-upsert'),'false','Do not allow file overwrites');
-   return Response.json({path:'stored'},200);
+   return Response.json({path:'stored'},{status:200});
   }
   throw Error('Unknown request '+uri);
  };
