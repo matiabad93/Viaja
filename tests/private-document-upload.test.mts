@@ -140,6 +140,6 @@ assert.ok(!/create\s+trigger\s+\S+\s+.*storage\.objects/i.test(sql),'Never modif
 for(const path of ['../lib/reservation-library.ts','../lib/trip-documents.ts']){
  const c=readFileSync(new URL(path,import.meta.url),'utf8');
  assert.ok(c.includes('uploadViajaPrivateFile('),'Client must use server upload');
- assert.ok(!/await storageRequest\('object\/'\+(RESERVATION_PDF_BUCKET|TRIP_DOCUMENT_BUCKET)\+\s*'\/'\+.*\{\s*method:'POST'/s.test(c),'Client direct Storage POST prohibited');
+ assert.ok(!/await storageRequest\('object\/'\+(RESERVATION_PDF_BUCKET|TRIP_DOCUMENT_BUCKET)\+\s*'\/'\+[\s\S]*\{\s*method:'POST'/.test(c),'Client direct Storage POST prohibited');
 }
 console.log('PASS P1.2: verified secret-only upload, ownership, MIME, actual size, trip role, quota and RLS guardrails');
