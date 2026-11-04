@@ -1,0 +1,96 @@
+name: Viaja 1.1 — private documents Preview
+on:
+  push:
+    branches: [feat/viaja-documents-private-storage-c-20261104]
+    paths:
+      - 'app/**'
+      - 'components/**'
+      - 'lib/**'
+      - 'scripts/documents-browser-smoke.mjs'
+      - 'scripts/logistics-browser-smoke.mjs'
+      - 'tests/trip-documents.test.mts'
+      - 'supabase/migrations/202611040001_trip_documents_private_storage.sql'
+      - '.github/workflows/viaja-documents-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: viaja-documents-preview
+  cancel-in-progress: true
+jobs:
+  verified-documents:
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 35
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.VIAJA_CF_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.VIAJA_CF_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CF_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: TypeScript, reservations and private document regressions
+        run: |
+          set -euo pipefail
+          npx tsc --noEmit
+          npm run test:core
+          node --experimental-strip-types tests/logistics.test.mts
+          node --experimental-strip-types tests/trip-documents.test.mts
+          node --experimental-strip-types tests/community-trips.test.mts
+          node --experimental-strip-types tests/collaborative-trips.test.mts
+      - name: Compile the exact production web client
+        run: |
+          npm run build:demo
+          test -s web-dist/index.html
+      - name: Install browser tooling
+        run: |
+          command -v google-chrome
+          npm install --prefix /tmp/viaja-ui-smoke --no-package-lock --no-audit --no-fund playwright@1.56.1
+      - name: Serve the production build
+        run: |
+          nohup npx vite preview --config vite.portable.config.ts --host 127.0.0.1 --port 4173 > /tmp/viaja-documents-preview.log 2>&1 &
+          for n in $(seq 1 45); do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/viaja-documents-preview.log
+          exit 1
+      - name: Chromium logistics and private document tests on phone and desktop
+        run: |
+          node scripts/logistics-browser-smoke.mjs
+          node scripts/documents-browser-smoke.mjs
+      - name: Install WebKit (Safari engine)
+        run: /tmp/viaja-ui-smoke/node_modules/.bin/playwright install --with-deps webkit
+      - name: Safari engine private document and logistics tests
+        env:
+          VIAJA_BROWSER: webkit
+        run: |
+          node scripts/logistics-browser-smoke.mjs
+          node scripts/documents-browser-smoke.mjs
+      - name: Require Cloudflare credentials before publishing Preview
+        run: |
+          set -euo pipefail
+          [[ -n "${CLOUDFLARE_API_TOKEN:-}" && -n "${CLOUDFLARE_ACCOUNT_ID:-}" ]] || {
+            echo "::error::Missing Cloudflare token/account ID. Preview not published."
+            exit 1
+          }
+      - name: Publish only this feature branch to Viaja Preview
+        run: |
+          npx wrangler pages deploy web-dist \
+            --project-name viaja \
+            --branch feat/viaja-documents-private-storage-c-20261104 \
+            --commit-hash "$GITHUB_SHA" \
+            --commit-message "Viaja 1.1 Entrega C — Private documents Preview"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Viaja-Private-Documents-QA
+          path: |
+            artifacts/documents-c/
+            artifacts/logistics-b/
+          retention-days: 7
