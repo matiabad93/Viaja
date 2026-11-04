@@ -1,0 +1,41 @@
+name: Viaja - live two-account private PDF security E2E
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: viaja-private-documents-live-e2e
+  cancel-in-progress: false
+jobs:
+  authorization-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: production
+    env:
+      VIAJA_E2E_ALLOW_PRODUCTION: 'yes'
+      VIAJA_E2E_PUBLISHABLE_KEY: \${{ secrets.VIAJA_E2E_PUBLISHABLE_KEY }}
+      VIAJA_E2E_USER_A_EMAIL: \${{ secrets.VIAJA_E2E_USER_A_EMAIL }}
+      VIAJA_E2E_USER_A_PASSWORD: \${{ secrets.VIAJA_E2E_USER_A_PASSWORD }}
+      VIAJA_E2E_USER_B_EMAIL: \${{ secrets.VIAJA_E2E_USER_B_EMAIL }}
+      VIAJA_E2E_USER_B_PASSWORD: \${{ secrets.VIAJA_E2E_USER_B_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate E2E security test syntax
+        run: node --check scripts/security-documents-e2e.mjs
+      - name: Require dedicated test account secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for item in VIAJA_E2E_PUBLISHABLE_KEY VIAJA_E2E_USER_A_EMAIL VIAJA_E2E_USER_A_PASSWORD VIAJA_E2E_USER_B_EMAIL VIAJA_E2E_USER_B_PASSWORD; do
+            if [[ -z "\${!item:-}" ]]; then
+              echo "::error::Missing E2E secret $item; create two confirmed viaja-e2e-* users"
+              exit 1
+            fi
+          done
+      - name: Real PDF lifecycle and cross-user denial
+        run: node scripts/security-documents-e2e.mjs
