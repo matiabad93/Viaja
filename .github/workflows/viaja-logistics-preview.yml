@@ -65,6 +65,12 @@ jobs:
           exit 1
       - name: Audit logistics on 320/390/768/1280px
         run: node scripts/logistics-browser-smoke.mjs
+      - name: Install WebKit for Safari-engine regression checks
+        run: /tmp/viaja-ui-smoke/node_modules/.bin/playwright install --with-deps webkit
+      - name: Audit Safari WebKit logistics UI on mobile, tablet and desktop
+        env:
+          VIAJA_BROWSER: webkit
+        run: node scripts/logistics-browser-smoke.mjs
       - name: Deploy only the feature branch to the existing Cloudflare Pages project
         run: |
           npx wrangler pages deploy web-dist \
