@@ -43,7 +43,7 @@ try{
   await aForm.getByRole('textbox',{name:'Dirección'}).fill('5 Rue de Paris, Colmar');
   await aForm.locator('input[type=date]').nth(0).fill('2026-11-27');
   await aForm.locator('input[type=date]').nth(1).fill('2026-11-30');
-  await aForm.getByRole('textbox',{name:'Zona horaria IANA'}).fill('Europe/Paris');
+  await aForm.getByLabel('Zona horaria IANA').fill('Europe/Paris');
   await aForm.getByRole('button',{name:'Guardar alojamiento'}).click();
   await page.getByRole('heading',{name:'Hotel Noël'}).waitFor();
   // Persist a transport segment with separate IANA zones.
@@ -54,8 +54,8 @@ try{
   await tForm.getByRole('textbox',{name:'Destino'}).fill('Basilea');
   await tForm.locator('input[type="datetime-local"]').nth(0).fill('2026-11-27T16:30');
   await tForm.locator('input[type="datetime-local"]').nth(1).fill('2026-11-27T18:20');
-  await tForm.getByRole('textbox',{name:'Zona horaria de salida'}).fill('Europe/Madrid');
-  await tForm.getByRole('textbox',{name:'Zona horaria de llegada'}).fill('Europe/Paris');
+  await tForm.getByLabel('Zona horaria de salida').fill('Europe/Madrid');
+  await tForm.getByLabel('Zona horaria de llegada').fill('Europe/Paris');
   await tForm.getByRole('button',{name:'Guardar transporte'}).click();
   await page.getByRole('heading',{name:/Barcelona → Basilea/}).waitFor();
   // Export a real ICS without private confirmation data.
