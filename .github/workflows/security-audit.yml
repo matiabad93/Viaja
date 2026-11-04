@@ -1,0 +1,74 @@
+name: Viaja — automated security guardrails
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  code-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked dependencies without executing lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Security regression checks (static assets, API, auth, PDF and RLS)
+        run: |
+          set -euo pipefail
+          node --experimental-strip-types tests/security-baseline.test.mts
+          node --experimental-strip-types tests/reservation-library.test.mts
+          node --experimental-strip-types tests/trip-documents.test.mts
+          node --experimental-strip-types tests/collaborative-trips.test.mts
+          node --experimental-strip-types tests/community-trips.test.mts
+          npx tsc --noEmit
+          npm run build:demo
+          test -s web-dist/_headers
+          cmp public/_headers web-dist/_headers
+          node scripts/security-bundle-scan.mjs
+  dependency-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Scan web AND Android dependencies even when one has advisories
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --omit=dev --json > audit-web.json || true
+          npm audit --omit=dev --prefix mobile --json > audit-mobile.json || true
+          web=0
+          mobile=0
+          node scripts/parse-security-audit.mjs audit-web.json "Web runtime" || web=$?
+          node scripts/parse-security-audit.mjs audit-mobile.json "Android runtime" || mobile=$?
+          if (( web != 0 || mobile != 0 )); then
+            echo "::error::Dependency security gate failed (web=$web, mobile=$mobile). See reports."
+            exit 1
+          fi
+      - name: Audit pnpm production graph independently (critical/high advisory gate)
+        shell: bash
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@11.25.0 --activate
+          pnpm audit --prod --audit-level high
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Viaja-security-dependency-audits
+          path: |
+            audit-web.json
+            audit-mobile.json
+          retention-days: 7
