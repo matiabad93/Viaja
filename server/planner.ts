@@ -1,4 +1,4 @@
-import {isAllowedApiOrigin} from './origin-policy';
+import {isAllowedApiOrigin} from './origin-policy.ts';
 import {validateTravelPreferences,describeTravelPreferences} from '../lib/travel-preferences';
 import {validateItinerary} from './structured-itinerary.ts';
 import {reviewItineraryFeasibility} from '../lib/trip-feasibility.ts';
