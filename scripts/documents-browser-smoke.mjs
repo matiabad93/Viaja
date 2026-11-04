@@ -117,7 +117,7 @@ try{
   assert.equal(backend.documents[0].related_type,'accommodation');
   assert.equal(backend.uploads,1,'Storage POST should happen after the metadata insert');
   assert.match(backend.documents[0].storage_path,/\/document.pdf$/);
-  assert.equal(await page.locator('.logistics-summary').getByText('1').count(),1);
+  assert.equal((await page.locator('.logistics-summary > div').nth(2).locator('strong').textContent())?.trim(),'1');
   await noOverflow(page);
   await page.locator('.document-row').getByRole('button',{name:'Ver'}).click();
   await page.getByRole('dialog',{name:/Vista previa de Billete Colmar.pdf/}).waitFor();
