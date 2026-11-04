@@ -1,5 +1,5 @@
 /** Authenticated same-origin P1.2 backend upload; no direct browser Storage INSERT. */
-import {accessToken} from './supabase-client.ts';
+import {accessToken,db} from './supabase-client.ts';
 import {requestAPI} from './api-client.ts';
 
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -25,4 +25,18 @@ export async function uploadViajaPrivateFile(
  }
  const response=await result.json().catch(()=>({})) as {uploaded?:boolean};
  if(response.uploaded!==true)throw Error('No se confirmó el almacenamiento del documento.');
+}
+
+
+export type ViajaDocumentUsage={
+ files:number;maxFiles:number;bytes:number;maxBytes:number;
+ uploadsLast24h:number;maxUploadsLast24h:number;
+};
+export async function getPrivateDocumentUsage():Promise<ViajaDocumentUsage>{
+ const response=await db<ViajaDocumentUsage>('rpc/viaja_document_usage',{
+  method:'POST',headers:{'Content-Type':'application/json'},body:'{}'
+ });
+ if(!response||!Number.isFinite(Number(response.files))||!Number.isFinite(Number(response.bytes)))
+  throw Error('No pudimos consultar el espacio utilizado.');
+ return response;
 }
