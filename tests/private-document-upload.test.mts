@@ -52,7 +52,7 @@ function request(kind:'reservation'|'trip',id:string,bytes:Uint8Array,mime:strin
 }
 const expectResponse=async(req:Request,expected:number)=>{
  const result=await privateDocumentUploadAPI(req,env);
- assert.equal(result.status,expected,await result.text().catch(()=>''));return result;
+ assert.equal(result.status,expected);return result;
 };
 {
  const mock=scenario();
