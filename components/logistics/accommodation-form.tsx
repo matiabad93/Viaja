@@ -9,7 +9,7 @@ const initial=():Accommodation=>({id:newId(),name:'',kind:'hotel',address:'',cit
 export function AccommodationForm({value,tripStart,tripEnd,onSave,onCancel}:AccommodationFormProps){
  const [draft,setDraft]=useState<Accommodation>(()=>value?{...value}:initial()),[errors,setErrors]=useState<string[]>([]);
  const tzList=useId();
- const set=<K extends keyof Accommodation>(key:K,v:Accommodation[K])=>{setDraft(d=>({...d,[key]:v}));setErrors([])};
+ const set=<K extends keyof Accommodation,>(key:K,v:Accommodation[K])=>{setDraft(d=>({...d,[key]:v}));setErrors([])};
  const submit=(e:React.FormEvent)=>{e.preventDefault();const problems=validateAccommodation(draft);if(problems.length){setErrors(problems);return}onSave({...draft,name:draft.name.trim(),address:draft.address.trim(),updatedAt:new Date().toISOString()})};
  const warning=tripDateWarning(draft.checkIn,draft.checkOut,tripStart,tripEnd);
  return <form className="logistics-form" aria-label={value?'Editar alojamiento':'Nuevo alojamiento'} onSubmit={submit}>
