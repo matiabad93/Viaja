@@ -76,6 +76,16 @@ try{
  denied(forbiddenSign,'Other user cannot sign PDF');
  const forbiddenGet=await storage(b,'object/authenticated/reservation-pdfs/'+path);
  denied(forbiddenGet,'Other user cannot download PDF');
+ const otherDeleteObject=await storage(b,'object/reservation-pdfs','DELETE',{prefixes:[path]});
+ if(otherDeleteObject.ok){
+  const removed=await data(otherDeleteObject);
+  const rows=Array.isArray(removed)?removed:removed?.data;
+  assert.ok(Array.isArray(rows)&&rows.length===0,'Other user removed private Storage object');
+ }else assert.ok([400,401,403,404].includes(otherDeleteObject.status));
+ const ownerStillHasObject=await storage(a,'object/authenticated/reservation-pdfs/'+path);
+ assert.equal(ownerStillHasObject.status,200,'Other user deleted private object');
+ assert.ok(Buffer.from(await ownerStillHasObject.arrayBuffer()).equals(file));
+ ok('Other user cannot remove Storage object');
  const forbiddenEdit=await rest(b,'reservation_files?id=eq.'+id+'&select=id','PATCH',{title:'unauthorized'});
  assert.ok([200,204].includes(forbiddenEdit.status));assert.deepEqual(forbiddenEdit.value||[],[]);ok('Other user cannot update metadata');
  const forbiddenDelete=await rest(b,'reservation_files?id=eq.'+id+'&select=id','DELETE');
