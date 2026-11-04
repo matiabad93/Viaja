@@ -1,0 +1,91 @@
+name: Viaja P1.2 — private upload quotas security checks
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'server/private-document-upload.ts'
+      - 'server/ai-gateway.ts'
+      - 'lib/private-upload-client.ts'
+      - 'lib/trip-documents.ts'
+      - 'lib/reservation-library.ts'
+      - 'components/reservations/reservations-center.tsx'
+      - 'app/globals.css'
+      - 'supabase/migrations/202611040003_document_quotas_backend_upload.sql'
+      - 'tests/private-document-upload.test.mts'
+      - 'scripts/*browser-smoke.mjs'
+      - '.github/workflows/*preview.yml'
+      - '.github/workflows/security-private-upload.yml'
+  push:
+    branches: [security/p1b-private-upload-quotas-20261104,main]
+    paths:
+      - 'server/**'
+      - 'lib/**'
+      - 'supabase/migrations/202611040003_document_quotas_backend_upload.sql'
+      - 'tests/private-document-upload.test.mts'
+      - '.github/workflows/security-private-upload.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  upload-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install exact lockfile without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check quota, direct Storage restrictions and upload endpoint
+        run: |
+          set -euo pipefail
+          node --experimental-strip-types tests/private-document-upload.test.mts
+          node --experimental-strip-types tests/reservation-library.test.mts
+          node --experimental-strip-types tests/trip-documents.test.mts
+          node --experimental-strip-types tests/security-baseline.test.mts
+          npx tsc --noEmit
+          npm run build:demo
+          node scripts/security-bundle-scan.mjs
+      - name: Ensure preview uses isolated credentials
+        run: |
+          set -euo pipefail
+          node scripts/check-preview-isolation.mjs
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install and build
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build:demo
+          npm install --prefix /tmp/viaja-ui-smoke --no-package-lock --no-audit --no-fund playwright@1.56.1
+      - name: Start local build
+        run: |
+          nohup npx vite preview --config vite.portable.config.ts --host 127.0.0.1 --port 4173 > /tmp/viaja-p1b-browser.log 2>&1 &
+          for n in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/viaja-p1b-browser.log
+          exit 1
+      - name: Chrome E2E – PDF/QR and trip documents
+        run: |
+          node scripts/reservations-browser-smoke.mjs
+          node scripts/documents-browser-smoke.mjs
+      - name: Install Safari WebKit
+        run: /tmp/viaja-ui-smoke/node_modules/.bin/playwright install --with-deps webkit
+      - name: Safari E2E – private uploads
+        env:
+          VIAJA_BROWSER: webkit
+        run: |
+          node scripts/reservations-browser-smoke.mjs
+          node scripts/documents-browser-smoke.mjs

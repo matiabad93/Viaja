@@ -1,6 +1,7 @@
 /** Account-scoped PDF reservation library. No PDF bytes or private URLs enter Plan/localStorage. */
 import {db,getCurrentSession,storageApiBase,storageRequest,accessToken} from './supabase-client.ts';
 import {requestAPI} from './api-client.ts';
+import {uploadViajaPrivateFile} from './private-upload-client.ts';
 import {MAX_TRIP_DOCUMENT_BYTES} from './trip-documents.ts';
 
 export const RESERVATION_PDF_BUCKET='reservation-pdfs';
@@ -80,9 +81,7 @@ export async function uploadReservationPdf(file:File):Promise<ReservationFile>{
  const record=created?.[0];
  if(!record?.id)throw Error('No se pudo registrar el archivo.');
  try{
-  await storageRequest('object/'+RESERVATION_PDF_BUCKET+'/'+record.storage_path,{
-   method:'POST',headers:{'Content-Type':'application/pdf','x-upsert':'false'},body:file
-  });
+  await uploadViajaPrivateFile('reservation',record.id,file,'application/pdf');
  }catch(e){
   try{await db('reservation_files?id=eq.'+encodeURIComponent(id),{method:'DELETE'})}catch{}
   throw e;

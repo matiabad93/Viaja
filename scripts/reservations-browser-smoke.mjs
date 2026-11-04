@@ -31,6 +31,19 @@ const setup=async(ctx)=>{
    user:{id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',email:'test@example.invalid'}
   }));
  });
+ await ctx.route(/\/api\/private-documents\/upload\?/,async route=>{
+  const req=route.request(),query=new URL(req.url()).searchParams;
+  const id=query.get('id');
+  assert.equal(query.get('kind'),'reservation');
+  const record=docs.find(d=>d.id===id);
+  assert.ok(record,'Metadata must be registered first');
+  const raw=req.postDataBuffer();
+  if(raw)assert.equal(raw.byteLength,record.size_bytes,'Actual bytes must match metadata');
+  // WebKit's Playwright interception may not expose a Blob streaming body;
+  // server unit tests separately verify exact bytes and signature.
+  uploaded++;storage.set(record.storage_path,raw||pdf);
+  await route.fulfill({status:201,contentType:'application/json',body:JSON.stringify({uploaded:true,id})});
+ });
  await ctx.route('**/api/reservations/extract',async route=>{
   extractCalls++;
   const body=JSON.parse(route.request().postData()||'{}');
@@ -52,6 +65,11 @@ const setup=async(ctx)=>{
   if(p==='/rest/v1/trips')return json([{user_id:owner,version:2,document:plan}]);
   if(p==='/rest/v1/trip_members')return json([]);
   if(p.startsWith('/rest/v1/community_trips'))return json([]);
+  if(p==='/rest/v1/rpc/viaja_document_usage')return json({
+   files:docs.length,maxFiles:50,
+   bytes:docs.reduce((sum,d)=>sum+d.size_bytes,0),maxBytes:104857600,
+   uploadsLast24h:uploaded,maxUploadsLast24h:30
+  });
   if(p==='/rest/v1/reservation_files'){
    if(method==='GET')return json(docs);
    if(method==='POST'){

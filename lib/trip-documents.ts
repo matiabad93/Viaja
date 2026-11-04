@@ -3,6 +3,7 @@
  * private storage bytes + RLS-protected relational metadata, never localStorage.
  */
 import {db,getCurrentSession,storageApiBase,storageRequest} from './supabase-client.ts';
+import {uploadViajaPrivateFile} from './private-upload-client.ts';
 
 export const TRIP_DOCUMENT_BUCKET='trip-documents';
 export const MAX_TRIP_DOCUMENT_BYTES=10*1024*1024;
@@ -89,11 +90,7 @@ export async function uploadTripDocument(tripId:string,file:File,link:DocumentLi
  const record=created?.[0];
  if(!record?.id)throw Error('No se pudo registrar el documento privado.');
  try{
-  await storageRequest('object/'+TRIP_DOCUMENT_BUCKET+'/'+record.storage_path,{
-   method:'POST',
-   headers:{'Content-Type':verified.mime,'x-upsert':'false','cache-control':'3600'},
-   body:file
-  });
+  await uploadViajaPrivateFile('trip',record.id,file,verified.mime);
  }catch(error){
   // Do not leave dangling registry entries on failed uploads.
   try{await db('trip_documents?id=eq.'+encodeURIComponent(id),{method:'DELETE'})}catch{}
