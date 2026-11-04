@@ -1,5 +1,5 @@
 import {isAllowedApiOrigin} from './origin-policy.ts';
-import {validateTravelPreferences,describeTravelPreferences} from '../lib/travel-preferences';
+import {validateTravelPreferences,describeTravelPreferences} from '../lib/travel-preferences.ts';
 import {validateItinerary} from './structured-itinerary.ts';
 import {reviewItineraryFeasibility} from '../lib/trip-feasibility.ts';
 import {destinationsAPI} from './destinations.ts';
