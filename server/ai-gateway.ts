@@ -1,3 +1,4 @@
+import {isAllowedApiOrigin} from './origin-policy';
 import {destinationsAPI} from './destinations';
 import {plannerAPI,validateTrip} from './planner';
 import {geminiFreePlanner,FREE_GEMINI_MODEL} from './gemini-planner';
@@ -77,7 +78,7 @@ export async function secureAIGateway(request:Request,env:ViajaAIEnv):Promise<Re
  }
  if(request.method!=='POST')return response({error:'Método no permitido'},405);
  if(!configured(env))return response({code:'AI_NOT_CONFIGURED',error:'La IA todavía está en preparación. Podés seguir guardando viajes.'},503);
- if(request.headers.get('origin')!==new URL(request.url).origin)return response({error:'Origen no permitido'},403);
+ if(!isAllowedApiOrigin(request))return response({error:'Origen no permitido'},403);
  if(!request.headers.get('content-type')?.toLowerCase().startsWith('application/json'))return response({error:'Formato inválido'},415);
  const length=Number(request.headers.get('content-length')||0);
  if(!Number.isFinite(length)||length>16000)return response({error:'Solicitud demasiado extensa'},413);
