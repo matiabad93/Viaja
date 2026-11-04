@@ -1,6 +1,6 @@
-import type {Day,Trip,Activity} from './travel';
+import type {Day,Trip,Activity} from './travel.ts';
 import {daysCount,newId} from './travel';
-import {initial,extra} from './curated-guides';
+import {initial,extra} from './curated-guides.ts';
 
 /** Make a useful local starting point before an AI account exists.
  * Content is copied from Viaja's existing editorial guides, not generated or
