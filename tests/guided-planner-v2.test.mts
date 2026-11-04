@@ -42,7 +42,7 @@ assert.match(page,/createEditorialStarter\(trip\)/);
 assert.match(page,/trip\.preferences\?\.durationDays\|\|3/);
 assert.match(page,/onGenerate=\{\(\)=>generate/);
 const form=readFileSync(new URL('../components/guided-planner.tsx',import.meta.url),'utf8');
-for(const field of ['TripDateRange','DestinationSearch','history','nightlife','dayTimes','onManual','onGenerate','onAdvanced','romaExamplePreferences'])assert.ok(form.includes(field),'Wizard missing '+field);
+for(const field of ['TripDateRange','DestinationSearch','interestOptions','dayTimes','onManual','onGenerate','onAdvanced','romaExamplePreferences'])assert.ok(form.includes(field),'Wizard missing '+field);
 const gemini=readFileSync(new URL('../server/gemini-planner.ts',import.meta.url),'utf8');
 const planner=readFileSync(new URL('../server/planner.ts',import.meta.url),'utf8');
 for(const source of [gemini,planner])assert.ok(source.includes('describeTravelPreferences(trip.preferences)'), 'An AI provider does not receive structured travel preferences');
