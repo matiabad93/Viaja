@@ -6,7 +6,10 @@ permissions:
   contents: write
 jobs:
   approved-prune:
-    if: github.repository == 'matiabad93/Viaja' && github.ref == 'refs/heads/main' && github.event.head_commit.message == 'chore(repo): execute approved cleanup of stale branches'
+    if: >-
+      github.repository == 'matiabad93/Viaja' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'chore(repo): execute approved cleanup of stale branches'
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
