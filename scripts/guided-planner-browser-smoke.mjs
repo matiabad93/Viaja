@@ -28,8 +28,8 @@ try{
   assert.equal(await page.getByRole('slider',{name:'Naturaleza'}).inputValue(),'3');
   await page.getByRole('button',{name:/Ver más intereses/}).click();
   assert.equal(await page.getByRole('slider',{name:'Vida nocturna'}).inputValue(),'0');
-  await page.getByRole('slider',{name:'Vida nocturna'}).fill('1');
-  await page.getByRole('slider',{name:'Vida nocturna'}).fill('0');
+  await page.getByRole('slider',{name:'Vida nocturna'}).press('ArrowRight');
+  await page.getByRole('slider',{name:'Vida nocturna'}).press('ArrowLeft');
   await page.screenshot({path:'artifacts/guided-planner-v2/'+device.label+'-step2.png',fullPage:true});
   await page.getByRole('button',{name:/Continuar/}).click();
   await page.getByRole('heading',{name:'¿Cómo te gusta viajar?'}).waitFor();
