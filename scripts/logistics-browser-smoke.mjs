@@ -5,7 +5,7 @@ import {chromium,webkit} from '/tmp/viaja-ui-smoke/node_modules/playwright/index
 const base=process.env.VIAJA_LOCAL_URL||'http://127.0.0.1:4173';
 const engine=process.env.VIAJA_BROWSER==='webkit'?webkit:chromium;
 const browser=await engine.launch({headless:true,...(engine===chromium?{executablePath:'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']}:{})});
-const devices=[{name:'phone320',width:320,height:720,theme:'dark'},{name:'iphone390',width:390,height:844,theme:'dark'},{name:'tablet768',width:768,height:1024,theme:'light'},{name:'desktop1280',width:1280,height:900,theme:'light'}];
+const devices=[{name:'phone320',width:320,height:720,theme:'dark'},{name:'iphone375',width:375,height:812,theme:'dark'},{name:'iphone390',width:390,height:844,theme:'dark'},{name:'tablet768',width:768,height:1024,theme:'light'},{name:'desktop1280',width:1280,height:900,theme:'light'}];
 await mkdir('artifacts/logistics-b',{recursive:true});
 const sample={
  id:'11111111-1111-4111-8111-111111111111',kind:'draft',createdAt:'2026-11-04T00:00:00Z',
@@ -86,6 +86,46 @@ try{
   assert.equal(saved.logistics.accommodations.length,1);
   assert.equal(saved.logistics.transports.length,1);
   assert.equal(saved.expenses.length,1);
+  // Full CRUD: edit lodging, add a second stay, cancel it and remove it.
+  await page.locator('.accommodation-card').first().getByRole('button',{name:'Editar'}).click();
+  const editForm=page.getByRole('form',{name:'Editar alojamiento'});
+  await editForm.getByRole('textbox',{name:'Nombre del alojamiento'}).fill('Hotel Noël revisado');
+  await editForm.getByRole('button',{name:'Guardar alojamiento'}).click();
+  assert.ok(await page.getByRole('heading',{name:'Hotel Noël revisado'}).isVisible());
+  const lodgings=page.locator('.logistics-block').filter({has:page.getByRole('heading',{name:'Alojamientos'})});
+  await lodgings.getByRole('button',{name:'Agregar',exact:true}).click();
+  const extra=page.getByRole('form',{name:'Nuevo alojamiento'});
+  await extra.getByRole('textbox',{name:'Nombre del alojamiento'}).fill('Segundo alojamiento');
+  await extra.getByRole('textbox',{name:'Dirección'}).fill('Rue des Marchands');
+  await extra.locator('input[type=date]').nth(0).fill('2026-11-28');
+  await extra.locator('input[type=date]').nth(1).fill('2026-11-29');
+  await extra.getByRole('button',{name:'Guardar alojamiento'}).click();
+  assert.equal(await page.locator('.accommodation-card').count(),2);
+  const extraCard=page.locator('.accommodation-card').filter({has:page.getByRole('heading',{name:'Segundo alojamiento'})});
+  await extraCard.getByRole('button',{name:'Cancelar reserva'}).click();
+  await page.getByRole('button',{name:'Marcar cancelada'}).click();
+  assert.ok(await extraCard.getByText('Cancelado').isVisible());
+  await extraCard.getByRole('button',{name:'Eliminar alojamiento Segundo alojamiento'}).click();
+  await page.getByRole('button',{name:'Eliminar reserva'}).click();
+  assert.equal(await page.locator('.accommodation-card').count(),1);
+  assert.ok(await page.getByRole('heading',{name:'Hotel Noël revisado'}).isVisible());
+  const raw=await page.evaluate(()=>JSON.parse(localStorage.getItem('viaja-ai-trips-v1')||'[]')[0]);
+  assert.equal(raw.logistics.accommodations.length,1);
+  assert.equal(raw.expenses.length,1,'Deleting a reservation must preserve manual expenses');
+  // The viewer role is enforced in UI; server-side save RPC separately rejects viewers.
+  await page.evaluate(()=>{
+   const trips=JSON.parse(localStorage.getItem('viaja-ai-trips-v1')||'[]');
+   trips[0].collaboration={ownerId:'22222222-2222-4222-8222-222222222222',version:2,role:'viewer',memberCount:2};
+   localStorage.setItem('viaja-ai-trips-v1',JSON.stringify(trips));
+  });
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.getByRole('button',{name:/Mis viajes/}).click();
+  await page.getByRole('button',{name:'Ver viaje →'}).click();
+  await page.getByRole('navigation',{name:'Secciones del viaje'}).getByRole('button',{name:'Logística'}).click();
+  assert.ok(await page.getByRole('heading',{name:'Hotel Noël revisado'}).isVisible());
+  assert.equal(await page.locator('.logistics-block').getByRole('button',{name:'Agregar',exact:true}).count(),0,'Viewers cannot add private reservations');
+  assert.equal(await page.locator('.accommodation-card').getByRole('button',{name:'Editar',exact:true}).count(),0,'Viewers cannot edit private reservations');
+  await overflow(page);
   assert.deepEqual(errors,[],'Client errors in '+device.name);
   await ctx.close();
   console.log('PASS '+device.name+' '+device.theme+' logistics CRUD, calendar export, manual expense and persistence');
