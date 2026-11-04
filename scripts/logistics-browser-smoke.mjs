@@ -3,6 +3,7 @@ import {mkdir,readFile} from 'node:fs/promises';
 import {chromium,webkit} from '/tmp/viaja-ui-smoke/node_modules/playwright/index.mjs';
 
 const base=process.env.VIAJA_LOCAL_URL||'http://127.0.0.1:4173';
+const browserLabel=process.env.VIAJA_BROWSER||'chromium';
 const engine=process.env.VIAJA_BROWSER==='webkit'?webkit:chromium;
 const browser=await engine.launch({headless:true,...(engine===chromium?{executablePath:'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']}:{})});
 const devices=[{name:'phone320',width:320,height:720,theme:'dark'},{name:'iphone375',width:375,height:812,theme:'dark'},{name:'iphone390',width:390,height:844,theme:'dark'},{name:'tablet768',width:768,height:1024,theme:'light'},{name:'desktop1280',width:1280,height:900,theme:'light'}];
@@ -73,7 +74,7 @@ try{
   assert.ok(await page.getByText('85,50').first().isVisible(),'Manual expense should be visible');
   await tabs.getByRole('button',{name:'Resumen'}).click();
   assert.ok(await page.getByText('Información, preferencias y fuentes del viaje').isVisible());
-  await page.screenshot({path:'artifacts/logistics-b/'+device.name+'-'+device.theme+'.png',fullPage:true});
+  await page.screenshot({path:'artifacts/logistics-b/'+browserLabel+'-'+device.name+'-'+device.theme+'.png',fullPage:true});
   await overflow(page);
   // Logged-out data must survive page refresh. Existing trip must not be overwritten.
   await page.reload({waitUntil:'domcontentloaded'});
