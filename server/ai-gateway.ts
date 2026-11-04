@@ -1,6 +1,7 @@
 import {destinationsAPI} from './destinations';
 import {plannerAPI,validateTrip} from './planner';
 import {geminiFreePlanner,FREE_GEMINI_MODEL} from './gemini-planner';
+import {reservationExtractionAPI} from './reservation-extraction';
 
 export type ViajaAIEnv={
  GEMINI_API_KEY?:string;
@@ -62,6 +63,7 @@ async function invokeQuota(env:ViajaAIEnv,name:'viaja_reserve_ai_request'|'viaja
  */
 export async function secureAIGateway(request:Request,env:ViajaAIEnv):Promise<Response>{
  const path=new URL(request.url).pathname;
+ if(path==='/api/reservations/extract')return reservationExtractionAPI(request,env);
  const destinations=await destinationsAPI(request);
  if(destinations)return destinations;
  if(path!=='/api/status'&&path!=='/api/plan')return response({error:'No encontrado'},404);
