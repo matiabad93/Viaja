@@ -1,4 +1,4 @@
-import {describeTravelPreferences} from '../lib/travel-preferences';
+import {describeTravelPreferences} from '../lib/travel-preferences.ts';
 /**
  * Gemini Free Tier adapter for Viaja 1.0 staging.
  *
