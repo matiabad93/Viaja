@@ -29,7 +29,11 @@ const mockSupabase=async(context,userId,seed=[])=>{
  await context.addInitScript(({userId})=>{
   localStorage.setItem('viaja-theme','dark');
   localStorage.setItem('viaja-auth-session-v1',JSON.stringify({
-   access_token:'test-jwt-for-ui-only',refresh_token:'test-refresh',
+   access_token:[
+    btoa(JSON.stringify({alg:'HS256',typ:'JWT'})),
+    btoa(JSON.stringify({sub:userId,role:'authenticated',aud:'authenticated',exp:Math.floor(Date.now()/1000)+36000})),
+    'mock-signature'
+   ].join('.'),refresh_token:'test-refresh',
    expires_at:Math.floor(Date.now()/1000)+36000,
    user:{id:userId,email:'test@example.invalid'}
   }));
