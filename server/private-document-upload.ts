@@ -1,3 +1,4 @@
+import {isAllowedApiOrigin} from './origin-policy';
 /**
  * Viaja P1.2 — the only file upload entrypoint.
  * Storage INSERT is denied to browser JWTs by RLS. Only this backend uses
@@ -24,7 +25,7 @@ const configured=(env:ViajaAIEnv)=>Boolean(
  (!env.SUPABASE_URL||/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(env.SUPABASE_URL))
 );
 function safeOrigin(request:Request){
- return request.headers.get('origin')===new URL(request.url).origin;
+ return isAllowedApiOrigin(request);
 }
 function verifyMagic(bytes:Uint8Array,mime:string){
  const ascii=(start:number,end:number)=>new TextDecoder().decode(bytes.slice(start,end));
