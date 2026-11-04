@@ -77,12 +77,15 @@ try{
   await page.screenshot({path:'artifacts/logistics-b/'+browserLabel+'-'+device.name+'-'+device.theme+'.png',fullPage:true});
   await overflow(page);
   // Logged-out data must survive page refresh. Existing trip must not be overwritten.
+  const beforeReload=await page.evaluate(()=>JSON.parse(localStorage.getItem('viaja-ai-trips-v1')||'[]')[0]);
+  assert.equal(beforeReload.logistics?.accommodations?.length,1,'Accommodation must be persisted before reload');
+  assert.equal(beforeReload.logistics?.transports?.length,1,'Transport must be persisted before reload');
   await page.reload({waitUntil:'domcontentloaded'});
   await page.getByRole('button',{name:/Mis viajes/}).click();
   await page.getByRole('button',{name:'Ver viaje →'}).click();
   await page.getByRole('navigation',{name:'Secciones del viaje'}).getByRole('button',{name:'Logística'}).click();
-  assert.ok(await page.getByRole('heading',{name:'Hotel Noël'}).isVisible());
-  assert.ok(await page.getByRole('heading',{name:/Barcelona → Basilea/}).isVisible());
+  await page.getByRole('heading',{name:'Hotel Noël'}).waitFor({state:'visible',timeout:10000});
+  await page.getByRole('heading',{name:/Barcelona → Basilea/}).waitFor({state:'visible',timeout:10000});
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('viaja-ai-trips-v1')||'[]')[0]);
   assert.equal(saved.logistics.accommodations.length,1);
   assert.equal(saved.logistics.transports.length,1);
