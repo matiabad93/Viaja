@@ -1,7 +1,9 @@
 name: Viaja — UI delivery A
 on:
   push:
-    branches: [feat/viaja-ui-delivery-a-20261103, fix/viaja-dark-contrast-input-overlap-20261103, fix/viaja-selected-tabs-clear-filters-ui-audit-20261104, feat/v1-production-release-plan, main]
+    branches: [feat/viaja-ui-delivery-a-20261103, fix/viaja-dark-contrast-input-overlap-20261103, fix/viaja-selected-tabs-clear-filters-ui-audit-20261104, feat/v1-production-release-plan, feat/viaja-ui-logistics-darkmode, main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
@@ -25,6 +27,7 @@ jobs:
           node --experimental-strip-types tests/ui-delivery-a.test.mts
           node --experimental-strip-types tests/community-trips.test.mts
           node --experimental-strip-types tests/collaborative-trips.test.mts
+          node --experimental-strip-types tests/logistics.test.mts
       - name: Build Cloudflare Pages output
         run: |
           npm run build:demo
@@ -43,6 +46,8 @@ jobs:
         run: node scripts/ui-delivery-a-smoke.mjs
       - name: Audit selected tabs and clear-filter alignment in both themes and at three widths
         run: node scripts/ui-polish-audit-smoke.mjs
+      - name: Verify logistics workflow on phones, tablet and desktop
+        run: node scripts/logistics-browser-smoke.mjs
       - name: Verify dark theme contrast and left-icon spacing
         run: node scripts/dark-mode-contrast-smoke.mjs
       - name: Verify new frontend really reached Cloudflare
@@ -57,5 +62,7 @@ jobs:
         if: always()
         with:
           name: Viaja-UI-Delivery-A
-          path: artifacts/ui-delivery-a/
+          path: |
+            artifacts/ui-delivery-a/
+            artifacts/logistics-b/
           retention-days: 7
