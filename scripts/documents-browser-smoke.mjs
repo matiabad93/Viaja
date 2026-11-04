@@ -95,7 +95,7 @@ const noOverflow=async page=>{
 };
 try{
  for(const device of mobileSets){
-  const ctx=await browser.newContext({viewport:{width:device.width,height:device.height},colorScheme:'dark',locale:'es-ES',acceptDownloads:true});
+  const ctx=await browser.newContext({serviceWorkers:'block',viewport:{width:device.width,height:device.height},colorScheme:'dark',locale:'es-ES',acceptDownloads:true});
   const backend=await mockSupabase(ctx,owner);
   const page=await ctx.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
@@ -153,7 +153,7 @@ try{
   await ctx.close();
  }
  // Reader can list and preview, but cannot add or delete.
- const ctx=await browser.newContext({viewport:{width:390,height:844},colorScheme:'dark',locale:'es-ES'});
+ const ctx=await browser.newContext({serviceWorkers:'block',viewport:{width:390,height:844},colorScheme:'dark',locale:'es-ES'});
  const seed={
   id:'dddddddd-dddd-4ddd-8ddd-dddddddddddd',trip_id:tripId,uploaded_by:owner,
   storage_path:tripId+'/dddddddd-dddd-4ddd-8ddd-dddddddddddd/document.pdf',
