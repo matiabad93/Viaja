@@ -38,6 +38,18 @@ const mockSupabase=async(context,userId,seed=[])=>{
    user:{id:userId,email:'test@example.invalid'}
   }));
  },{userId});
+ await context.route(/\/api\/private-documents\/upload\?/,async route=>{
+  const req=route.request(),query=new URL(req.url()).searchParams;
+  assert.equal(query.get('kind'),'trip');
+  const id=query.get('id');
+  if(userId===viewer)return route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:'Solo editores'})});
+  const record=docs.find(d=>d.id===id);
+  assert.ok(record,'Metadata must exist before server upload');
+  const buffer=req.postDataBuffer();
+  assert.equal(buffer.byteLength,record.size_bytes,'Actual file bytes must match recorded length');
+  files.set(record.storage_path,buffer);uploads++;
+  await route.fulfill({status:201,contentType:'application/json',body:JSON.stringify({uploaded:true,id})});
+ });
  await context.route('https://ovagewbmrirzrlvbvtbw.supabase.co/**',async route=>{
   const request=route.request(),u=new URL(request.url()),p=u.pathname,method=request.method();
   const json=(data,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(data)});
