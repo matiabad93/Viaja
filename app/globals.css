@@ -2061,3 +2061,16 @@ html[data-theme] .reservation-viewer-actions .primary {color:#fff;background:var
  html[data-theme] .reservation-viewer-actions :is(a,button) {flex:1 1 auto;}
  html[data-theme] .reservation-file-queue>.primary {justify-self:stretch;}
 }
+
+
+/* P1.2 — quotas are reported by authenticated Supabase RPC, not estimated
+   from the number of cards visible in the current filter. */
+html[data-theme] .reservation-quota-status{
+ display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+ padding:13px 17px;margin:0;
+ border:1px solid var(--line);border-radius:13px;
+ color:var(--muted);background:var(--surface-muted);
+ font-size:12px;line-height:1.55;overflow-wrap:anywhere;
+}
+html[data-theme] .reservation-quota-status strong{color:var(--ink)}
+html[data-theme] .reservation-quota-status svg{color:var(--green);flex:none}
