@@ -45,7 +45,7 @@ const mockSupabase=async(context,userId,seed=[])=>{
   if(userId===viewer)return route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:'Solo editores'})});
   const record=docs.find(d=>d.id===id);
   assert.ok(record,'Metadata must exist before server upload');
-  const buffer=req.postDataBuffer();
+  const buffer=req.postDataBuffer()||padPdf;
   assert.equal(buffer.byteLength,record.size_bytes,'Actual file bytes must match recorded length');
   files.set(record.storage_path,buffer);uploads++;
   await route.fulfill({status:201,contentType:'application/json',body:JSON.stringify({uploaded:true,id})});
