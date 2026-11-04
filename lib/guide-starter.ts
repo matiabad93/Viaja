@@ -1,5 +1,5 @@
 import type {Day,Trip,Activity} from './travel.ts';
-import {daysCount,newId} from './travel';
+import {daysCount,newId} from './travel.ts';
 import {initial,extra} from './curated-guides.ts';
 
 /** Make a useful local starting point before an AI account exists.
