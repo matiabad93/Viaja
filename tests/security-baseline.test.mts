@@ -13,7 +13,10 @@ for(const header of ['X-Frame-Options','X-Content-Type-Options','Referrer-Policy
 assert.match(api,/return new Response\(result\.body,\{status:result\.status/);
 assert.match(api,/if\(!headers\.has\('Cache-Control'\)\)/,'Preserve deliberate cache headers');
 const gateway=readFileSync(new URL('../server/ai-gateway.ts',import.meta.url),'utf8');
-assert.match(gateway,/if\(request\.headers\.get\('origin'\)!==new URL\(request\.url\)\.origin\)/);
+assert.match(gateway,/if\(!isAllowedApiOrigin\(request\)\)/,'AI gateway must validate trusted origins');
+const policy=readFileSync(new URL('../server/origin-policy.ts',import.meta.url),'utf8');
+for(const origin of ['https://localhost','capacitor://localhost'])assert.ok(policy.includes(origin),'Native origin missing from allowlist');
+assert.ok(policy.includes('new URL(request.url).origin'),'Same-origin API requests must remain supported');
 assert.match(gateway,/if\(!user\)return response\(\{code:'AUTH_REQUIRED'/);
 assert.match(gateway,/invokeQuota\(env,'viaja_reserve_ai_request'/);
 const extraction=readFileSync(new URL('../server/reservation-extraction.ts',import.meta.url),'utf8');
