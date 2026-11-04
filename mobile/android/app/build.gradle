@@ -1,3 +1,13 @@
+// Google Play upload signing. Keys are supplied ONLY through GitHub environment secrets.
+// Local assembleDebug never requires the release keystore.
+def viajaUploadStorePath = System.getenv("VIAJA_ANDROID_KEYSTORE_PATH")
+def viajaUploadStorePassword = System.getenv("VIAJA_ANDROID_STORE_PASSWORD")
+def viajaUploadAlias = System.getenv("VIAJA_ANDROID_KEY_ALIAS")
+def viajaUploadKeyPassword = System.getenv("VIAJA_ANDROID_KEY_PASSWORD")
+def viajaReleaseSigningReady = [viajaUploadStorePath, viajaUploadStorePassword, viajaUploadAlias, viajaUploadKeyPassword].every { it != null && !it.isEmpty() }
+def viajaCode = System.getenv("VIAJA_ANDROID_VERSION_CODE")
+def viajaVersion = System.getenv("VIAJA_ANDROID_VERSION_NAME") ?: "1.0.0"
+
 apply plugin: 'com.android.application'
 
 android {
@@ -7,8 +17,8 @@ android {
         applicationId "com.matiabad.viaja"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode (viajaCode?.isInteger() ? viajaCode.toInteger() : 1)
+        versionName viajaVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +26,21 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (viajaReleaseSigningReady) {
+            viajaUpload {
+                storeFile file(viajaUploadStorePath)
+                storePassword viajaUploadStorePassword
+                keyAlias viajaUploadAlias
+                keyPassword viajaUploadKeyPassword
+            }
+        }
+    }
     buildTypes {
         release {
+            if (viajaReleaseSigningReady) {
+                signingConfig signingConfigs.viajaUpload
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
