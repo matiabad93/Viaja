@@ -7,12 +7,16 @@ import type {Plan} from './travel.ts';
 import {publicTripSnapshot,type CommunityTrip} from './community-trips.ts';
 import {buildSocialAuthorizationUrl,parseSocialProviderSettings,unavailableSocialProviders,type SocialProvider,type SocialAvailability} from './social-auth.ts';
 
+declare const __VIAJA_NATIVE__: boolean;
 declare const __VIAJA_SUPABASE_URL__: string;
 declare const __VIAJA_SUPABASE_PUBLIC_KEY__: string;
 const url = typeof __VIAJA_SUPABASE_URL__ === 'string' ? __VIAJA_SUPABASE_URL__.replace(/\/+$/,'') : '';
 const key = typeof __VIAJA_SUPABASE_PUBLIC_KEY__ === 'string' ? __VIAJA_SUPABASE_PUBLIC_KEY__ : '';
 const storageKey = 'viaja-auth-session-v1';
-const authRedirect=()=>browser()?'?redirect_to='+encodeURIComponent(window.location.origin+'/'):'';
+const nativeApp = typeof __VIAJA_NATIVE__ !== 'undefined' && __VIAJA_NATIVE__;
+// Native email confirmation/recovery opens the HTTPS website; do not use an
+// unreachable WebView localhost callback or silently lose recovery links.
+const authRedirect=()=>browser()?'?redirect_to='+encodeURIComponent((nativeApp?'https://viaja.pages.dev':window.location.origin)+'/'):'';
 export const cloudReady = Boolean(url && /^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(url) && key);
 export type ViajaUser = {id:string;email?:string};
 export type ViajaSession = {access_token:string;refresh_token:string;expires_at:number;user:ViajaUser};
@@ -105,7 +109,10 @@ export async function accessToken():Promise<string|null> {
 }
 /** Read only published provider availability; never assume an OAuth provider works. */
 export async function getSocialProviderAvailability():Promise<SocialAvailability> {
- if(!cloudReady)return {...unavailableSocialProviders};
+ // OAuth redirect handling requires app links/deep links on iOS and Android.
+ // Never promise a working Google/Facebook login in a native build before that
+ // callback is implemented and verified on a real device.
+ if(nativeApp||!cloudReady)return {...unavailableSocialProviders};
  try{
   const settings=await api<unknown>('/auth/v1/settings',{method:'GET'});
   return parseSocialProviderSettings(settings);
@@ -116,6 +123,7 @@ export async function getSocialProviderAvailability():Promise<SocialAvailability
 /** Browser redirect to Supabase's OAuth endpoint. Supabase handles identity verification. */
 export function beginSocialSignIn(provider:SocialProvider) {
  ensureConfigured();
+ if(nativeApp)throw Error('En la aplicación móvil, ingresá con correo y contraseña. El acceso social estará disponible cuando validemos el retorno seguro.');
  if(!browser())throw Error('El acceso social está disponible desde el navegador.');
  const target=buildSocialAuthorizationUrl(url,provider,window.location.origin+'/');
  window.location.assign(target);
