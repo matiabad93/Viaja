@@ -38,7 +38,7 @@ export function validateAccommodation(a:Accommodation):string[]{
  if(a.bookingUrl&&!httpsUrl(a.bookingUrl))errors.push('La URL de reserva debe usar HTTPS.');
  if(a.timezone&&!validTimezone(a.timezone))errors.push('La zona horaria no existe.');
  if((a.checkInTime||a.checkOutTime)&&!a.timezone)errors.push('Indicá la zona horaria para usar horarios de entrada o salida.');
- for(const [date,time] of [[a.checkIn,a.checkInTime],[a.checkOut,a.checkOutTime]]){
+ for(const [date,time] of ([[a.checkIn,a.checkInTime],[a.checkOut,a.checkOutTime]] as Array<[string,string|undefined]>)){
   if(time&&a.timezone&&validDay(date))try{localTimeToUtc(date+'T'+time,a.timezone)}catch(e){errors.push((e as Error).message)}
  }
  if(a.amount!==undefined&&(!Number.isFinite(a.amount)||a.amount<0))errors.push('El importe no es válido.');
