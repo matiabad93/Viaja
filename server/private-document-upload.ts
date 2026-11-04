@@ -151,7 +151,7 @@ export async function privateDocumentUploadAPI(request:Request,env:ViajaAIEnv):P
    method:'POST',
    headers:{apikey:env.SUPABASE_SECRET_KEY!,'Content-Type':record.mime_type,
     'x-upsert':'false','cache-control':'3600'},
-   body:bytes,
+   body:bytes.buffer as ArrayBuffer,
    cache:'no-store',signal:AbortSignal.timeout(40000)
   });
   if(uploaded.status===409)return json({error:'El archivo ya existe. No se sobrescribió.'},409);
