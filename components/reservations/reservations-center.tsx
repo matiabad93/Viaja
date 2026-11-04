@@ -8,6 +8,7 @@ import {
  validateReservationPdf,type ReservationFile,type ReservationDetails,type ReservationKind,type ReservationChanges
 } from '../../lib/reservation-library';
 import {ReservationEditor} from './reservation-editor';
+import {getPrivateDocumentUsage,type ViajaDocumentUsage} from '../../lib/private-upload-client.ts';
 import {ReservationPdfViewer} from './reservation-pdf-viewer';
 import {ConfirmDialog} from '../confirm-dialog';
 
@@ -22,6 +23,7 @@ export function ReservationsCenter({
  session:ViajaSession|null;plans:Plan[];onOpenTrip:(plan:Plan)=>void;onError:(error:string)=>void;focusTripId?:string|null;
 }){
  const [items,setItems]=useState<ReservationFile[]>([]),[loading,setLoading]=useState(false);
+ const [usage,setUsage]=useState<ViajaDocumentUsage|null>(null);
  const [revision,setRevision]=useState(0),[error,setError]=useState(''),[success,setSuccess]=useState('');
  const [files,setFiles]=useState<File[]>([]),[uploading,setUploading]=useState(false);
  const [search,setSearch]=useState(''),[kindFilter,setKindFilter]=useState('all'),[onlyTrip,setOnlyTrip]=useState(focusTripId||'');
@@ -38,6 +40,13 @@ export function ReservationsCenter({
   listReservations().then(res=>{if(live)setItems(res)}).catch(e=>{if(live)setError((e as Error).message)})
    .finally(()=>{if(live)setLoading(false)});
   return()=>{live=false};
+ },[owner,revision]);
+ useEffect(()=>{
+  if(!owner){setUsage(null);return}
+  let active=true;
+  getPrivateDocumentUsage().then(stats=>{if(active)setUsage(stats)})
+   .catch(()=>{if(active)setUsage(null)});
+  return()=>{active=false};
  },[owner,revision]);
  useEffect(()=>{if(focusTripId)setOnlyTrip(focusTripId)},[focusTripId]);
  const filtered=useMemo(()=>{
@@ -123,6 +132,11 @@ export function ReservationsCenter({
    <div><CalendarCheck size={23}/><strong>{items.filter(x=>x.linked_trip_id).length}</strong><span>Con viaje</span></div>
    <div><ShieldCheck size={23}/><strong>{items.filter(x=>!x.reviewed_at).length}</strong><span>Por revisar</span></div>
   </div>
+  {owner&&usage&&<p className="reservation-quota-status" role="status">
+   <LockKeyhole size={16}/>Almacenamiento privado: <strong>{usage.files} de {usage.maxFiles} documentos</strong>
+   · <strong>{(usage.bytes/1048576).toFixed(1)} de {(usage.maxBytes/1048576).toFixed(0)} MB</strong>
+   · {usage.uploadsLast24h} de {usage.maxUploadsLast24h} cargas en las últimas 24 horas.
+  </p>}
   <section ref={addRef} className="reservation-import" aria-labelledby="reservation-import-heading">
    <div className="reservation-section-heading"><div><h2 id="reservation-import-heading">Importá tus comprobantes</h2>
     <p>Solo PDF. Máximo 10 MB por archivo. También podés guardar billetes con códigos QR dentro del PDF.</p></div>
