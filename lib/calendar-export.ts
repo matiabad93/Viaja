@@ -58,5 +58,5 @@ export function downloadCalendarFile(events:CalendarEvent[],filename:string):voi
  const data=serializeCalendar(events),url=URL.createObjectURL(new Blob([data],{type:'text/calendar;charset=utf-8'}));
  const a=document.createElement('a');a.href=url;
  a.download=(filename.replace(/[^a-z0-9áéíóúñ_-]+/gi,'-').replace(/\.ics$/i,'').slice(0,85)||'viaja-calendario')+'.ics';
- document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
