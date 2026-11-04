@@ -38,13 +38,13 @@ export function validateTravelPreferences(raw:unknown):TravelPreferences|undefin
  const companions=['Solo','Pareja','Familia','Amigos'];
  const budgets=['Económico','Intermedio','Cómodo'];
  if(!companions.includes(String(p.travelWith))||!budgets.includes(String(p.budgetStyle)))throw Error('Elegí un tipo de viaje y presupuesto válido.');
- if(!Number.isInteger(p.durationDays)||Number(p.durationDays)<1||Number(p.durationDays)>31)throw Error('Elegí entre 1 y 31 días.');
+ if(!Number.isInteger(Number(p.durationDays))||Number(p.durationDays)<1||Number(p.durationDays)>31)throw Error('Elegí entre 1 y 31 días.');
  const interests=p.interests;
  if(!interests||typeof interests!=='object'||Array.isArray(interests))throw Error('Revisá los intereses del viaje.');
  const rawInterests=interests as Record<string,unknown>;
  const clean=Object.fromEntries(interestOptions.map(item=>{
   const level=rawInterests[item.id];
-  if(!Number.isInteger(level)||Number(level)<0||Number(level)>3)throw Error('Revisá los intereses del viaje.');
+  if(!Number.isInteger(Number(level))||Number(level)<0||Number(level)>3)throw Error('Revisá los intereses del viaje.');
   return [item.id,level];
  })) as InterestLevels;
  if(p.dayTimes!==undefined){
