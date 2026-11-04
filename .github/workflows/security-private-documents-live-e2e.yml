@@ -13,11 +13,11 @@ jobs:
     environment: production
     env:
       VIAJA_E2E_ALLOW_PRODUCTION: 'yes'
-      VIAJA_E2E_PUBLISHABLE_KEY: \${{ secrets.VIAJA_E2E_PUBLISHABLE_KEY }}
-      VIAJA_E2E_USER_A_EMAIL: \${{ secrets.VIAJA_E2E_USER_A_EMAIL }}
-      VIAJA_E2E_USER_A_PASSWORD: \${{ secrets.VIAJA_E2E_USER_A_PASSWORD }}
-      VIAJA_E2E_USER_B_EMAIL: \${{ secrets.VIAJA_E2E_USER_B_EMAIL }}
-      VIAJA_E2E_USER_B_PASSWORD: \${{ secrets.VIAJA_E2E_USER_B_PASSWORD }}
+      VIAJA_E2E_PUBLISHABLE_KEY: ${{ secrets.VIAJA_E2E_PUBLISHABLE_KEY }}
+      VIAJA_E2E_USER_A_EMAIL: ${{ secrets.VIAJA_E2E_USER_A_EMAIL }}
+      VIAJA_E2E_USER_A_PASSWORD: ${{ secrets.VIAJA_E2E_USER_A_PASSWORD }}
+      VIAJA_E2E_USER_B_EMAIL: ${{ secrets.VIAJA_E2E_USER_B_EMAIL }}
+      VIAJA_E2E_USER_B_PASSWORD: ${{ secrets.VIAJA_E2E_USER_B_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,7 +32,7 @@ jobs:
         run: |
           set -euo pipefail
           for item in VIAJA_E2E_PUBLISHABLE_KEY VIAJA_E2E_USER_A_EMAIL VIAJA_E2E_USER_A_PASSWORD VIAJA_E2E_USER_B_EMAIL VIAJA_E2E_USER_B_PASSWORD; do
-            if [[ -z "\${!item:-}" ]]; then
+            if [[ -z "${!item:-}" ]]; then
               echo "::error::Missing E2E secret $item; create two confirmed viaja-e2e-* users"
               exit 1
             fi
