@@ -14,6 +14,6 @@ for(const file of [
  assert.doesNotMatch(contents,/secrets\.(?:VIAJA_CF_ACCOUNT_ID|CLOUDFLARE_ACCOUNT_ID|CF_ACCOUNT_ID)\b/);
  assert.match(contents,/--branch (?!main\b)[a-z0-9/-]+/,'Must deploy only feature branch');
 }
-const production=readFileSync('.github/workflows/viaja-production.yml','utf8');
+const production=readFileSync('.github/workflows/cloudflare-viaja-production.yml','utf8');
 assert.match(production,/branches:\s*\[main\]/,'Production deploy must be restricted to main');
 console.log('PASS P1.2: Preview CI cannot read production Cloudflare secrets and never deploys main');
