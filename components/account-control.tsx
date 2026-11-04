@@ -5,6 +5,9 @@ import {cloudReady,logIn,register,logOut,sendRecovery,changePassword,recoveryPen
 import {unavailableSocialProviders,socialProviders,type SocialAvailability,type SocialProvider} from '../lib/social-auth';
 import {UserRound,LogOut,CloudUpload,X,LoaderCircle} from 'lucide-react';
 
+declare const __VIAJA_NATIVE__: boolean;
+const isNativeApp = typeof __VIAJA_NATIVE__ !== 'undefined' && __VIAJA_NATIVE__;
+
 export function AccountControl({session,onReload,onError}:{session:ViajaSession|null;onReload:()=>Promise<void>;onError:(message:string)=>void}){
  const [open,setOpen]=useState(false);
  const [mode,setMode]=useState<'login'|'signup'|'recover'|'password'>('login');
@@ -94,7 +97,7 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
     </>:<>
       <h2>{mode==='login'?'Iniciar sesión':mode==='signup'?'Crear una cuenta':mode==='recover'?'Recuperar contraseña':'Nueva contraseña'}</h2>
       <p className="viaja-account-subtitle">Tus viajes, calendario y gastos estarán disponibles cuando ingreses con tu cuenta.</p>
-      {mode!=='password'&&mode!=='recover'&&<div className="viaja-social-auth">
+      {!isNativeApp&&mode!=='password'&&mode!=='recover'&&<div className="viaja-social-auth">
         <div className="viaja-social-list" aria-label="Acceso con Gmail o Facebook">
           {socialProviders.map(provider=><button
             key={provider}
