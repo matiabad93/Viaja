@@ -1,3 +1,4 @@
+import {isAllowedApiOrigin} from './origin-policy';
 /** Authenticated, opt-in analysis of a PRIVATE PDF owned by the caller. */
 import type {ViajaAIEnv} from './ai-gateway';
 import {sanitizeReservationDetails,type ReservationKind} from '../lib/reservation-library.ts';
@@ -36,7 +37,7 @@ function kind(value:unknown):ReservationKind{
 }
 export async function reservationExtractionAPI(request:Request,env:ViajaAIEnv):Promise<Response>{
  if(request.method!=='POST')return reply({error:'Método no permitido.'},405);
- if(request.headers.get('origin')!==new URL(request.url).origin)return reply({error:'Origen no permitido.'},403);
+ if(!isAllowedApiOrigin(request))return reply({error:'Origen no permitido.'},403);
  if(!request.headers.get('content-type')?.startsWith('application/json'))return reply({error:'Formato inválido.'},415);
  if(!env.GEMINI_API_KEY||env.GEMINI_KEY_ROTATED!=='true'||env.VIAJA_AI_ENABLED!=='true'||!env.SUPABASE_SECRET_KEY||!key(env))
   return reply({code:'AI_UNAVAILABLE',error:'La lectura con Gemini todavía no está configurada. Conservamos tu PDF para revisión manual.'},503);
