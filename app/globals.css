@@ -2240,6 +2240,12 @@ html[data-theme="dark"] .topbar nav button:not(.navactive):hover {
 .viaja-wizard .wizard-ai-preferences svg {flex-shrink:0;margin-top:2px;color:var(--wz-accent)}
 
 
+/* Keep the trip count badge from changing the width of the selected nav tab.
+   The dark active badge has a 1px border; inactive badges need the same box. */
+html[data-theme] header.topbar nav button small {
+  box-sizing:border-box;
+  border:1px solid transparent;
+}
 /* UX regression fix: a tab must have EXACTLY the same box in idle, hover,
    focus, selected and selected:hover, regardless of authentication state.
    Older globals used height:100% for idle but 49px for selected dark tabs. */
