@@ -27,6 +27,9 @@ assert.equal(matchCountryQuery('Ital')?.code,'IT','Unambiguous partial country n
 assert.equal(matchCountryQuery('Argentina')?.code,'AR');
 assert.equal(matchCountryQuery('Rosario'),null,'A city is not interpreted as a country');
 assert.equal(matchCountryQuery('Roma, Italia'),null,'City plus country qualifier is a city search');
+assert.equal(matchCountryQuery('Roma'),null,'Roma is a city, never an unambiguous prefix of Romania');
+assert.equal(matchCountryQuery('roma'),null,'Lowercase Roma must remain a city');
+assert.equal(matchCountryQuery('Romania')?.code,'RO','Full Romania still works as a country');
 const italianSource=[
  {geonameId:3173435,name:'Milano',countryCode:'IT',latitude:45.4642,longitude:9.19,population:1300000,featureCode:'PPLA'},
  {geonameId:3169070,name:'Roma',countryCode:'IT',latitude:41.9028,longitude:12.4964,population:2800000,featureCode:'PPLC'},
