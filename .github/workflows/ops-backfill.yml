@@ -1,0 +1,26 @@
+name: Viaja Ops - Import historical task backlog (silent)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+jobs:
+  import:
+    if: github.repository == 'matiabad93/Viaja' && github.actor == 'matiabad93'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Import existing GitHub backlog (zero WhatsApp messages)
+        env:
+          GH_OPS_READ_TOKEN: ${{ github.token }}
+          OPS_INGEST_URL: ${{ secrets.OPS_INGEST_URL }}
+          OPS_INGEST_TOKEN: ${{ secrets.OPS_INGEST_TOKEN }}
+        run: node ops-harness/scripts/sync-github.mjs

@@ -1,0 +1,34 @@
+name: Viaja Ops - Harness security and WhatsApp tests
+on:
+  push:
+    branches: [feat/ops-harness-whatsapp-20261105]
+    paths: ['ops-harness/**', '.github/workflows/ops-*.yml']
+  pull_request:
+    paths: ['ops-harness/**', '.github/workflows/ops-*.yml']
+permissions:
+  contents: read
+jobs:
+  harness-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify harness code parses
+        working-directory: ops-harness
+        run: npm run check
+      - name: Run security and notification regression tests without secrets
+        working-directory: ops-harness
+        run: npm test
+      - name: Check no tokens are hard-coded in source
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R -En 'EAA[A-Za-z0-9]{30,}|sk-proj-[A-Za-z0-9]+' ops-harness/src ops-harness/scripts; then
+            echo 'Possible hard-coded token in operations source'
+            exit 1
+          fi

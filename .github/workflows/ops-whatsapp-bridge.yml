@@ -1,0 +1,56 @@
+name: Viaja Ops - WhatsApp task completion bridge
+on:
+  issues:
+    types: [opened, reopened, closed, edited]
+  pull_request_target:
+    types: [opened, reopened, closed, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      task_id:
+        description: Stable task ID (e.g. viaja-ui-fix-45)
+        required: true
+        type: string
+      title:
+        description: Task name for the report
+        required: true
+        type: string
+      summary:
+        description: What was actually completed; no secrets or customer data
+        required: true
+        type: string
+      url:
+        description: Verified GitHub issue/PR/deployment URL
+        required: true
+        type: string
+      state:
+        description: Recorded state in dashboard; only completed sends WhatsApp
+        required: true
+        default: completed
+        type: choice
+        options: [todo, in_progress, blocked, completed, cancelled]
+permissions:
+  contents: read
+concurrency:
+  group: viaja-ops-event-bridge-${{ github.event_name }}-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+jobs:
+  publish:
+    # Avoid untrusted issue/PR authors triggering a notification.
+    if: github.repository == 'matiabad93/Viaja' && github.actor == 'matiabad93'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Read trusted event bridge code only from main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Register task update / notify only after completion
+        continue-on-error: true
+        env:
+          OPS_INGEST_URL: ${{ secrets.OPS_INGEST_URL }}
+          OPS_INGEST_TOKEN: ${{ secrets.OPS_INGEST_TOKEN }}
+        run: node ops-harness/scripts/publish-github.mjs
