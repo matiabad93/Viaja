@@ -6,6 +6,7 @@ import {cloudReady,restoreAuth,subscribeAuth,getCurrentSession,accessToken,listC
 import {TripStopsEditor} from '../components/trip-stops-editor';
 import {GuidedPlanner} from '../components/guided-planner';
 import {createEditorialStarter} from '../lib/guide-starter';
+import {travelerGroupError,type TravelWith} from '../lib/travel-preferences';
 import {DestinationSearch} from '../components/destination-search';
 import {cityLabel} from '../lib/city-suggestions';
 import {reviewItineraryFeasibility} from '../lib/trip-feasibility';
@@ -90,7 +91,20 @@ const reloadAccount=async()=>{const current=getCurrentSession();setSession(curre
  }else{setPublicationIds({});loadLocal();setMessage('Sesión cerrada. Tus viajes de invitado siguen en este dispositivo.')}};
 useEffect(()=>{checkStatus();let mounted=true;const unsubscribe=subscribeAuth(s=>{if(mounted)setSession(s)});if(!cloudReady){loadLocal();setAuthLoaded(true)}else{restoreAuth().then(async()=>{if(!mounted)return;await reloadAccount()}).catch(e=>{if(mounted){setError('No pudimos sincronizar tu cuenta: '+(e instanceof Error?e.message:'error de conexión')+'. Reintentá al ingresar.');if(!getCurrentSession())loadLocal()}}).finally(()=>{if(mounted)setAuthLoaded(true)})}return()=>{mounted=false;unsubscribe();abortRef.current?.abort()}},[]);
 useEffect(()=>{const back=(e:Event)=>{if(tab!=='guides'){e.preventDefault();setTab(tab==='detail'?'saved':'guides')}};window.addEventListener('viaja-back',back);return()=>window.removeEventListener('viaja-back',back)},[tab]);
-const update=(key:keyof Trip,value:any)=>{setTrip(t=>({...t,[key]:value}));setSaved(false)};
+const update=(key:keyof Trip,value:any)=>{
+ setTrip(t=>{
+  const next={...t,[key]:value};
+  if(key==='travelers'&&next.preferences&&Number.isInteger(value)&&value>=1&&value<=12){
+   const problem=travelerGroupError(next.preferences.travelWith,value);
+   if(problem){
+    const group:TravelWith=value===1?'Solo':value===2?'Pareja':'Amigos';
+    next.preferences={...next.preferences,travelWith:group};
+   }
+  }
+  return next;
+ });
+ setSaved(false);
+};
 const save=(p:Plan)=>{
  if(session&&p.collaboration?.role==='viewer'){setError('Tenés acceso de solo lectura. Pedile permiso de edición al organizador.');return false;}
  const next=[p,...plans.filter(x=>x.id!==p.id)];
@@ -161,6 +175,7 @@ const saveDraft=()=>{setError('');setMessage('');
  if(trip.end<trip.start){setError('La fecha de regreso no puede ser anterior a la salida.');return}
  if(daysCount(trip)>366){setError('Para crear un viaje manual, elegí hasta 366 días.');return}
  if(!Number.isInteger(trip.travelers)||trip.travelers<1||trip.travelers>12){setError('Indicá entre 1 y 12 viajeros.');return}
+ if(trip.preferences){const error=travelerGroupError(trip.preferences.travelWith,trip.travelers);if(error){setError(error);return}}
  if(!Number.isFinite(trip.budget)||trip.budget<0||trip.budget>1000000){setError('Ingresá un presupuesto válido o dejalo vacío.');return}
  const guide=!result?createEditorialStarter(trip):null;
  const count=daysCount(trip)||trip.preferences?.durationDays||3;
@@ -172,7 +187,8 @@ const example=()=>{const friday=new Date();friday.setDate(friday.getDate()+((5-f
 const performGeneration=async()=>{if(busy)return;const draft:Plan=result?{...result,trip:{...trip}}:{id:newId(),trip:{...trip},kind:'draft',createdAt:new Date().toISOString()};if(!save(draft))return;setResult(draft);setBusy(true);const snapshot={...trip,sources:[...trip.sources]};const controller=new AbortController();abortRef.current=controller;try{localStorage.setItem('viaja-ai-current',JSON.stringify(snapshot))}catch{}const timeout=setTimeout(()=>controller.abort(),165000);try{const token=await accessToken();if(!token)throw Error('Iniciá sesión con Gmail para investigar tu viaje con IA.');const r=await requestAPI('/api/plan',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(snapshot),signal:controller.signal});const data=await r.json() as Plan & {error?:string;code?:string};if(!r.ok)throw Error((data.error||'No se pudo preparar el viaje.')+(data.code?' [Código: '+data.code+']':''));data.trip={...data.trip,city:snapshot.city};const next:Plan={...draft,...data,id:draft.id,expenses:draft.expenses,logistics:draft.logistics,collaboration:draft.collaboration,itinerary:data.itinerary};if(!itineraryOf(next).some(d=>d.activities.length))throw Error("La investigación no devolvió actividades organizadas. Tu viaje sigue guardado; podés reintentar o completarlo manualmente.");if(save(next)){openTrip(next);setMessage(data.kind==='draft'?'Ideas con Gemini guardadas. Verificá todos los datos antes de reservar.':'Investigación guardada. Revisá las fuentes antes de reservar.')}else{setResult(next);setTrip(next.trip);setTab('detail')}}catch(e){setError(e instanceof Error&&e.name==='AbortError'?'La investigación se interrumpió. Conservamos los datos del viaje.':e instanceof Error?e.message:'No se pudo generar el plan.')}finally{clearTimeout(timeout);setBusy(false);abortRef.current=null}};
 const generate=(e:React.FormEvent)=>{e.preventDefault();if(busy)return;setError('');setMessage('');
  if((trip.additionalDestinations||[]).some(x=>!x.trim())){setError('Completá los destinos adicionales o quitá los campos vacíos.');return}
- const feasibility=reviewItineraryFeasibility(trip);if(feasibility.blocking.length){setError(feasibility.blocking.join(' '));return}if(!trip.destination.trim()||!trip.start||!trip.end||!Number.isInteger(trip.travelers)||trip.travelers<1||trip.travelers>12){setError('Completá destino, fechas y viajeros antes de usar la IA.');return}if(trip.end<trip.start){setError('El regreso debe ser posterior o igual a la salida.');return}if((Date.parse(trip.end)-Date.parse(trip.start))/86400000>30){setError('Por ahora, planificamos viajes de hasta 31 días.');return}if(aiMode!=='ideas_without_search'&&!trip.sources.length){setError('Seleccioná al menos un tipo de fuente.');return}if(result&&(Boolean(result.parts?.length)||itineraryOf(result).some(day=>day.activities.length>0))){
+ const feasibility=reviewItineraryFeasibility(trip);if(feasibility.blocking.length){setError(feasibility.blocking.join(' '));return}if(!trip.destination.trim()||!trip.start||!trip.end||!Number.isInteger(trip.travelers)||trip.travelers<1||trip.travelers>12){setError('Completá destino, fechas y viajeros antes de usar la IA.');return}
+ if(trip.preferences){const error=travelerGroupError(trip.preferences.travelWith,trip.travelers);if(error){setError(error);return}}if(trip.end<trip.start){setError('El regreso debe ser posterior o igual a la salida.');return}if((Date.parse(trip.end)-Date.parse(trip.start))/86400000>30){setError('Por ahora, planificamos viajes de hasta 31 días.');return}if(aiMode!=='ideas_without_search'&&!trip.sources.length){setError('Seleccioná al menos un tipo de fuente.');return}if(result&&(Boolean(result.parts?.length)||itineraryOf(result).some(day=>day.activities.length>0))){
  setPendingRegeneration(true);
  return;
 }
