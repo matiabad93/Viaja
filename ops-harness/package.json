@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "check": "node --check src/index.mjs && node --check src/panel.mjs && node --check ../scripts/ops-publish-event.mjs"
+    "check": "node --check src/index.mjs && node --check src/panel.mjs && node --check src/whatsapp.mjs && node --check scripts/publish-github.mjs && node --check scripts/sync-github.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.50.0"
