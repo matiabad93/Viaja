@@ -1,5 +1,5 @@
 import {isAllowedApiOrigin} from './origin-policy.ts';
-import {validateTravelPreferences,describeTravelPreferences} from '../lib/travel-preferences.ts';
+import {validateTravelPreferences,describeTravelPreferences,travelerGroupError} from '../lib/travel-preferences.ts';
 import {validateItinerary} from './structured-itinerary.ts';
 import {reviewItineraryFeasibility} from '../lib/trip-feasibility.ts';
 import {destinationsAPI} from './destinations.ts';
@@ -18,6 +18,7 @@ export function validateTrip(raw:any){
  if(start<new Date().toISOString().slice(0,10))throw Error('La fecha de salida ya pasó.');
  const travelers=Number(raw.travelers),budget=raw.budget===null||raw.budget===undefined||raw.budget===''?0:Number(raw.budget);if(!Number.isInteger(travelers)||travelers<1||travelers>12)throw Error('Ingresá entre 1 y 12 viajeros.');if(!Number.isFinite(budget)||budget<0||budget>1000000)throw Error('Ingresá un presupuesto válido o dejalo vacío.');
  const preferences=validateTravelPreferences(raw.preferences);
+ if(preferences){const error=travelerGroupError(preferences.travelWith,travelers);if(error)throw Error(error);}
  const notes=string('notes',2000,false),links=string('links',2000,false),adjustment=string('adjustment',1000,false);
  for(const link of links.split(/\s+/).filter(Boolean)){let u;try{u=new URL(link)}catch{throw Error('Cada referencia debe ser un enlace https válido.')}if(u.protocol!=='https:'||u.username||u.password||!u.hostname.includes('.'))throw Error('Usá enlaces públicos https.');}
  if(!Array.isArray(raw.sources)||!raw.sources.length||raw.sources.length>5||raw.sources.some((s:unknown)=>!sourceOptions.includes(s as string)))throw Error('Seleccioná al menos un tipo de fuente.');
