@@ -107,7 +107,7 @@ export function normalizeGeminiIdeas(data:unknown,start:string,days:number,pace=
  return {summary,budgetNotes,days:normalized,warnings};
 }
 
-function geminiRequest(trip:ReturnType<typeof validateTrip>){
+export function geminiRequest(trip:ReturnType<typeof validateTrip>){
  const dense=trip.pace==='Intenso';
  const suggestedStops=dense?(trip.days<=4?'7 a 10':'6 a 8'):trip.pace==='Tranquilo'?'2 a 4':'4 a 6';
  const detailLevel=dense?(trip.days<=4?'4 a 6':'3 a 5'):'2 a 4';
