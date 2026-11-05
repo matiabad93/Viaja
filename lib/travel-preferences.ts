@@ -29,11 +29,6 @@ export const defaultTravelPreferences=():TravelPreferences=>({
  durationDays:3,travelWith:'Pareja',budgetStyle:'Intermedio',
  interests:{history:2,food:2,nature:2,culture:2,relax:2,nightlife:1,shopping:1,adventure:1,sports:1,football:0,events:1,family:0}
 });
-export const romaExamplePreferences=():TravelPreferences=>({
- ...defaultTravelPreferences(),
- durationDays:3,travelWith:'Pareja',budgetStyle:'Intermedio',
- interests:{history:3,food:3,nature:3,culture:1,relax:1,nightlife:0,shopping:0,adventure:0,sports:1,football:0,events:1,family:0}
-});
 /** Existing trips may have the original eight interests: preserve their choices. */
 const recentlyAddedInterests=new Set<InterestKey>(['sports','football','events','family']);
 export const minimumTravelers=(travelWith:TravelWith):number=>
