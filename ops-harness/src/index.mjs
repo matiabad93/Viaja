@@ -28,7 +28,7 @@ export function validateTask(raw){
  let url;try{url=new URL(String(raw.url))}catch{throw Error('URL inválida')}
  if(url.protocol!=='https:'||!['github.com','viaja.pages.dev'].includes(url.hostname)&&!url.hostname.endsWith('.viaja.pages.dev'))throw Error('Solo se admiten URLs de GitHub o Viaja');
  if(url.href.length>500)throw Error('URL demasiado larga');
- return {task_id,title,summary:summary||'Tarea actualizada. Consultá el detalle para verificar qué quedó terminado.',project,source,actor,state,url:url.href};
+ return {task_id,title,summary:summary||'Tarea actualizada. Consultá el detalle para verificar qué quedó terminado.',project,source,actor,state,url:url.href,silent:raw.silent===true};
 }
 export async function verifyMetaSignature(raw,signature,appSecret){
  if(!appSecret||!signature?.startsWith('sha256='))return false;
@@ -45,9 +45,9 @@ async function upsert(db,task){
  project=excluded.project,title=excluded.title,summary=excluded.summary,url=excluded.url,
  state=excluded.state,source=excluded.source,actor=excluded.actor,changed_at=datetime('now'),
  notice_state=CASE
-   WHEN excluded.state='completed' AND ops_tasks.state!='completed' THEN 'pending'
+   WHEN excluded.state='completed' AND ops_tasks.state!='completed' THEN excluded.notice_state
    WHEN excluded.state!='completed' THEN 'not_due'
-   ELSE ops_tasks.notice_state END`).bind(task.task_id,task.project,task.title,task.summary,task.url,task.state,task.source,task.actor,task.state==='completed'?'pending':'not_due').run();
+   ELSE ops_tasks.notice_state END`).bind(task.task_id,task.project,task.title,task.summary,task.url,task.state,task.source,task.actor,task.state==='completed'&&!task.silent?'pending':'not_due').run();
 }
 async function notifyIfReady(env,taskId){
  if(env.OPS_SEND_ENABLED!=='true')return; // Opt-in is mandatory.
@@ -128,7 +128,7 @@ export default {
     if(!env.DB)return json({error:'Database not connected'},503);
     let task;try{task=validateTask(await readJson(request))}catch(e){return json({error:e.message||'Invalid task'},400)}
     await upsert(env.DB,task);
-    if(task.state==='completed')ctx.waitUntil(notifyIfReady(env,task.task_id));
+    if(task.state==='completed'&&!task.silent)ctx.waitUntil(notifyIfReady(env,task.task_id));
     return json({stored:true,task_id:task.task_id,notify_enabled:env.OPS_SEND_ENABLED==='true'},202);
    }
    if(url.pathname==='/api/notify/retry'&&method==='POST'){
