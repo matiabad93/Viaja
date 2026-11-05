@@ -45,7 +45,7 @@ test('Webhook verification requires exact challenge and signed payload',async()=
  const mac=await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(payload));
  const signature='sha256='+Array.from(new Uint8Array(mac),b=>b.toString(16).padStart(2,'0')).join('');
  assert.equal(await verifyMetaSignature(payload,signature,env.META_APP_SECRET),true);
- assert.equal(await verifyMetaSignature(payload,signature.replace(/.$/,'0'),env.META_APP_SECRET),false);
+ assert.equal(await verifyMetaSignature(payload,signature.slice(0,-1)+(signature.endsWith('0')?'1':'0'),env.META_APP_SECRET),false);
  const ok=await worker.fetch(new Request('https://harness.test/webhook/whatsapp',{method:'POST',
   headers:{'x-hub-signature-256':signature},body:payload}),env,ctx);
  assert.equal(ok.status,200);
@@ -93,7 +93,7 @@ test('Admin CSP excludes arbitrary 3rd party scripts and task cards use safe DOM
  const result=await worker.fetch(new Request('https://harness.test/'),env,ctx);
  const page=await result.text();
  assert.match(page,/textContent/);
- assert.match(page,/script-src 'nonce-/i);
+ assert.match(result.headers.get('content-security-policy'),/script-src 'nonce-/i);
  assert.doesNotMatch(result.headers.get('content-security-policy'),/unsafe-inline/);
  assert.doesNotMatch(page,/localStorage\.setItem/);
 });
