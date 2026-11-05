@@ -2238,3 +2238,69 @@ html[data-theme="dark"] .topbar nav button:not(.navactive):hover {
   color:var(--wz-text);
 }
 .viaja-wizard .wizard-ai-preferences svg {flex-shrink:0;margin-top:2px;color:var(--wz-accent)}
+
+
+/* UX regression fix: a tab must have EXACTLY the same box in idle, hover,
+   focus, selected and selected:hover, regardless of authentication state.
+   Older globals used height:100% for idle but 49px for selected dark tabs. */
+html[data-theme] header.topbar nav button {
+  box-sizing:border-box;
+  flex:0 0 auto;
+  height:50px;
+  min-height:50px;
+  padding:0 13px;
+  border:1px solid transparent;
+  border-radius:11px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  font-weight:600;
+  line-height:1.25;
+  white-space:nowrap;
+  box-shadow:none;
+  transition:background-color 120ms ease,border-color 120ms ease,color 120ms ease;
+}
+html[data-theme] header.topbar nav button.navactive {
+  height:50px;
+  min-height:50px;
+  padding:0 13px;
+  font-weight:600; /* avoid width jump from bold active label */
+  box-shadow:none;
+}
+html[data-theme="dark"] header.topbar nav button:not(.navactive):is(:hover,:focus-visible),
+html[data-theme="dark"] header.topbar nav button.navactive,
+html[data-theme="dark"] header.topbar nav button.navactive:hover {
+  background-color:#263e34 !important;
+  border-color:#456759;
+  color:#e5f6eb;
+  border-radius:11px;
+  box-shadow:none;
+}
+html[data-theme="dark"] header.topbar nav button.navactive::after {
+  content:'';
+  position:absolute;
+  bottom:3px;
+  left:19%;
+  width:62%;
+  height:2px;
+  background:#a7d8ba;
+  border-radius:3px;
+}
+html[data-theme="dark"] header.topbar nav button:not(.navactive):hover::after {
+  content:none;
+}
+@media(max-width:700px){
+  html[data-theme] header.topbar nav button,
+  html[data-theme] header.topbar nav button.navactive {
+    box-sizing:border-box;
+    width:100%;
+    height:50px;
+    min-height:50px;
+    padding:4px 3px;
+    gap:4px;
+    white-space:normal;
+    font-weight:600;
+  }
+  html[data-theme="dark"] header.topbar nav button.navactive::after {display:none}
+}
