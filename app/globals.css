@@ -2173,3 +2173,67 @@ html[data-theme="dark"] .viaja-wizard .wizard-option.selected,html[data-theme="d
  .wizard-footer{padding:14px 17px 19px}
 }
 @media(prefers-reduced-motion:reduce){.viaja-wizard *{scroll-behavior:auto!important;transition:none!important}}
+
+
+/* Viaja 2.0 UX: calm, integrated selected tabs in dark mode.
+   Apply only to the global navigation; maintain accessible contrast and focus. */
+html[data-theme="dark"] .topbar nav button.navactive {
+  background:#263e34;
+  color:#e5f6eb;
+  border:1px solid #456759;
+  border-radius:11px;
+  box-shadow:none;
+  text-decoration:none;
+}
+html[data-theme="dark"] .topbar nav button.navactive:hover {
+  background:#304c3e;
+  color:#f3fff7;
+  box-shadow:none;
+}
+html[data-theme="dark"] .topbar nav button.navactive::after {
+  background:#a7d8ba;
+  height:2px;
+  width:62%;
+  left:19%;
+  bottom:3px;
+  border-radius:4px;
+  box-shadow:none;
+}
+html[data-theme="dark"] .topbar nav button.navactive small {
+  background:#344f41;
+  color:#ecf9ef;
+  border:1px solid #547964;
+}
+html[data-theme="dark"] .topbar nav button:not(.navactive):hover {
+  background:#25392f;
+  border-radius:10px;
+}
+@media(min-width:701px){
+  html[data-theme="dark"] .topbar nav button.navactive {
+    align-self:center;
+    height:49px;
+    min-height:49px;
+    padding:0 13px;
+  }
+}
+@media(max-width:700px){
+  html[data-theme="dark"] .topbar nav button.navactive {
+    height:auto;
+    min-height:49px;
+    padding:6px 4px;
+    background:#263e34;
+  }
+  html[data-theme="dark"] .topbar nav button.navactive::after {display:none}
+}
+/* Accessible fixed traveler summary and preference disclosure. */
+.viaja-wizard .wizard-fixed-travelers {
+  display:flex;align-items:center;gap:11px;
+  padding:15px 17px;min-height:54px;
+  border:1px solid var(--wz-line);border-radius:12px;
+  background:var(--wz-soft);color:var(--wz-text);font-size:16px;font-weight:650;
+}
+.viaja-wizard .wizard-ai-preferences {
+  display:flex;align-items:flex-start;gap:10px;
+  color:var(--wz-text);
+}
+.viaja-wizard .wizard-ai-preferences svg {flex-shrink:0;margin-top:2px;color:var(--wz-accent)}
