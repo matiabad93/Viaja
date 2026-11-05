@@ -14,6 +14,16 @@
 
 **No es un webhook nativo de ChatGPT.** Este harness registra eventos GitHub y eventos explícitamente integrados. El chat de ChatGPT no emite automáticamente un evento por cada actividad; para seguir tareas de otro origen hay que crear un adaptador o registrar una tarea manual.
 
+## Meta: enlace oficial verificado (5 de noviembre de 2026)
+
+El enlace directo a `developers.facebook.com/apps/` puede mostrar una página rota o exigir autenticación dependiendo del navegador y la sesión. Usar como entrada estable el **centro oficial de WhatsApp Business**:
+
+https://whatsappbusiness.com/es-la/developers/developer-hub/
+
+Seleccionar **Empezar** (o **Iniciar sesión** si ya existe una aplicación). Esta es la página de entrada verificada; luego Meta solicita acceso a la cuenta y creación/selección de una aplicación y portafolio empresarial. No solicitar contraseñas ni códigos de 2FA en conversaciones. Un agente solo puede continuar configurando Meta y Cloudflare cuando el titular se autentique de forma segura y permita esas operaciones.
+
+Para una prueba inicial puede usarse el número de prueba que ofrece Meta, con el destinatario habilitado por el titular. Eso no confirma todavía el envío a escala ni la aprobación de plantillas de producción.
+
 ## Preparar WhatsApp Business Cloud API
 
 1. Crear/usar una **Meta Developer App** con WhatsApp Business Platform y registrar un **número emisor** permitido. Verificar la cuenta y la suscripción/aceptación expresa del número receptor.
