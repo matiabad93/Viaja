@@ -1,4 +1,4 @@
-name: Viaja 2.0 — Guided Planner Preview
+name: Viaja 2.0 — Guided Planner Preview QA
 on:
   push:
     branches: [feat/viaja-guided-planner-v2-20261104]
@@ -11,11 +11,9 @@ concurrency:
 jobs:
   guided-preview:
     runs-on: ubuntu-24.04
-    environment: preview
     timeout-minutes: 30
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.VIAJA_CF_PREVIEW_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.VIAJA_CF_PREVIEW_ACCOUNT_ID }}
+    # Cloudflare Pages already deploys preview branches directly from GitHub.
+    # CI only validates the branch and never needs Cloudflare credentials.
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,23 +49,6 @@ jobs:
           exit 1
       - name: End-to-end guided planning on phone, dark theme and desktop
         run: node scripts/guided-planner-browser-smoke.mjs
-      - name: Check isolated Preview credentials without exposing them
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]]; then
-            echo "::error::Missing VIAJA_CF_PREVIEW_API_TOKEN or VIAJA_CF_PREVIEW_ACCOUNT_ID in Preview environment. Production credentials cannot substitute."
-            exit 1
-          fi
-      - name: Deploy feature branch to Cloudflare Pages Preview only
-        shell: bash
-        run: |
-          set -euo pipefail
-          npx wrangler pages deploy web-dist \
-            --project-name viaja \
-            --branch feat/viaja-guided-planner-v2-20261104 \
-            --commit-hash "$GITHUB_SHA" \
-            --commit-message "Viaja 2.0 guided planner preview"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
