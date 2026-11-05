@@ -33,19 +33,25 @@ Reducir la complejidad inicial para personas de distintas edades. La vista **Pla
 - La suite de CI anterior se ejecuta también para detectar regresiones de navegación y funciones existentes.
 - En GitHub Actions, los workflows de Preview generan capturas como artefacto privado `Viaja-Guided-Planner-UX-QA`.
 
-## Publicar una Preview real de Cloudflare
+## Preview de Cloudflare (Git integrado)
 
-La rama está preparada para publicar, pero requiere **credenciales dedicadas a Preview**; no reutilizar los secretos de producción.
+Cloudflare Pages ya está conectado al repositorio GitHub `matiabad93/Viaja` y despliega automáticamente la rama `feat/viaja-guided-planner-v2-20261104` en un **deployment de Preview** cada vez que se actualiza la rama.
 
-1. En Cloudflare: crear un API Token con permiso mínimo para **Cloudflare Pages Edit** sobre la cuenta del proyecto `viaja`, y copiar el Account ID de dicha cuenta. Evitar permisos de DNS, D1, claves de IA o acceso a proyectos ajenos.
-2. En GitHub → repositorio Viaja → Settings → Environments → `preview`, configurar las dos **Environment secrets**:
-   - `VIAJA_CF_PREVIEW_API_TOKEN` (token Cloudflare Pages con alcance mínimo).
-   - `VIAJA_CF_PREVIEW_ACCOUNT_ID`.
-3. GitHub Actions → `Viaja 2.0 — Guided Planner Preview` → Run workflow en la rama indicada. El build, las pruebas y el deploy se ejecutan de nuevo.
-4. Leer la **URL real** que Wrangler imprima en `Deploy feature branch to Cloudflare Pages Preview only`. No inferir una URL a partir del nombre de la rama.
-5. Verificar en móvil y escritorio los flujos con sesión real antes de dar el Preview como aprobado. Al publicar la rama, confirmar que Cloudflare Pages usa secretos y variables de **entorno Preview**, independientes de producción.
+1. Entrar al panel de Cloudflare → Workers & Pages → `viaja` → **Deployments**.
+2. En **All deployments**, elegir la fila **Preview** de la rama `feat/viaja-guided-planner-v2-20261104` con el commit más reciente; abrir su URL de despliegue. No asumir que la URL de un commit antiguo representa la versión nueva.
+3. Para validar el código, revisar GitHub Actions → `Viaja 2.0 — Guided Planner Preview QA`: el workflow hace `tsc`, pruebas, build y tests de navegador. **No despliega** y no necesita API Token ni Account ID.
+4. Probar de nuevo el flujo y verificar preferencias + IA con una cuenta de prueba antes de aprobar la fusión.
 
-**Bloqueo detectado 2026-11-04:** en el run https://github.com/matiabad93/Viaja/actions/runs/41934889665 las pruebas y el build pasaron, pero la publicación quedó bloqueada por ausencia de `VIAJA_CF_PREVIEW_API_TOKEN` y/o `VIAJA_CF_PREVIEW_ACCOUNT_ID`. No existe URL nueva confirmada de Preview.
+**Nota histórica:** el antiguo pipeline de Wrangler fallaba porque faltaban `VIAJA_CF_PREVIEW_API_TOKEN` y `VIAJA_CF_PREVIEW_ACCOUNT_ID`. Ese despliegue duplicado fue eliminado del workflow, ya que Cloudflare realiza directamente la publicación mediante Git.
+
+## Correcciones de UX de la segunda revisión
+
+- Pestaña activa del menú en modo oscuro más sobria: sin gran bloque verde ni raya beige.
+- Quitado del planificador público el botón y el preset «Probar ejemplo: Roma».
+- Agregados intereses opcionales **Deportes**, **Fútbol**, **Eventos y espectáculos** y **Actividades familiares**, todos valorables de 0 a 3.
+- Viajeros coherentes: **Solo = 1 fijo**, **Pareja = 2 fijos**, **Familia = 3–12** y **Amigos = 2–12** editables; validación también en backend.
+- Las preferencias, presupuesto orientativo, disponibilidad horaria por día y texto opcional se envían a los generadores IA como datos estructurados. Los intereses 3/3 se priorizan y los 0/3 se evitan salvo petición explícita; no se inventan partidos, eventos ni reservas.
+- Los viajes antiguos con 8 intereses conservan sus elecciones y reciben valores por defecto para las nuevas categorías.
 
 ## Aprobación antes de fusionar
 
