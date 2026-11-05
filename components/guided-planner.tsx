@@ -7,7 +7,7 @@ import {TripStopsEditor} from './trip-stops-editor';
 import {cityLabel} from '../lib/city-suggestions';
 import {todayLocal} from '../lib/date-range';
 import {daysCount,photo,type Trip} from '../lib/travel';
-import {defaultTravelPreferences,interestOptions,romaExamplePreferences,type InterestKey,type TravelPreferences,type DayTimeWindow,type TravelWith,type BudgetStyle} from '../lib/travel-preferences';
+import {resolvedTravelPreferences,interestOptions,minimumTravelers,fixedTravelers,travelerGroupError,type InterestKey,type TravelPreferences,type DayTimeWindow,type TravelWith,type BudgetStyle} from '../lib/travel-preferences';
 
 type Props={
  trip:Trip;onChange:(trip:Trip)=>void;onManual:()=>void;onGenerate:()=>void;
@@ -30,7 +30,9 @@ export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiRe
  const [notice,setNotice]=useState('');
  const [extraInterests,setExtraInterests]=useState(false);
  const [timesOpen,setTimesOpen]=useState(false);
- const pref=trip.preferences||defaultTravelPreferences();
+ const pref=resolvedTravelPreferences(trip.preferences);
+ // Trips originally created in advanced mode did not store a group selection.
+ if(!trip.preferences&&trip.travelers>2)pref.travelWith='Amigos';
  const withDates=Boolean(trip.start||trip.end);
  const duration=withDates?daysCount(trip):pref.durationDays;
  const update=(patch:Partial<Trip>)=>onChange({...trip,...patch});
@@ -42,15 +44,16 @@ export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiRe
   updatePref({dayTimes:next});
  };
  const hasInvalidTimes=Boolean(pref.dayTimes?.some(w=>w.start>=w.end));
- const canNext=step!==0||(trip.destination.trim().length>=2&&
-  (!withDates||Boolean(trip.start&&trip.end&&trip.end>=trip.start))&&duration>=1&&duration<=31);
+ const travelerError=travelerGroupError(pref.travelWith,trip.travelers);
+ const validDestination=trip.destination.trim().length>=2&&
+  (!withDates||Boolean(trip.start&&trip.end&&trip.end>=trip.start))&&duration>=1&&duration<=31;
+ const canNext=validDestination&&!hasInvalidTimes&&(!travelerError||step<2);
  const next=()=>{if(!canNext){setNotice('Elegí un destino y fechas válidas, o seleccioná una duración.');return}
   if(hasInvalidTimes){setNotice('Revisá los horarios: cada día debe terminar después de comenzar.');return}
   setNotice('');setStep(s=>Math.min(3,s+1));
   if(typeof window!=='undefined')window.scrollTo({top:0,behavior:'auto'});
  };
  const back=()=>{setNotice('');setStep(s=>Math.max(0,s-1));window.scrollTo({top:0,behavior:'auto'})};
- const setRome=()=>{const p=romaExamplePreferences();onChange({...trip,destination:'Roma, Italia',city:undefined,origin:'',start:'',end:'',travelers:2,budget:0,notes:'',preferences:p});setNotice('Ejemplo de Roma cargado: 3 días, pareja, presupuesto intermedio e intereses personalizados.');};
  const cover=photo(trip.destination);
  const explainAI=withDates
   ?authenticated?'El asistente no está disponible ahora. Podés guardar tu viaje y completarlo más adelante.':'Para crear actividades con IA necesitás iniciar sesión. Podés guardar tu viaje sin una cuenta.'
@@ -91,7 +94,6 @@ export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiRe
        {[2,3,4,5,6,7,8,10,12,14,21,30].map(n=><option key={n} value={n}>{n} días</option>)}
       </select>
      </label>}
-    <button type="button" className="wizard-demo-link" onClick={setRome}>Probar ejemplo: Roma, 3 días, en pareja <ArrowRight size={15}/></button>
    </>}
    {step===1&&<>
     <div className="wizard-intro"><span className="eyebrow">PASO 2 · TUS INTERESES</span><h1>¿Qué te gusta hacer?</h1>
@@ -105,7 +107,7 @@ export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiRe
       <div className="wizard-interest-ends"><span>Nada</span><span>Mucho</span></div>
      </div>)}
     <button className="wizard-more-link" type="button" aria-expanded={extraInterests} onClick={()=>setExtraInterests(s=>!s)}>
-     {extraInterests?'Mostrar menos intereses':'Ver más intereses (descanso, vida nocturna, compras, aventura)'}
+     {extraInterests?'Mostrar menos intereses':'Ver más intereses (deportes, fútbol, eventos y otros)'}
     </button>
    </>}
    {step===2&&<>
@@ -114,11 +116,24 @@ export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiRe
     <fieldset className="wizard-option-group"><legend>¿Con quién viajás?</legend><div className="wizard-cards four">
      {companions.map(item=><button key={item.name} type="button" className={'wizard-option'+(pref.travelWith===item.name?' selected':'')}
       aria-pressed={pref.travelWith===item.name}
-      onClick={()=>{update({travelers:item.people,preferences:{...pref,travelWith:item.name}})}}>{item.label}</button>)}
+      onClick={()=>{
+       const fixed=fixedTravelers(item.name);
+       const current=Number.isInteger(trip.travelers)?trip.travelers:item.people;
+       const count=fixed??(pref.travelWith==='Solo'||pref.travelWith==='Pareja'?item.people:Math.max(minimumTravelers(item.name),Math.min(12,current)));
+       update({travelers:count,preferences:{...pref,travelWith:item.name}});
+       setNotice('');
+      }}>{item.label}</button>)}
     </div></fieldset>
-    <label className="wizard-field">¿Cuántas personas viajan en total?
-     <input type="number" min={1} max={12} value={trip.travelers||''} onChange={e=>update({travelers:Number(e.target.value)})}/>
-    </label>
+    {fixedTravelers(pref.travelWith)!==undefined?
+      <p className="wizard-fixed-travelers" role="status"><Users size={18}/>
+       {pref.travelWith==='Solo'?'1 viajero · viajás solo/a':'2 viajeros · viajás en pareja'}
+      </p>:
+      <label className="wizard-field">¿Cuántas personas viajan en total?
+       <input type="number" min={minimumTravelers(pref.travelWith)} max={12} value={trip.travelers||''}
+        onChange={e=>update({travelers:e.target.value===''?0:Number(e.target.value)})}
+        aria-invalid={Boolean(travelerError)} aria-describedby={travelerError?'wizard-traveler-error':undefined}/>
+      </label>}
+    {travelerError&&<p id="wizard-traveler-error" className="wizard-notice" role="alert">{travelerError}</p>}
     <fieldset className="wizard-option-group"><legend>¿Qué nivel de gasto preferís?</legend><div className="wizard-cards three">
      {budgets.map(item=><button key={item.name} type="button" className={'wizard-option'+(pref.budgetStyle===item.name?' selected':'')}
       aria-pressed={pref.budgetStyle===item.name} title={item.hint}
@@ -150,12 +165,15 @@ export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiRe
       onChange={e=>update({notes:e.target.value})}
       placeholder="Por ejemplo: viajo con alguien que camina poco, quiero visitar el Coliseo..."/>
     </label>
+    <p className="wizard-info wizard-ai-preferences"><Sparkles size={17}/>
+      La IA usará tus intereses, el tipo de viaje, el presupuesto orientativo y los horarios que elegiste. Tus notas son opcionales.
+    </p>
     <div className="wizard-result-actions">
-     {aiReady&&withDates?<button className="primary" type="button" disabled={busy||hasInvalidTimes} onClick={onGenerate}>
+     {aiReady&&withDates?<button className="primary" type="button" disabled={busy||hasInvalidTimes||Boolean(travelerError)} onClick={onGenerate}>
        <Sparkles size={18}/>{busy?'Preparando tu itinerario…':'Generar itinerario con IA'}<ArrowRight size={18}/>
       </button>:<p className="wizard-info" role="status">{explainAI}</p>}
      <button className={aiReady&&withDates?'secondary':'primary'} type="button"
-      disabled={busy||hasInvalidTimes} onClick={onManual}><Compass size={18}/>Crear mi viaje con guía o agenda</button>
+      disabled={busy||hasInvalidTimes||Boolean(travelerError)} onClick={onManual}><Compass size={18}/>Crear mi viaje con guía o agenda</button>
      <p className="wizard-subtle">Para los destinos con guías editoriales, empezás con actividades sugeridas. En otros destinos podés organizar tu agenda desde cero. Las propuestas se pueden editar.</p>
      {busy&&<button type="button" className="wizard-more-link" onClick={onCancel}>Cancelar generación</button>}
     </div>
