@@ -2259,7 +2259,7 @@ html[data-theme] header.topbar nav button {
   line-height:1.25;
   white-space:nowrap;
   box-shadow:none;
-  transition:background-color 120ms ease,border-color 120ms ease,color 120ms ease;
+  transition:none; /* no intermediate active/hover background or hitbox flash */
 }
 html[data-theme] header.topbar nav button.navactive {
   height:50px;
