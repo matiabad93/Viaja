@@ -1,3 +1,4 @@
+import {describeTravelPreferences} from '../lib/travel-preferences.ts';
 /**
  * Gemini Free Tier adapter for Viaja 1.0 staging.
  *
@@ -106,7 +107,7 @@ export function normalizeGeminiIdeas(data:unknown,start:string,days:number,pace=
  return {summary,budgetNotes,days:normalized,warnings};
 }
 
-function geminiRequest(trip:ReturnType<typeof validateTrip>){
+export function geminiRequest(trip:ReturnType<typeof validateTrip>){
  const dense=trip.pace==='Intenso';
  const suggestedStops=dense?(trip.days<=4?'7 a 10':'6 a 8'):trip.pace==='Tranquilo'?'2 a 4':'4 a 6';
  const detailLevel=dense?(trip.days<=4?'4 a 6':'3 a 5'):'2 a 4';
@@ -155,13 +156,15 @@ function geminiRequest(trip:ReturnType<typeof validateTrip>){
  'Respondé SOLAMENTE un objeto JSON válido con los campos summary, budgetNotes y days.',
  'Cada día debe contener date (YYYY-MM-DD), title, advice (ruta y consejos logísticos detallados), activities (array, que puede estar vacía si es un día exclusivamente de llegada o salida). En cada actividad: title, description, time HH:MM, minutes entero, location, y opcionalmente estimatedCostEUR, costCategory y costNote. Las actividades con el mismo título en días distintos son válidas; no repitas el mismo monumento sin motivo.',
  'Devuelve exactamente '+trip.days+' días, de '+trip.start+' a '+trip.end+'.',
- 'Toda recomendación está sujeta a verificación independiente antes de reservar o desplazarse.'
+ 'Toda recomendación está sujeta a verificación independiente antes de reservar o desplazarse.',
+ describeTravelPreferences(trip.preferences)
  ].join('\n');
  return {
   systemInstruction:{parts:[{text:guidance}]},
   contents:[{role:'user',parts:[{text:JSON.stringify({
    destination:trip.destination,additionalDestinations:trip.additionalDestinations,origin:trip.origin,start:trip.start,end:trip.end,travelers:trip.travelers,
-   budget:trip.budget,pace:trip.pace,transport:trip.transport,notes:trip.notes,adjustment:trip.adjustment
+   budget:trip.budget,pace:trip.pace,transport:trip.transport,notes:trip.notes,adjustment:trip.adjustment,
+    preferences:trip.preferences
   })}]}],
   generationConfig:{responseMimeType:'application/json',responseSchema:schema,temperature:0.35,thinkingConfig:{thinkingLevel:'minimal'},maxOutputTokens:16384}
  };

@@ -1,4 +1,4 @@
-import {isAllowedApiOrigin} from './origin-policy';
+import {isAllowedApiOrigin} from './origin-policy.ts';
 import {destinationsAPI} from './destinations';
 import {plannerAPI,validateTrip} from './planner';
 import {geminiFreePlanner,FREE_GEMINI_MODEL} from './gemini-planner';

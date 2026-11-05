@@ -1,4 +1,4 @@
-import {isAllowedApiOrigin} from './origin-policy';
+import {isAllowedApiOrigin} from './origin-policy.ts';
 /** Authenticated, opt-in analysis of a PRIVATE PDF owned by the caller. */
 import type {ViajaAIEnv} from './ai-gateway';
 import {sanitizeReservationDetails,type ReservationKind} from '../lib/reservation-library.ts';

@@ -1,5 +1,6 @@
+import type {TravelPreferences} from './travel-preferences';
 export type DestinationPhoto={url:string;source:string;title:string;author:string;license:string};
-export type Trip={city?:{id:number;name:string;country:string;region:string;latitude:number;longitude:number};destination:string;additionalDestinations?:string[];origin:string;start:string;end:string;travelers:number;budget:number;pace:string;transport:string;notes:string;links:string;adjustment:string;sources:string[]};
+export type Trip={preferences?:TravelPreferences;city?:{id:number;name:string;country:string;region:string;latitude:number;longitude:number};destination:string;additionalDestinations?:string[];origin:string;start:string;end:string;travelers:number;budget:number;pace:string;transport:string;notes:string;links:string;adjustment:string;sources:string[]};
 export type Activity={completed?:boolean;endTime?:string;source?:string;id:string;title:string;description:string;time?:string;duration?:string;location?:string;price?:string;estimatedCostEUR?:number;costCategory?:'Actividades'|'Transporte'|'Comida';costNote?:string;reservation?:string};
 export type Day={id:string;title:string;advice?:string;activities:Activity[]};
 export type ReservationStatus='planned'|'confirmed'|'cancelled';

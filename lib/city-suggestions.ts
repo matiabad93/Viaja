@@ -48,6 +48,9 @@ function countryNames():Map<string,CountryMatch[]>{
 export function matchCountryQuery(query:string):CountryMatch|null{
  if(query.includes(',')||query.trim().length<3)return null;
  const key=normalizeCityName(query);
+ // Roma is a major city; the four-letter prefix also matches "Romania".
+ // Never convert an exact city query into a country discovery request.
+ if(key==='roma')return null;
  const names=countryNames();
  const exact=names.get(key)||[];
  if(exact.length===1)return exact[0];
