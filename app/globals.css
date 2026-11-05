@@ -2186,8 +2186,9 @@ html[data-theme="dark"] .topbar nav button.navactive {
   text-decoration:none;
 }
 html[data-theme="dark"] .topbar nav button.navactive:hover {
-  background:#304c3e;
-  color:#f3fff7;
+  /* Override legacy :is(...):hover selection styles that are more specific. */
+  background-color:#263e34 !important;
+  color:#e5f6eb;
   box-shadow:none;
 }
 html[data-theme="dark"] .topbar nav button.navactive::after {
