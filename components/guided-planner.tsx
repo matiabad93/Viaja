@@ -50,6 +50,11 @@ export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiRe
  const canNext=validDestination&&!hasInvalidTimes&&(!travelerError||step<2);
  const next=()=>{if(!canNext){setNotice('Elegí un destino y fechas válidas, o seleccioná una duración.');return}
   if(hasInvalidTimes){setNotice('Revisá los horarios: cada día debe terminar después de comenzar.');return}
+  // Persist displayed defaults even when the user never touches a slider.
+  // Older drafts may also lack newer interests; normalize them without losing 0/3.
+  if(step===0&&(!trip.preferences||interestOptions.some(i=>trip.preferences?.interests?.[i.id]===undefined))){
+   update({preferences:pref});
+  }
   setNotice('');setStep(s=>Math.min(3,s+1));
   if(typeof window!=='undefined')window.scrollTo({top:0,behavior:'auto'});
  };
