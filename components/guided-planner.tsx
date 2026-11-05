@@ -12,6 +12,7 @@ import {resolvedTravelPreferences,interestOptions,minimumTravelers,fixedTraveler
 type Props={
  trip:Trip;onChange:(trip:Trip)=>void;onManual:()=>void;onGenerate:()=>void;
  onAdvanced:()=>void;aiReady:boolean;authenticated:boolean;busy:boolean;
+ aiStatusReason?:string;aiStatusLoading?:boolean;aiStatusError?:boolean;onRefreshAI?:()=>void;
  onCancel:()=>void;
 };
 const labels=['No me interesa','Un poco','Me gusta','Me encanta'];
@@ -25,7 +26,7 @@ const budgets:{name:BudgetStyle;hint:string}[]=[
  {name:'Intermedio',hint:'Equilibrar opciones gratuitas y de pago'},
  {name:'Cómodo',hint:'Más flexibilidad para experiencias'}
 ];
-export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiReady,authenticated,busy,onCancel}:Props){
+export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiReady,authenticated,busy,onCancel,aiStatusReason,aiStatusLoading,aiStatusError,onRefreshAI}:Props){
  const [step,setStep]=useState(0);
  const [notice,setNotice]=useState('');
  const [extraInterests,setExtraInterests]=useState(false);
@@ -60,9 +61,15 @@ export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiRe
  };
  const back=()=>{setNotice('');setStep(s=>Math.max(0,s-1));window.scrollTo({top:0,behavior:'auto'})};
  const cover=photo(trip.destination);
- const explainAI=withDates
-  ?authenticated?'El asistente no está disponible ahora. Podés guardar tu viaje y completarlo más adelante.':'Para crear actividades con IA necesitás iniciar sesión. Podés guardar tu viaje sin una cuenta.'
-  :'Si querés un itinerario con IA, elegí fechas exactas en el primer paso. Sin fechas podés crear tu viaje igualmente.';
+ const explainAI=!withDates
+  ?'Para generar con IA, elegí las fechas del viaje. También podés crear tu agenda sin ellas.'
+  :aiStatusLoading?'Comprobando la conexión con el asistente de IA…'
+  :aiStatusReason==='configuration_incomplete'||aiStatusReason==='provider_unsupported'
+   ?'La IA todavía no está habilitada en esta versión de pruebas. Tus preferencias se pueden guardar y usar más adelante.'
+  :aiStatusError?'No pudimos comprobar el servicio de IA. Reintentá la conexión.'
+  :!authenticated?'Iniciá sesión para generar actividades con IA. Podés crear el viaje sin iniciar sesión.'
+  :aiStatusReason==='authentication_required'?'Todavía no pudimos validar tu sesión para usar la IA. Comprobá tu conexión y reintentá.'
+  :'El asistente no está disponible por ahora. Podés guardar tu viaje sin perder las preferencias.';
  return <section className="viaja-wizard" aria-label="Nuevo planificador guiado de viajes">
   <div className="wizard-header">
    <div className="wizard-brand"><Compass size={18}/><strong>Planeá a tu ritmo</strong><span>Nuevo planificador</span></div>
@@ -176,7 +183,11 @@ export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiRe
     <div className="wizard-result-actions">
      {aiReady&&withDates?<button className="primary" type="button" disabled={busy||hasInvalidTimes||Boolean(travelerError)} onClick={onGenerate}>
        <Sparkles size={18}/>{busy?'Preparando tu itinerario…':'Generar itinerario con IA'}<ArrowRight size={18}/>
-      </button>:<p className="wizard-info" role="status">{explainAI}</p>}
+      </button>:<div className="wizard-ai-unavailable" role="status">
+       <p className="wizard-info">{explainAI}</p>
+       {(aiStatusError||aiStatusReason==='authentication_required')&&onRefreshAI&&
+        <button className="secondary" type="button" onClick={onRefreshAI} disabled={aiStatusLoading}>Volver a comprobar IA</button>}
+      </div>}
      <button className={aiReady&&withDates?'secondary':'primary'} type="button"
       disabled={busy||hasInvalidTimes||Boolean(travelerError)} onClick={onManual}><Compass size={18}/>Crear mi viaje con guía o agenda</button>
      <p className="wizard-subtle">Para los destinos con guías editoriales, empezás con actividades sugeridas. En otros destinos podés organizar tu agenda desde cero. Las propuestas se pueden editar.</p>
