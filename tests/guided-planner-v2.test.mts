@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {validateTravelPreferences,describeTravelPreferences,defaultTravelPreferences,interestOptions,minimumTravelers,fixedTravelers,travelerGroupError,resolvedTravelPreferences} from '../lib/travel-preferences.ts';
+import type {TravelPreferences} from '../lib/travel-preferences.ts';
 import {validateTrip} from '../server/planner.ts';
 import {geminiRequest} from '../server/gemini-planner.ts';
 import {createEditorialStarter} from '../lib/guide-starter.ts';
 import type {Trip} from '../lib/travel.ts';
 // Roma is only a test fixture, not an example shown to the user.
-const pref={...defaultTravelPreferences(),durationDays:3,
+const pref:TravelPreferences={...defaultTravelPreferences(),durationDays:3,
  interests:{...defaultTravelPreferences().interests,history:3,food:3,nature:3,nightlife:0,football:3,sports:2}};
 assert.equal(pref.durationDays,3);
 assert.equal(pref.travelWith,'Pareja');
