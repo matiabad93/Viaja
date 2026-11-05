@@ -1,0 +1,12 @@
+{
+  "name": "viaja-ops-harness",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check src/index.mjs && node --check src/panel.mjs && node --check ../scripts/ops-publish-event.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.50.0"
+  }
+}
