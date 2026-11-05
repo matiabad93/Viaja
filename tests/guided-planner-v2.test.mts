@@ -98,4 +98,5 @@ for(const source of [gemini,planner])assert.ok(source.includes('describeTravelPr
 assert.match(planner,/validateTravelPreferences\(raw\.preferences\)/);
 assert.ok(!form.includes('Probar ejemplo: Roma'),'No visible Roma preset');
 assert.ok(!form.includes('setRome'),'No hidden Roma action');
+assert.ok(form.includes('update({preferences:pref})'),'Guided defaults must be saved even if no slider is touched');
 console.log('PASS guided planner: group rules, sports/football preferences, old drafts, AI payload, editorial starter, wizard');
