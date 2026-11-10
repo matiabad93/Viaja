@@ -1,0 +1,23 @@
+name = "viaja-ops-harness"
+main = "src/index.mjs"
+compatibility_date = "2026-11-05"
+workers_dev = true
+
+# Create a dedicated D1 database with wrangler before deployment, then fill
+# database_id below. No production Viaja DB or Supabase credentials are used.
+[[d1_databases]]
+binding = "DB"
+database_name = "viaja-ops"
+database_id = "REPLACE_WITH_NEW_OPS_D1_DATABASE_ID"
+
+[vars]
+OPS_SEND_ENABLED = "false"
+WA_GRAPH_VERSION = "v23.0"
+WA_TEMPLATE_NAME = "viaja_task_completed"
+WA_TEMPLATE_LANG = "es"
+OPS_TTS_MODEL = "gpt-4o-mini-tts"
+OPS_TTS_VOICE = "marin"
+# Configure secrets separately with wrangler secret put; never here:
+# OPS_ADMIN_TOKEN, OPS_INGEST_TOKEN, WA_ACCESS_TOKEN,
+# WA_PHONE_NUMBER_ID, WA_RECIPIENT, WA_VERIFY_TOKEN, META_APP_SECRET,
+# OPENAI_API_KEY.
