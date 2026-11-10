@@ -37,6 +37,7 @@ try{
   });
   await page.goto(origin,{waitUntil:'domcontentloaded',timeout:45000});
   await page.getByRole('button',{name:'Planificar'}).first().click();
+  await page.getByRole('button',{name:/Opciones avanzadas/}).click();
   await page.getByRole('button',{name:'Abrir guía de Madrid imprescindible en Explorar destinos'}).click();
   await page.getByRole('heading',{name:'Madrid imprescindible',exact:true}).waitFor({state:'visible',timeout:20000});
   await page.getByText('Puerta del Sol').first().waitFor({state:'visible'});

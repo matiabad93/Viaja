@@ -27,6 +27,9 @@ assert.equal(matchCountryQuery('Ital')?.code,'IT','Unambiguous partial country n
 assert.equal(matchCountryQuery('Argentina')?.code,'AR');
 assert.equal(matchCountryQuery('Rosario'),null,'A city is not interpreted as a country');
 assert.equal(matchCountryQuery('Roma, Italia'),null,'City plus country qualifier is a city search');
+assert.equal(matchCountryQuery('Roma'),null,'Roma is a city, never an unambiguous prefix of Romania');
+assert.equal(matchCountryQuery('roma'),null,'Lowercase Roma must remain a city');
+assert.equal(matchCountryQuery('Romania')?.code,'RO','Full Romania still works as a country');
 const italianSource=[
  {geonameId:3173435,name:'Milano',countryCode:'IT',latitude:45.4642,longitude:9.19,population:1300000,featureCode:'PPLA'},
  {geonameId:3169070,name:'Roma',countryCode:'IT',latitude:41.9028,longitude:12.4964,population:2800000,featureCode:'PPLC'},
@@ -74,11 +77,12 @@ const home=readFileSync(new URL('../app/page.tsx',import.meta.url),'utf8');
 const detail=readFileSync(new URL('../components/trip-detail.tsx',import.meta.url),'utf8');
 assert.ok(home.includes('ariaLabel="Ciudad de salida"'),'Planner origin autocompletes');
 assert.ok(detail.includes('ariaLabel="Ciudad de salida"'),'Edit-trip origin autocompletes');
-const guide=readFileSync(new URL('../components/travel-hub.tsx',import.meta.url),'utf8');
+const guide=readFileSync(new URL('../lib/curated-guides.ts',import.meta.url),'utf8');
+const guideComponent=readFileSync(new URL('../components/travel-hub.tsx',import.meta.url),'utf8');
 const madrid=guide.slice(guide.indexOf("id:'madrid'"),guide.indexOf('const meta='));
 assert.ok(madrid.includes('published:true'),'Madrid is available in Explore');
 assert.ok(madrid.includes('Puerta del Sol')&&madrid.includes('Plaza Mayor')&&madrid.includes('Museo del Prado'),'Madrid guide has significant landmarks');
-assert.ok(guide.includes('viaja-editorial-madrid-v1'),'Madrid is added even if local catalog was previously cached');
+assert.ok(guideComponent.includes('viaja-editorial-madrid-v1'),'Madrid is added even if local catalog was previously cached');
 const css=readFileSync(new URL('../app/globals.css',import.meta.url),'utf8');
 assert.ok(css.includes('max-height:min(256px,36dvh)'), 'Suggestions stay compact on a mobile screen');
 assert.ok(css.includes('font-size:16px'), 'iPhone input remains legible without Safari zoom');

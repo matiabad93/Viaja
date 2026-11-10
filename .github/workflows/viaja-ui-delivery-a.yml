@@ -28,6 +28,7 @@ jobs:
           node --experimental-strip-types tests/community-trips.test.mts
           node --experimental-strip-types tests/collaborative-trips.test.mts
           node --experimental-strip-types tests/logistics.test.mts
+          node --experimental-strip-types tests/guided-planner-v2.test.mts
       - name: Build Cloudflare Pages output
         run: |
           npm run build:demo
@@ -48,6 +49,8 @@ jobs:
         run: node scripts/ui-polish-audit-smoke.mjs
       - name: Verify logistics workflow on phones, tablet and desktop
         run: node scripts/logistics-browser-smoke.mjs
+      - name: Verify guided planner Roma flow on phone, dark theme and desktop
+        run: node scripts/guided-planner-browser-smoke.mjs
       - name: Verify dark theme contrast and left-icon spacing
         run: node scripts/dark-mode-contrast-smoke.mjs
       - name: Verify new frontend really reached Cloudflare

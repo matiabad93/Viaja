@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 import {isAllowedApiOrigin,capacitorCorsOrigin} from '../server/origin-policy.ts';
 
 const url='https://viaja.pages.dev/api/private-documents/upload';
-const request=(origin)=>new Request(url,{method:'POST',headers:origin?{Origin:origin}:{}});
+const request=(origin:string|null)=>new Request(url,{method:'POST',headers:origin?{Origin:origin}:{}});
 for(const origin of ['https://viaja.pages.dev','https://localhost','capacitor://localhost']){
  assert.equal(isAllowedApiOrigin(request(origin)),true,'Trusted origin denied: '+origin);
 }

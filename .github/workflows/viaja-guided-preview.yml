@@ -1,0 +1,58 @@
+name: Viaja 2.0 — Guided Planner Preview QA
+on:
+  push:
+    branches: [feat/viaja-guided-planner-v2-20261104]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: viaja-guided-planner-preview
+  cancel-in-progress: true
+jobs:
+  guided-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # Cloudflare Pages already deploys preview branches directly from GitHub.
+    # CI only validates the branch and never needs Cloudflare credentials.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install frozen dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Types, shared tests and guided planner regression
+        run: |
+          set -euo pipefail
+          npx tsc --noEmit
+          npm run test:core
+          node --experimental-strip-types tests/guided-planner-v2.test.mts
+          node --check scripts/guided-planner-browser-smoke.mjs
+      - name: Build exact Viaja web client
+        run: |
+          npm run build:demo
+          test -s web-dist/index.html
+      - name: Install Chromium browser test runner
+        run: |
+          command -v google-chrome
+          npm install --prefix /tmp/viaja-ui-smoke --no-package-lock --no-audit --no-fund playwright@1.56.1
+      - name: Start compiled site locally
+        run: |
+          nohup npx vite preview --config vite.portable.config.ts --host 127.0.0.1 --port 4173 >/tmp/viaja-guided-preview.log 2>&1 &
+          for n in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/viaja-guided-preview.log
+          exit 1
+      - name: End-to-end guided planning on phone, dark theme and desktop
+        run: node scripts/guided-planner-browser-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Viaja-Guided-Planner-UX-QA
+          path: artifacts/guided-planner-v2/
+          retention-days: 7
+          if-no-files-found: ignore
