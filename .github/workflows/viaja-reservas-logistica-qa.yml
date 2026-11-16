@@ -51,6 +51,11 @@ jobs:
         run: node scripts/reservations-browser-smoke.mjs
       - name: QA navegador y móvil simulado - logística
         run: node scripts/logistics-browser-smoke.mjs
+      - name: QA integral de etapas 1 a 6
+        run: |
+          node scripts/guided-planner-browser-smoke.mjs
+          node scripts/trip-list-browser-smoke.mjs
+          node scripts/ui-polish-audit-smoke.mjs
       - name: Capturas de QA
         if: always()
         uses: actions/upload-artifact@v4
@@ -59,5 +64,8 @@ jobs:
           path: |
             artifacts/reservations-c/
             artifacts/logistics-b/
+            artifacts/guided-planner-v2/
+            artifacts/trip-list-ux/
+            artifacts/ui-delivery-a/polish/
           retention-days: 7
           if-no-files-found: ignore
