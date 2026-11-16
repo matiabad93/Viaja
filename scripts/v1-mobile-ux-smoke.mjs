@@ -43,6 +43,7 @@ try{
   await page.getByText('Puerta del Sol').first().waitFor({state:'visible'});
   await page.screenshot({path:'artifacts/v1-mobile-ux/'+viewport.name+'-madrid-guide.png'});
   await page.getByRole('button',{name:'Planificar'}).first().click();
+  await page.getByRole('button',{name:/Opciones avanzadas/}).click();
   const originCity=page.getByRole('combobox',{name:'Ciudad de salida'});
   assert.equal(await originCity.inputValue(),'','New trip leaves city of departure empty');
   const add=page.getByRole('button',{name:'Agregar otro destino'});
