@@ -52,7 +52,7 @@ export function TravelPassWallet({
       <span className="travel-pass-card-icon"><Icon size={21}/></span>
       <span className="travel-pass-card-type">{record.kind==='flight'?'Vuelo':record.kind==='accommodation'?'Alojamiento':'Billete / comprobante'}</span>
      </div>
-     <h3>{record.title||record.filename}</h3>
+     <strong className="travel-pass-card-title">{record.title||record.filename}</strong>
      <p className="travel-pass-card-route">{summary.route}</p>
      <dl className="travel-pass-facts">
       {summary.date&&<div><dt>{summary.dateLabel}</dt><dd>{dateForPeople(summary.date)}{summary.time?' · '+summary.time:''}</dd></div>}
