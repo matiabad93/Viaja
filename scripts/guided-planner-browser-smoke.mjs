@@ -90,6 +90,12 @@ try{
   await page.getByRole('button',{name:'Mapa',exact:true}).click();
   await page.getByRole('region',{name:'Mapa de Roma, Italia'}).waitFor();
   assert.ok(await page.getByRole('link',{name:/Abrir ruta en Google Maps/}).isVisible(),'Map alternative remains accessible');
+  await page.waitForFunction(()=>{
+   const map=document.querySelector('.viaja-osm-map[data-map-status="ready"]');
+   const fallback=document.querySelector('.viaja-map-section .error')?.textContent?.includes('mapa de fondo');
+   return Boolean(map||fallback);
+  },{timeout:20000});
+  assert.equal(await page.locator('.viaja-map-loading').count(),0,'Loading state must finish before presenting the map');
   await page.screenshot({path:'artifacts/guided-planner-v2/'+device.label+'-map.png',fullPage:true});
   await page.getByRole('button',{name:/Planificar/}).click();
   await page.getByRole('button',{name:/Opciones avanzadas/}).click();

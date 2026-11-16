@@ -159,6 +159,8 @@ body{font-size:15px;line-height:1.5}button,a,input,textarea,select{-webkit-tap-h
 .viaja-map-toolbar select{background:#fff;border:1px solid #cfdbcd;border-radius:9px;padding:11px;color:#234b3d}
 .viaja-map-toolbar a.secondary{min-height:45px}
 .viaja-osm-map{height:min(66vh,480px);min-height:300px;width:100%;border:1px solid #cddacb;border-radius:16px;overflow:hidden;background:#dce8dd;z-index:0}
+.viaja-map-frame{position:relative;min-width:0}
+.viaja-map-loading{position:absolute;z-index:500;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 18px;border-radius:100px;background:var(--surface,#fff);color:var(--text,#204c3d);box-shadow:0 4px 20px #102a2030;font-weight:650;white-space:nowrap;pointer-events:none}
 .viaja-map-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .viaja-map-stop{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #dce6da;border-radius:12px;padding:13px 15px;min-width:0}
 .viaja-map-stop-number{height:29px;width:29px;flex-shrink:0;display:grid;place-items:center;border-radius:50%;background:#e3eadc;color:#235544;font-size:12px;font-weight:800}

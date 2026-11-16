@@ -32,6 +32,8 @@ assert.deepEqual(itineraryOf(copied)[0].activities.map(a=>a.title),days[0].activ
 const mapSource=readFileSync(new URL('../components/trip-map.tsx',import.meta.url),'utf8');
 assert.ok(mapSource.includes('https://tiles.openfreemap.org/styles/liberty'));
 assert.ok(mapSource.includes('maplibreGL('));
+assert.ok(mapSource.includes("glMap.once('load'"),'The map must verify real vector rendering, not merely mount an empty canvas');
+assert.ok(mapSource.includes('Cargando mapa…'),'A slow map provider must show a visible loading state');
 assert.ok(!mapSource.includes('tile.openstreetmap.org/{z}/{x}/{y}.png'),'Do not depend on the blocked OSM volunteer raster endpoint');
 const headers=readFileSync(new URL('../public/_headers',import.meta.url),'utf8');
 assert.ok(headers.includes('Referrer-Policy: strict-origin-when-cross-origin'),'Map/geocoding services need an identifiable HTTPS origin');

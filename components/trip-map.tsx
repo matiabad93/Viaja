@@ -44,7 +44,7 @@ async function lookup(query:string):Promise<Coordinate|null>{
 }
 export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
  const element=useRef<HTMLDivElement>(null),map=useRef<MapInterface|null>(null),leaflet=useRef<LeafletApi|null>(null),generation=useRef(0);
- const [mapReady,setMapReady]=useState(false),[points,setPoints]=useState<DisplayPoint[]>([]),[missing,setMissing]=useState<string[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(''),[loadError,setLoadError]=useState(''),[loadAttempt,setLoadAttempt]=useState(0),[mode,setMode]=useState<'walking'|'driving'|'transit'>('walking');
+ const [mapReady,setMapReady]=useState(false),[mapVisualReady,setMapVisualReady]=useState(false),[points,setPoints]=useState<DisplayPoint[]>([]),[missing,setMissing]=useState<string[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(''),[loadError,setLoadError]=useState(''),[loadAttempt,setLoadAttempt]=useState(0),[mode,setMode]=useState<'walking'|'driving'|'transit'>('walking');
  const stops=mapStops(activities,trip.destination,trip.additionalDestinations);
  const fallback=trip.city&&pointValid(trip.city.latitude,trip.city.longitude)?{lat:trip.city.latitude,lon:trip.city.longitude}:null;
  const pinStops=useCallback(async()=>{
@@ -70,8 +70,10 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
  useEffect(()=>{
   let cancelled=false;
   setLoadError('');
+  setMapVisualReady(false);
   let observer:ResizeObserver|undefined;
   let frame=0,settledFrame=0;
+  let styleTimeout:ReturnType<typeof setTimeout>|undefined;
   const refreshSize=()=>{
    cancelAnimationFrame(frame);
    cancelAnimationFrame(settledFrame);
@@ -95,9 +97,18 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
     // without an API key. Do not call OSM's volunteer-run raster tile service.
     const base=maplibreGL({style:MAP_STYLE,attributionControl:false}).addTo(m);
     m.attributionControl?.addAttribution('<a href="https://openfreemap.org/" target="_blank" rel="noopener noreferrer">OpenFreeMap</a> · <a href="https://www.openmaptiles.org/" target="_blank" rel="noopener noreferrer">OpenMapTiles</a> · &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>');
-    base.getMaplibreMap().on('error',()=>{
-     if(!cancelled)setLoadError('No pudimos descargar el mapa de fondo. Podés abrir la ruta en Google Maps o reintentar.');
+    // A mounted Leaflet canvas is not proof that vector tiles have rendered.
+    // Wait for MapLibre's first complete load and explain persistent failures.
+    const glMap=base.getMaplibreMap();
+    let loaded=false;
+    glMap.once('load',()=>{
+     loaded=true;
+     if(styleTimeout)clearTimeout(styleTimeout);
+     if(!cancelled)setMapVisualReady(true);
     });
+    styleTimeout=setTimeout(()=>{
+     if(!cancelled&&!loaded)setLoadError('El mapa de fondo no respondió. Podés abrir la ruta en Google Maps o reintentar.');
+    },15000);
     if(!fallback){const center=readCache(trip.destination);if(center)m.setView([center.lat,center.lon],12)}
     // A tab opening, font/layout reflow or iPhone viewport change can
     // resize the container after Leaflet cached its original dimensions.
@@ -115,6 +126,7 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
    observer?.disconnect();
    cancelAnimationFrame(frame);
    cancelAnimationFrame(settledFrame);
+   if(styleTimeout)clearTimeout(styleTimeout);
    window.removeEventListener('resize',refreshSize);
    window.removeEventListener('pageshow',refreshSize);
    setMapReady(false);
@@ -141,7 +153,10 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
   </div>
   {error&&<p role="alert" className="error">{error}</p>}
   {loadError&&<div role="alert" className="error">{loadError} <button type="button" className="secondary" onClick={()=>setLoadAttempt(n=>n+1)}>Reintentar mapa</button></div>}
-  <div ref={element} className="viaja-osm-map" role="region" aria-label={'Mapa de '+trip.destination} style={{display:loadError?'none':undefined}}/>
+  <div className="viaja-map-frame" style={{display:loadError?'none':undefined}}>
+   <div ref={element} className="viaja-osm-map" role="region" aria-label={'Mapa de '+trip.destination} aria-busy={!mapVisualReady} data-map-status={mapVisualReady?'ready':'loading'}/>
+   {!mapVisualReady&&!loadError&&<div className="viaja-map-loading" role="status"><LoaderCircle size={20} className="spin"/> Cargando mapa…</div>}
+  </div>
   {loadError&&iframeSource&&<iframe className="viaja-osm-map" loading="lazy" title={'Mapa alternativo de '+trip.destination} src={iframeSource} referrerPolicy="no-referrer-when-downgrade"/>}
   <div className="viaja-map-list">{stops.map((stop,i)=><div key={stop.id} className="viaja-map-stop"><span className="viaja-map-stop-number">{i+1}</span><div><strong>{stop.title}</strong><small>{stop.time} · {stop.query}</small></div><a href={'https://www.google.com/maps/search/?'+new URLSearchParams({api:'1',query:stop.query})} target="_blank" rel="noopener noreferrer" aria-label={'Buscar '+stop.title+' en Google Maps'}><ExternalLink size={17}/></a></div>)}</div>
   {stops.length>MAX_STOPS&&<p className="subtle">Por respeto a los límites de geocodificación, se ubican hasta {MAX_STOPS} puntos por consulta. Podés abrir el resto individualmente en Google Maps.</p>}
