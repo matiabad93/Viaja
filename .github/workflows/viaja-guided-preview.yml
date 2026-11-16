@@ -11,9 +11,11 @@ concurrency:
 jobs:
   guided-preview:
     runs-on: ubuntu-24.04
+    environment: preview
     timeout-minutes: 30
-    # Cloudflare Pages already deploys preview branches directly from GitHub.
-    # CI only validates the branch and never needs Cloudflare credentials.
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.VIAJA_CF_PREVIEW_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.VIAJA_CF_PREVIEW_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -49,6 +51,21 @@ jobs:
           exit 1
       - name: End-to-end guided planning on phone, dark theme and desktop
         run: node scripts/guided-planner-browser-smoke.mjs
+      - name: Require isolated Cloudflare Preview credentials
+        if: github.ref_name == 'feat/ux-viaja-21-itinerarios-mapas-20261116'
+        run: |
+          [[ -n "${CLOUDFLARE_API_TOKEN:-}" && -n "${CLOUDFLARE_ACCOUNT_ID:-}" ]] || {
+            echo "::error::Missing preview credentials; no deployment performed"
+            exit 1
+          }
+      - name: Publish validated Phase 1 to feature preview only
+        if: github.ref_name == 'feat/ux-viaja-21-itinerarios-mapas-20261116'
+        run: |
+          npx wrangler pages deploy web-dist \
+            --project-name viaja \
+            --branch feat/ux-viaja-21-itinerarios-mapas-20261116 \
+            --commit-hash "$GITHUB_SHA" \
+            --commit-message "Viaja UX Phase 1: editorial stops and vector maps"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
