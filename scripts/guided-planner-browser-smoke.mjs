@@ -86,6 +86,7 @@ try{
   assert.ok(model.itinerary.every(d=>d.activities.length>=3),'Rome draft needs concrete stops on every day');
   assert.deepEqual(model.itinerary[0].activities.map(a=>a.title),['Coliseo','Foro Romano','Colina Capitolina','Piazza Venezia']);
   assert.ok(model.itinerary.every(d=>d.activities.every(a=>a.location&&!/^(Mañana|Tarde) en /i.test(a.title))),'No generic morning/afternoon placeholders');
+  await page.locator('.detail-tabs').getByRole('button',{name:'Itinerario'}).click();
   await page.getByRole('button',{name:'Mapa',exact:true}).click();
   await page.getByRole('region',{name:'Mapa de Roma, Italia'}).waitFor();
   assert.ok(await page.getByRole('link',{name:/Abrir ruta en Google Maps/}).isVisible(),'Map alternative remains accessible');
