@@ -57,6 +57,7 @@ export function TravelPassWallet({
      <dl className="travel-pass-facts">
       {summary.date&&<div><dt>{summary.dateLabel}</dt><dd>{dateForPeople(summary.date)}{summary.time?' · '+summary.time:''}</dd></div>}
       {summary.secondary&&<div><dt>Detalle</dt><dd>{summary.secondary}</dd></div>}
+      {summary.extraFacts.map(fact=><div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}
       {summary.reference&&<div className="travel-pass-reference"><dt>Localizador</dt><dd><span>{summary.reference}</span>
        <button type="button" className="travel-pass-copy" aria-label={'Copiar localizador de '+record.title} onClick={()=>void copyReference(summary.reference)}><ClipboardCopy size={16}/>Copiar</button></dd></div>}
      </dl>
@@ -68,6 +69,7 @@ export function TravelPassWallet({
   </div>
   {items.length>visible.length&&<p className="travel-pass-more">Mostramos primero las reservas más próximas. Encontrás las demás en la biblioteca.</p>}
   <p className="travel-pass-offline"><WifiOff size={17}/>¿Vas a estar sin internet? Abrí el billete y descargá el PDF en Archivos antes de salir. Los documentos privados no se guardan en el caché público de Viaja.</p>
+  <p className="travel-pass-more">Antes de embarcar, confirmá la terminal, la puerta y el asiento con la aerolínea: pueden cambiar.</p>
   {notice&&<p className="travel-pass-notice" role="status"><Check size={16}/>{notice}</p>}
   {viewing&&<ReservationPdfViewer reservation={viewing} onClose={()=>setViewing(null)}/>}
  </section>;
