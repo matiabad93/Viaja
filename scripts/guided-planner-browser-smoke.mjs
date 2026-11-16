@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {chromium} from '/tmp/viaja-ui-smoke/node_modules/playwright/index.mjs';
-const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']});
+const browser=await chromium.launch({headless:true,executablePath:process.env.VIAJA_BROWSER_BIN||'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']});
 await mkdir('artifacts/guided-planner-v2',{recursive:true});
 try{
  for(const device of [
@@ -83,7 +83,13 @@ try{
   assert.equal(model.trip.travelers,2,'Back to couple must reset party to exactly two');
   assert.equal(model.trip.preferences.dayTimes[0].start,'12:00');
   assert.equal(model.itinerary.length,3);
-  assert.ok(model.itinerary.every(d=>d.activities.length>0),'Rome draft must not start with empty days');
+  assert.ok(model.itinerary.every(d=>d.activities.length>=3),'Rome draft needs concrete stops on every day');
+  assert.deepEqual(model.itinerary[0].activities.map(a=>a.title),['Coliseo','Foro Romano','Colina Capitolina','Piazza Venezia']);
+  assert.ok(model.itinerary.every(d=>d.activities.every(a=>a.location&&!/^(Mañana|Tarde) en /i.test(a.title))),'No generic morning/afternoon placeholders');
+  await page.getByRole('button',{name:'Mapa',exact:true}).click();
+  await page.getByRole('region',{name:'Mapa de Roma, Italia'}).waitFor();
+  assert.ok(await page.getByRole('link',{name:/Abrir ruta en Google Maps/}).isVisible(),'Map alternative remains accessible');
+  await page.screenshot({path:'artifacts/guided-planner-v2/'+device.label+'-map.png',fullPage:true});
   await page.getByRole('button',{name:/Planificar/}).click();
   await page.getByRole('button',{name:/Opciones avanzadas/}).click();
   await page.getByRole('heading',{name:'Contanos tu próximo viaje'}).waitFor();

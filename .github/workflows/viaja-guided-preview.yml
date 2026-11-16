@@ -1,7 +1,7 @@
 name: Viaja 2.0 — Guided Planner Preview QA
 on:
   push:
-    branches: [feat/viaja-guided-planner-v2-20261104]
+    branches: [feat/viaja-guided-planner-v2-20261104, feat/ux-viaja-21-itinerarios-mapas-20261116]
   workflow_dispatch:
 permissions:
   contents: read

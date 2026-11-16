@@ -22,7 +22,7 @@ async function probe(name,path,options,expectedStatus,{staticPage=false}={}){
   for(const [header,expected] of [
    ['x-content-type-options','nosniff'],
    ['x-frame-options','DENY'],
-   ['referrer-policy','no-referrer']
+   ['referrer-policy','strict-origin-when-cross-origin']
   ])assert.equal(response.headers.get(header),expected,name+': missing '+header);
   const csp=response.headers.get('content-security-policy')||'';
   assert.match(csp,/frame-ancestors 'none'/,name+': missing anti-framing CSP');

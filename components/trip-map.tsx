@@ -3,6 +3,8 @@ import {useCallback,useEffect,useRef,useState} from 'react';
 import {MapPin,Navigation,ExternalLink,LoaderCircle,AlertCircle} from 'lucide-react';
 import type * as Leaflet from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import type {Activity,Trip} from '../lib/travel.ts';
 import {mapBounds,mapRouteUrl,mapStops,pointValid} from '../lib/map-helpers.ts';
 
@@ -10,12 +12,18 @@ type Coordinate={lat:number;lon:number};
 type DisplayPoint={id:string;title:string;time:string;coordinate:Coordinate};
 type MapInterface=Leaflet.Map;
 type LeafletApi=typeof import('leaflet');
+type MaplibreLayerFactory=typeof import('@maplibre/maplibre-gl-leaflet').maplibreGL;
 const MAX_STOPS=6;
-let leafletPromise:Promise<LeafletApi>|null=null;
-function ensureLeaflet():Promise<LeafletApi>{
- if(leafletPromise)return leafletPromise;
- leafletPromise=import('leaflet').then(module=>module.default).catch(e=>{leafletPromise=null;throw e});
- return leafletPromise;
+const MAP_STYLE='https://tiles.openfreemap.org/styles/liberty';
+let mapModulesPromise:Promise<{L:LeafletApi;maplibreGL:MaplibreLayerFactory}>|null=null;
+function ensureMapModules(){
+ if(mapModulesPromise)return mapModulesPromise;
+ mapModulesPromise=Promise.all([import('leaflet'),import('maplibre-gl'),import('@maplibre/maplibre-gl-leaflet')])
+  .then(([leaflet,libre,plugin])=>{
+   libre.setWorkerUrl(workerUrl);
+   return {L:leaflet.default,maplibreGL:plugin.maplibreGL};
+  }).catch(e=>{mapModulesPromise=null;throw e});
+ return mapModulesPromise;
 }
 const safeText=(s:string)=>s.replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]||ch));
 const wait=(ms:number)=>new Promise<void>(resolve=>setTimeout(resolve,ms));
@@ -76,14 +84,20 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
   if(!element.current)return;
   (async()=>{
    try{
-    const L=await ensureLeaflet();if(cancelled||!element.current)return;
+    const {L,maplibreGL}=await ensureMapModules();if(cancelled||!element.current)return;
     leaflet.current=L;
     if(map.current){map.current.remove();map.current=null}
     const initial=fallback?[fallback.lat,fallback.lon] as [number,number]:[45,9] as [number,number];
     const m=L.map(element.current,{zoomAnimation:false}).setView(initial,fallback?11:4);
     map.current=m;
     setMapReady(true);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>',maxZoom:19}).addTo(m);
+    // OpenFreeMap's public vector style supports published web/mobile applications
+    // without an API key. Do not call OSM's volunteer-run raster tile service.
+    const base=maplibreGL({style:MAP_STYLE,attributionControl:false}).addTo(m);
+    m.attributionControl?.addAttribution('<a href="https://openfreemap.org/" target="_blank" rel="noopener noreferrer">OpenFreeMap</a> · <a href="https://www.openmaptiles.org/" target="_blank" rel="noopener noreferrer">OpenMapTiles</a> · &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>');
+    base.getMaplibreMap().on('error',()=>{
+     if(!cancelled)setLoadError('No pudimos descargar el mapa de fondo. Podés abrir la ruta en Google Maps o reintentar.');
+    });
     if(!fallback){const center=readCache(trip.destination);if(center)m.setView([center.lat,center.lon],12)}
     // A tab opening, font/layout reflow or iPhone viewport change can
     // resize the container after Leaflet cached its original dimensions.
@@ -132,6 +146,6 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
   <div className="viaja-map-list">{stops.map((stop,i)=><div key={stop.id} className="viaja-map-stop"><span className="viaja-map-stop-number">{i+1}</span><div><strong>{stop.title}</strong><small>{stop.time} · {stop.query}</small></div><a href={'https://www.google.com/maps/search/?'+new URLSearchParams({api:'1',query:stop.query})} target="_blank" rel="noopener noreferrer" aria-label={'Buscar '+stop.title+' en Google Maps'}><ExternalLink size={17}/></a></div>)}</div>
   {stops.length>MAX_STOPS&&<p className="subtle">Por respeto a los límites de geocodificación, se ubican hasta {MAX_STOPS} puntos por consulta. Podés abrir el resto individualmente en Google Maps.</p>}
   {missing.length>0&&<p className="subtle"><AlertCircle size={14}/> No se pudieron localizar: {missing.join(', ')}. Podés corregir las ubicaciones en Itinerario.</p>}
-  <p className="viaja-map-attribution">Mapa: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>. Ubicaciones: <a href="https://nominatim.org/" target="_blank" rel="noopener noreferrer">Nominatim</a>, bajo demanda y con caché local. El mapa no calcula tiempos de desplazamiento ni rutas automáticamente.</p>
+  <p className="viaja-map-attribution">Mapa: <a href="https://openfreemap.org/" target="_blank" rel="noopener noreferrer">OpenFreeMap</a> y <a href="https://www.openmaptiles.org/" target="_blank" rel="noopener noreferrer">OpenMapTiles</a>, con datos de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>. Ubicaciones: <a href="https://nominatim.org/" target="_blank" rel="noopener noreferrer">Nominatim</a>, bajo demanda y con caché local. El mapa no calcula tiempos de desplazamiento ni rutas automáticamente.</p>
  </section>;
 }

@@ -5,14 +5,14 @@ import {ThemeSwitcher} from '../components/theme/theme-switcher';
 import {cloudReady,restoreAuth,subscribeAuth,getCurrentSession,accessToken,listCloudTrips,saveCloudTrip,deleteCloudTrip,type ViajaSession} from '../lib/supabase-client';
 import {TripStopsEditor} from '../components/trip-stops-editor';
 import {GuidedPlanner} from '../components/guided-planner';
-import {createEditorialStarter} from '../lib/guide-starter';
+import {createEditorialStarter,createGuideItinerary,guideDestination} from '../lib/guide-starter';
+import type {Guide} from '../lib/curated-guides';
 import {travelerGroupError,type TravelWith} from '../lib/travel-preferences';
 import {DestinationSearch} from '../components/destination-search';
 import {cityLabel} from '../lib/city-suggestions';
 import {reviewItineraryFeasibility} from '../lib/trip-feasibility';
 import {TripDateRange} from '../components/trip-date-range';
 import {todayLocal,isoFromDate} from '../lib/date-range';
-import {parisDemo} from '../lib/demo-plan';
 import {newId,backup} from '../lib/travel';
 import {useEffect,useState,useRef,Fragment} from 'react';
 import {ArrowUpRight,ArrowRight,MapPin,Compass,CalendarDays,Users,Wallet,Bookmark,Globe,Check,Link2,ChevronRight,Download,LoaderCircle,Plus,TrainFront,BookOpen,Sparkles,RotateCcw,Ticket} from 'lucide-react';
@@ -135,6 +135,15 @@ const save=(p:Plan)=>{
  catch{setError('No pudimos guardar los cambios. Exportá el viaje para conservarlo.');return false}
 };
 const openTrip=(p:Plan,edit=false)=>{setRemoteChanges(false);setResult(p);setTrip(p.trip);setEditingTrip(edit);setTab('detail');setError('');setMessage('');window.scrollTo(0,0)};
+const useGuide=(guide:Guide)=>{
+ const p:Plan={
+  id:newId(),trip:{...empty,destination:guideDestination(guide),notes:'Itinerario editorial de '+guide.days.length+' días. Adaptar a las fechas del viaje.'},
+  kind:'draft',createdAt:new Date().toISOString(),
+  itinerary:createGuideItinerary(guide,guide.days.length),
+  sources:guide.sources.map(url=>({url,title:'Fuente de la guía'}))
+ };
+ if(save(p)){openTrip(p);setMessage('Guía copiada a Mis viajes. Podés editar las actividades, agregar fechas y consultar horarios oficiales.');}
+};
 const newTrip=()=>{setPlannerMode('guided');setResult(null);setTrip({...empty});setTab('planner');setMessage('');setError('');window.scrollTo(0,0)};
 const deleteTrip=(p:Plan)=>{setPendingDeletion(p)};
 const requestPublish=(p:Plan)=>{
@@ -203,8 +212,8 @@ const exportPlan=(p:Plan)=>{const data=`# Viaja · ${p.trip.destination}\n\n${p.
 return <><a className="skip-link" href="#main-content">Saltar al contenido</a><header className="topbar"><a href="/" className="logo">viaja<span>.</span></a><nav aria-label="Navegación principal"><button className={tab==='planner'?'navactive':''} onClick={()=>{setTab('planner');setError('');window.scrollTo(0,0)}}><Compass size={16}/>Planificar</button><button className={tab==="guides"?"navactive":""} onClick={()=>showGuide()}><Globe size={16}/>Explorar destinos</button><button className={tab==='saved'||tab==='detail'?'navactive':''} onClick={()=>{setTab('saved');window.scrollTo(0,0)}}><Bookmark size={16}/>Mis viajes <small>{plans.length}</small></button><button className={tab==='reservations'?'navactive':''} onClick={()=>{setReservationsTripFilter(null);setTab('reservations');setError('');window.scrollTo(0,0)}}><Ticket size={16}/>Reservas</button>{admin&&<button className={tab==="admin"?"navactive":""} onClick={()=>setTab("admin")}>Administración</button>}</nav><div className="header-actions"><ThemeSwitcher/><AccountControl session={session} onReload={reloadAccount} onError={setError}/></div></header><main id="main-content"><div className="global-feedback">{invitationToken&&!invitationDone&&<div className="team-invitation-banner" role="status"><Users size={19}/><span>{session?'Estamos comprobando tu invitación privada.':'Te invitaron a planificar un viaje en equipo. Iniciá sesión o registrate para aceptarla.'}</span></div>}{remoteChanges&&tab==='detail'&&currentTrip&&<div className="team-refresh-warning" role="status"><RotateCcw size={18}/><span>Hay cambios nuevos de otro colaborador. Descargá una copia si editaste algo antes de actualizar.</span><button type="button" className="secondary" onClick={()=>backup(currentTrip)}>Guardar copia</button><button type="button" className="primary" onClick={()=>void refreshActiveTrip()}>Ver últimos cambios</button></div>}{error&&<div role="alert" className="error">{error}</div>}{message&&<div role="status" className="message">{message}<button aria-label="Cerrar notificación" onClick={()=>setMessage('')}>×</button></div>}</div>
 {!authLoaded?<p role="status" className="message">Comprobando tu sesión…</p>:tab==='detail'&&currentTrip?<TripDetail key={currentTrip.id} plan={currentTrip} authenticated={Boolean(session)} onOpenReservations={()=>{setReservationsTripFilter(currentTrip.id);setTab('reservations');window.scrollTo(0,0)}} initialEdit={editingTrip} onChange={p=>{if(save(p)){setResult(p);setTrip(p.trip);return true}return false}} onRefresh={refreshActiveTrip} onError={setError} onBack={()=>{setTab('saved');window.scrollTo(0,0)}} onAI={p=>{setTrip({...p.trip,adjustment:('Itinerario actual: '+itineraryOf(p).map((d,i)=>'Día '+(i+1)+': '+d.activities.map(a=>a.title).join(', ')).join('; ')).slice(0,650)+'\nCambios que quiero: '});setResult(p);setPlannerMode('advanced');setTab('planner')}} onDelete={()=>deleteTrip(currentTrip)} onPublish={requestPublish} onUnpublish={setPendingUnpublish} publishedId={publicationIds[currentTrip.id]} publicationBusy={publicationBusy} report={currentTrip.parts?.map((part,i)=><Citations key={i} part={part}/>)}/>:tab==='reservations'?<ReservationsCenter session={session} plans={plans} onOpenTrip={p=>openTrip(p)} onError={setError} focusTripId={reservationsTripFilter}/>:tab==='guides'?<section className="explore-all">
 <div className="explore-switch" role="group" aria-label="Explorar destinos"><button type="button" aria-pressed={exploreMode==='community'} className={exploreMode==='community'?'active':''} onClick={()=>setExploreMode('community')}>Viajes compartidos</button><button type="button" aria-pressed={exploreMode==='guides'} className={exploreMode==='guides'?'active':''} onClick={()=>setExploreMode('guides')}>Guías de Viaja</button></div>
-{exploreMode==='community'?<CommunityTrips onUse={copyCommunityTrip} initialId={sharedLinkId||undefined}/>:<Guides key={tab+'-'+guideNavigationId} initialGuideId={tab==='guides'?guideTarget||undefined:undefined} admin={false} onUse={g=>{if(g.id==='paris'){const demo=parisDemo(empty);if(save(demo))openTrip(demo);return}const p:Plan={id:newId(),trip:{...empty,destination:g.title,notes:'Itinerario editorial de 3 días. Adaptar a las fechas del viaje.'},kind:'draft',createdAt:new Date().toISOString(),parts:g.days.map((d,i)=>({text:'Día '+(i+1)+'\n'+d,annotations:[]})),sources:g.sources.map(url=>({url,title:'Fuente de la guía'}))};if(save(p))openTrip(p)}}/>}
-</section>:tab==='admin'?<Guides key={tab+'-'+guideNavigationId} initialGuideId={undefined} admin={admin} onUse={g=>{if(g.id==='paris'){const demo=parisDemo(empty);if(save(demo))openTrip(demo);return}const p:Plan={id:newId(),trip:{...empty,destination:g.title,notes:'Itinerario editorial de 3 días. Adaptar a las fechas del viaje.'},kind:'draft',createdAt:new Date().toISOString(),parts:g.days.map((d,i)=>({text:'Día '+(i+1)+'\n'+d,annotations:[]})),sources:g.sources.map(url=>({url,title:'Fuente de la guía'}))};if(save(p))openTrip(p)}}/>:tab==='planner'?<>{plannerMode==='guided'?<GuidedPlanner
+{exploreMode==='community'?<CommunityTrips onUse={copyCommunityTrip} initialId={sharedLinkId||undefined}/>:<Guides key={tab+'-'+guideNavigationId} initialGuideId={tab==='guides'?guideTarget||undefined:undefined} admin={false} onUse={useGuide}/>}
+</section>:tab==='admin'?<Guides key={tab+'-'+guideNavigationId} initialGuideId={undefined} admin={admin} onUse={useGuide}/>:tab==='planner'?<>{plannerMode==='guided'?<GuidedPlanner
  trip={trip} onChange={next=>{setTrip(next);setSaved(false)}} onManual={saveDraft}
  onGenerate={()=>generate({preventDefault(){}} as React.FormEvent<HTMLFormElement>)}
  onAdvanced={()=>{setPlannerMode('advanced');setError('');window.scrollTo(0,0)}}
