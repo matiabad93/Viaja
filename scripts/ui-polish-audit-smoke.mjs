@@ -101,9 +101,9 @@ try{
    await selected(page.locator('.topbar nav button.navactive'),'Main selected nav',theme);
    const journeyTabs=page.locator('.journey-toolbar .filterpills');
    await selected(journeyTabs.locator('button[aria-pressed="true"]'),'Journey filter',theme);
-   await journeyTabs.getByRole('button',{name:'Próximo'}).click();
+   await journeyTabs.getByRole('button',{name:/^Próximo/}).click();
    await selected(journeyTabs.locator('button[aria-pressed="true"]'),'Journey upcoming',theme);
-   await journeyTabs.getByRole('button',{name:'Todos'}).click();
+   await journeyTabs.getByRole('button',{name:/^Todos/}).click();
    await selected(journeyTabs.locator('button[aria-pressed="true"]'),'Journey all',theme);
    await take(page,device.name,theme,'my-trips');
 

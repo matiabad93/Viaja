@@ -2395,3 +2395,31 @@ html[data-theme="dark"] .home-shortcut-action{color:#b4e3c3}
  .home-shortcut{min-height:0;padding:20px;gap:10px}
  .home-shortcut>p{min-height:0}
 }
+/* UX phase 4 — trip discovery with prioritised dates, accessible sorting and clear filters. */
+.journey-toolbar-v2{flex-direction:column;align-items:stretch;gap:16px;border-bottom:0;padding:6px 0 12px}
+.journey-toolbar-v2 .searchbox{max-width:none;width:100%;flex:none;min-height:50px}
+.journey-toolbar-v2 .searchbox input{min-height:48px;font-size:15px}
+.journey-toolbar-controls{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.journey-toolbar-v2 .filterpills{display:flex;gap:7px;align-items:center;flex-wrap:wrap;min-width:0}
+.journey-toolbar-v2 .filterpills button{display:inline-flex;align-items:center;gap:7px;min-height:42px;border:1px solid var(--line);background:var(--surface,#fff);color:var(--ink);font-weight:600;padding:7px 11px}
+.journey-toolbar-v2 .filterpills button[aria-pressed=true]{border-color:#7eaf90;background:#e5efe5;color:#18452e;box-shadow:inset 0 0 0 1px #7eaf90}
+.journey-filter-count{display:inline-grid;place-items:center;min-width:23px;padding:2px 6px;background:#edf3eb;border-radius:25px;color:#365847;font-size:11px;font-variant-numeric:tabular-nums}
+.journey-toolbar-v2 .filterpills button[aria-pressed=true] .journey-filter-count{background:#cfdfd0;color:#18452e}
+.journey-sort{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
+.journey-sort select{min-height:44px;min-width:170px;border:1px solid var(--line);border-radius:10px;padding:9px 28px 9px 12px;margin:0;background:var(--surface,#fff);color:var(--ink);font:inherit}
+.journey-results{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--muted);font-size:13px;padding:3px 0;min-height:32px}
+.journey-clear{color:var(--green,#246045);font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px;min-height:40px;padding:5px 8px}
+.journey-card .journey-open-button{color:#1f5a40;font-weight:750;padding:8px 12px;border-radius:9px;background:#e5efe5;white-space:nowrap}
+.journey-card .journey-open-button:hover,.journey-card .journey-open-button:focus-visible{background:#d3e5d7}
+html[data-theme="dark"] .journey-toolbar-v2 .filterpills button[aria-pressed=true]{background:#334d3d;color:#edf6eb;border-color:#8cba9a}
+html[data-theme="dark"] .journey-filter-count{background:#314a3d;color:#e8f5e7}
+html[data-theme="dark"] .journey-toolbar-v2 .filterpills button[aria-pressed=true] .journey-filter-count{background:#486b51;color:#fff}
+html[data-theme="dark"] .journey-card .journey-open-button{background:#304e3e;color:#eaf9ed}
+html[data-theme="dark"] .journey-card .journey-open-button:hover{background:#3c644e}
+@media(max-width:700px){
+ .journey-toolbar-controls{align-items:stretch;flex-direction:column;gap:12px}
+ .journey-toolbar-v2 .filterpills{width:100%;flex-wrap:nowrap;overflow-x:auto;padding:4px 1px 9px;scrollbar-width:thin}
+ .journey-toolbar-v2 .filterpills button{flex-shrink:0}
+ .journey-sort{justify-content:space-between}
+ .journey-results{align-items:flex-start;flex-wrap:wrap}
+}

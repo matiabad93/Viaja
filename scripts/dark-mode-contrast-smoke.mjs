@@ -120,6 +120,7 @@ try{
   await page.screenshot({path:'artifacts/ui-delivery-a/dark-fixes/'+device.label+'-my-trips.png',fullPage:true});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)<=1,'No horizontal overflow');
   await page.getByRole('button',{name:'Planificar',exact:true}).click();
+  await page.getByRole('button',{name:/Opciones avanzadas/}).click();
   const example=page.getByRole('button',{name:'Probar con Madrid'});
   const readable=async(locator,background=locator)=>{
    const fg=await locator.evaluate(el=>getComputedStyle(el).color);

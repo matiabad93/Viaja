@@ -28,6 +28,7 @@ jobs:
           npm run test:core
           node --experimental-strip-types tests/guided-planner-v2.test.mts
           node --check scripts/guided-planner-browser-smoke.mjs
+          node --check scripts/trip-list-browser-smoke.mjs
       - name: Build exact Viaja web client
         run: |
           npm run build:demo
@@ -47,12 +48,16 @@ jobs:
           exit 1
       - name: End-to-end guided planning on phone, dark theme and desktop
         run: node scripts/guided-planner-browser-smoke.mjs
+      - name: Verify trip list discovery and sorting on phone and desktop
+        run: node scripts/trip-list-browser-smoke.mjs
       # Cloudflare Pages' GitHub integration deploys preview branches automatically.
       # This workflow validates the branch without requiring deployment credentials.
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: Viaja-Guided-Planner-UX-QA
-          path: artifacts/guided-planner-v2/
+          path: |
+            artifacts/guided-planner-v2/
+            artifacts/trip-list-ux/
           retention-days: 7
           if-no-files-found: ignore
