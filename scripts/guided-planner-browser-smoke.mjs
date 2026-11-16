@@ -15,7 +15,13 @@ try{
   const page=await ctx.newPage();
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
-  await page.getByRole('button',{name:/Planificar/}).click();
+  await page.getByRole('heading',{name:'Todo gran viaje empieza con una idea.'}).waitFor();
+  assert.ok(await page.getByRole('button',{name:/Planificar un viaje/}).isVisible(),'Guest sees immediate plan CTA');
+  await page.screenshot({path:'artifacts/guided-planner-v2/'+device.label+'-home.png',fullPage:true});
+  await page.locator('.home-shortcuts .home-shortcut').nth(1).click();
+  await page.getByRole('heading',{name:'Guías para explorar'}).waitFor();
+  await page.getByRole('button',{name:'Inicio',exact:true}).click();
+  await page.getByRole('button',{name:/Planificar un viaje/}).click();
   await page.getByRole('heading',{name:'¿A dónde te gustaría viajar?'}).waitFor();
   assert.equal(await page.getByRole('button',{name:/Opciones avanzadas/}).count(),1);
   await page.screenshot({path:'artifacts/guided-planner-v2/'+device.label+'-step1.png',fullPage:true});
@@ -97,6 +103,11 @@ try{
   },{timeout:20000});
   assert.equal(await page.locator('.viaja-map-loading').count(),0,'Loading state must finish before presenting the map');
   await page.screenshot({path:'artifacts/guided-planner-v2/'+device.label+'-map.png',fullPage:true});
+  await page.getByRole('button',{name:'Inicio',exact:true}).click();
+  await page.getByRole('button',{name:/Abrir este viaje/}).waitFor();
+  assert.match(await page.locator('.home-featured').innerText(),/Roma, Italia/,'Home highlights the recently created trip');
+  await page.getByRole('button',{name:/Abrir este viaje/}).click();
+  await page.getByRole('button',{name:/Itinerario/}).first().waitFor();
   await page.getByRole('button',{name:/Planificar/}).click();
   await page.getByRole('button',{name:/Opciones avanzadas/}).click();
   await page.getByRole('heading',{name:'Contanos tu próximo viaje'}).waitFor();
@@ -143,8 +154,8 @@ try{
  await signedPage.getByRole('button',{name:'Opciones de mi cuenta'}).waitFor();
  await signedPage.getByRole('button',{name:'Administración'}).waitFor();
  const nav=signedPage.locator('.topbar nav button');
- assert.equal(await nav.count(),5,'Signed-in fixture must show 5 tabs');
- for(let i=0;i<5;i++){
+ assert.equal(await nav.count(),6,'Signed-in fixture must show 6 tabs');
+ for(let i=0;i<6;i++){
   const button=nav.nth(i);
   const box=()=>button.evaluate(el=>({w:Math.round(el.getBoundingClientRect().width),h:Math.round(el.getBoundingClientRect().height)}));
   const initial=await box();

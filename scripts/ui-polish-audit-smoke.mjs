@@ -77,6 +77,7 @@ try{
    await page.goto(BASE,{waitUntil:'domcontentloaded'});
    await page.getByRole('button',{name:/Apariencia:/}).waitFor();
    await page.waitForFunction(expected=>document.documentElement.dataset.theme===expected,theme);
+   await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:'Explorar destinos'}).click();
 
    // Destination sub-navigation and the editorial guide day tabs.
    const switcher=page.locator('.explore-switch');
