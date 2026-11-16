@@ -1,0 +1,63 @@
+name: Viaja etapa 6 - Reservas y logística QA
+on:
+  push:
+    branches:
+      - feat/ux-viaja-22-reservas-logistica-20261117
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: viaja-reservas-logistica-qa
+  cancel-in-progress: true
+jobs:
+  reservas:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Dependencias bloqueadas
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Tipos y pruebas de reservas y logística
+        run: |
+          set -euo pipefail
+          npx tsc --noEmit
+          npm run test:core
+          node --experimental-strip-types tests/reservation-library.test.mts
+          node --experimental-strip-types tests/logistics.test.mts
+          node --experimental-strip-types tests/trip-documents.test.mts
+      - name: Compilar app web
+        run: |
+          npm run build:demo
+          test -s web-dist/index.html
+      - name: Instalar navegador para pruebas
+        run: |
+          command -v google-chrome
+          npm install --prefix /tmp/viaja-ui-smoke --no-package-lock --no-audit --no-fund playwright@1.56.1
+      - name: Abrir app compilada
+        run: |
+          nohup npx vite preview --config vite.portable.config.ts --host 127.0.0.1 --port 4173 >/tmp/viaja-reservas-preview.log 2>&1 &
+          for n in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/viaja-reservas-preview.log
+          exit 1
+      - name: QA navegador y móvil simulado - reservas
+        run: node scripts/reservations-browser-smoke.mjs
+      - name: QA navegador y móvil simulado - logística
+        run: node scripts/logistics-browser-smoke.mjs
+      - name: Capturas de QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Viaja-Etapa6-Reservas-QA
+          path: |
+            artifacts/reservations-c/
+            artifacts/logistics-b/
+          retention-days: 7
+          if-no-files-found: ignore
