@@ -9,6 +9,7 @@ export type WalletSummary = {
  dateLabel: string;
  route: string;
  secondary: string;
+ extraFacts: Array<{label:string;value:string}>;
  reference: string;
  sortGroup: number;
 };
@@ -20,7 +21,7 @@ function validDate(value: string): string {
  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === day ? day : '';
 }
 
-type Event = {date:string;time:string;dateLabel:string;route:string;secondary:string};
+type Event = {date:string;time:string;dateLabel:string;route:string;secondary:string;extraFacts:Array<{label:string;value:string}>};
 
 export function reservationWalletSummary(
  item: ReservationFile,
@@ -35,7 +36,12 @@ export function reservationWalletSummary(
    date, time: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(flight.departureAt)?flight.departureAt.slice(11,16):'',
    dateLabel:'Salida',
    route:[flight.origin,flight.destination].filter(Boolean).join(' → ')||flight.company||item.title||item.filename,
-   secondary:[flight.company,flight.serviceNumber].filter(Boolean).join(' · ')
+   secondary:[flight.company,flight.serviceNumber].filter(Boolean).join(' · '),
+   extraFacts:[
+    {label:'Terminal',value:flight.terminal||''},
+    {label:'Puerta',value:flight.gate||''},
+    {label:'Asiento',value:flight.seat||''}
+   ].filter(fact=>fact.value)
   });
  }
  const lodging = details.lodging;
@@ -44,7 +50,7 @@ export function reservationWalletSummary(
   if(date)events.push({
    date,time:'',dateLabel:'Check-in',
    route:[lodging.name,lodging.city].filter(Boolean).join(' · ')||item.title||item.filename,
-   secondary:lodging.address||lodging.provider
+   secondary:lodging.address||lodging.provider,extraFacts:[]
   });
  }
  // Upcoming events first; if all dates passed, highlight the most recent event.
@@ -58,7 +64,7 @@ export function reservationWalletSummary(
   details.provider||item.title||item.filename;
  return {
   date:selected?.date||'',time:selected?.time||'',dateLabel:selected?.dateLabel||'',
-  route,secondary:selected?.secondary||details.provider||'',
+  route,secondary:selected?.secondary||details.provider||'',extraFacts:selected?.extraFacts||[],
   reference:details.bookingReference||'',
   sortGroup:future.length?0:selected?2:1
  };
