@@ -28,7 +28,7 @@ try{
   const page=await ctx.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base,{waitUntil:'domcontentloaded'});
-  await page.getByRole('button',{name:/Mis viajes/}).click();
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:/Mis viajes/}).click();
   await page.getByRole('button',{name:'Ver viaje →'}).click();
   const tabs=page.getByRole('navigation',{name:'Secciones del viaje'});
   assert.equal(await tabs.getByRole('button').count(),5,'Five trip tabs expected');
@@ -81,7 +81,7 @@ try{
   assert.equal(beforeReload.logistics?.accommodations?.length,1,'Accommodation must be persisted before reload');
   assert.equal(beforeReload.logistics?.transports?.length,1,'Transport must be persisted before reload');
   await page.reload({waitUntil:'domcontentloaded'});
-  await page.getByRole('button',{name:/Mis viajes/}).click();
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:/Mis viajes/}).click();
   await page.getByRole('button',{name:'Ver viaje →'}).click();
   await page.getByRole('navigation',{name:'Secciones del viaje'}).getByRole('button',{name:'Logística'}).click();
   await page.getByRole('heading',{name:'Hotel Noël'}).waitFor({state:'visible',timeout:10000});
@@ -123,7 +123,7 @@ try{
    localStorage.setItem('viaja-ai-trips-v1',JSON.stringify(trips));
   });
   await page.reload({waitUntil:'domcontentloaded'});
-  await page.getByRole('button',{name:/Mis viajes/}).click();
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:/Mis viajes/}).click();
   await page.getByRole('button',{name:'Ver viaje →'}).click();
   await page.getByRole('navigation',{name:'Secciones del viaje'}).getByRole('button',{name:'Logística'}).click();
   assert.ok(await page.getByRole('heading',{name:'Hotel Noël revisado'}).isVisible());

@@ -44,7 +44,7 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base,{waitUntil:'domcontentloaded'});
   await page.getByRole('button',{name:/Apariencia:/}).waitFor();
-  await page.getByRole('button',{name:/Planificar/}).click();
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:/Planificar/}).click();
   await page.getByRole('button',{name:/Opciones avanzadas/}).click();
   await page.getByRole('heading',{name:'Contanos tu próximo viaje'}).waitFor();
   await inset(page.locator('.formcard'),page.locator('.formcard .formtitle'));
@@ -104,7 +104,7 @@ try{
    return {target:{x:t.x,y:t.y,width:t.width,height:t.height},theme:{x:m.x,y:m.y,width:m.width,height:m.height},nav:{y:navRect.y,height:navRect.height,position:navCSS.position,top:navCSS.top,bottom:navCSS.bottom,display:navCSS.display},header:{transform:headerCSS.transform,filter:headerCSS.filter,backdrop:headerCSS.backdropFilter,position:headerCSS.position},viewport:window.innerHeight,interceptor:hit?.outerHTML?.slice(0,150),scrollY:window.scrollY};
   });
   console.log('NAV_DIAG '+device.label+': '+JSON.stringify(navDebug));
-  await page.getByRole('button',{name:/Mis viajes/}).click({timeout:5000});
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:/Mis viajes/}).click({timeout:5000});
   const search=page.getByRole('textbox',{name:'Buscar mis viajes'});
   await search.waitFor();
   await inset(page.locator('.journey-content').first(),page.locator('.journey-content h2').first());
@@ -165,7 +165,7 @@ try{
    await control.click();
   }
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)<=1,'Guide map overflows viewport');
-  await page.getByRole('button',{name:/Mis viajes/}).first().click();
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:/Mis viajes/}).click();
   const badge=page.locator('.topbar nav small');
   assert.equal(await badge.innerText(),'1');
   assert.ok(await badge.isVisible());
@@ -196,7 +196,7 @@ try{
   assert.ok(contrast(amountField.fg,amountField.bg)>=4.5);
   assert.equal(amountField.bg,colors.darkField);
   await page.screenshot({path:'artifacts/ui-delivery-a/dark-fixes/'+device.label+'-expenses.png'});
-  await page.getByRole('button',{name:'Explorar destinos'}).click();
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:'Explorar destinos'}).click();
   for(const name of ['Guías de Viaja','Viajes compartidos']){
    const choice=page.getByRole('button',{name,exact:true});
    await choice.click();

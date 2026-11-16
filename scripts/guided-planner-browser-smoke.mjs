@@ -32,6 +32,25 @@ try{
   assert.equal(await dest.inputValue(),'Roma, Italia');
   await page.getByRole('button',{name:/Continuar/}).click();
   await page.getByRole('heading',{name:'¿Qué te gusta hacer?'}).waitFor();
+  await page.waitForFunction(()=>Boolean(localStorage.getItem('viaja-guided-planner-draft-v1')));
+  await page.getByRole('button',{name:'Inicio',exact:true}).click();
+  await page.getByRole('button',{name:/Continuar planificación/}).click();
+  await page.getByRole('heading',{name:'¿Qué te gusta hacer?'}).waitFor();
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.getByRole('button',{name:/Continuar planificación/}).click();
+  await page.getByRole('heading',{name:'¿Qué te gusta hacer?'}).waitFor();
+  assert.equal(await page.getByRole('combobox',{name:'Destino principal'}).count(),0,'Resumed wizard must stay on its saved step');
+  await page.getByRole('button',{name:/Empezar de cero/}).click();
+  await page.getByRole('alertdialog',{name:'¿Empezar un viaje nuevo?'}).getByRole('button',{name:'Cancelar'}).click();
+  await page.getByRole('heading',{name:'¿Qué te gusta hacer?'}).waitFor();
+  await page.getByRole('button',{name:/Empezar de cero/}).click();
+  await page.getByRole('alertdialog',{name:'¿Empezar un viaje nuevo?'}).getByRole('button',{name:'Sí, empezar de cero'}).click();
+  await page.getByRole('heading',{name:'¿A dónde te gustaría viajar?'}).waitFor();
+  assert.equal(await page.evaluate(()=>localStorage.getItem('viaja-guided-planner-draft-v1')),null,'Reset removes only pending planner draft');
+  await page.getByRole('combobox',{name:'Destino principal'}).fill('Roma, Italia');
+  await page.getByRole('combobox',{name:'Destino principal'}).press('Tab');
+  await page.getByRole('button',{name:/Continuar/}).click();
+  await page.getByRole('heading',{name:'¿Qué te gusta hacer?'}).waitFor();
   for(const label of ['Historia y monumentos','Gastronomía','Naturaleza']){
    const slider=page.getByRole('slider',{name:label});
    await slider.press('ArrowRight');
@@ -76,6 +95,7 @@ try{
    const v=localStorage.getItem('viaja-ai-trips-v1');
    try {const arr=JSON.parse(v||'[]');return Array.isArray(arr)&&arr.some(p=>p.trip?.destination==='Roma, Italia'&&p.itinerary?.length===3);}catch{return false}
   },{timeout:8000});
+  assert.equal(await page.evaluate(()=>localStorage.getItem('viaja-guided-planner-draft-v1')),null,'Created trips must clear the pending wizard draft');
   const model=await page.evaluate(()=>{
    const trips=JSON.parse(localStorage.getItem('viaja-ai-trips-v1')||'[]');
    return trips.find(p=>p.trip.destination==='Roma, Italia');

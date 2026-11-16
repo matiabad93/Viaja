@@ -4,14 +4,15 @@ import type {Plan} from '../lib/travel';
 import {dateLabel,status} from '../lib/travel';
 import {todayLocal} from '../lib/date-range';
 import {selectHomeTrip} from '../lib/home-journey';
+import type {PlannerDraft} from '../lib/planner-draft';
 
 type HomeProps={
- plans:Plan[];cloud:boolean;
+ plans:Plan[];cloud:boolean;draft:PlannerDraft|null;
  onNew:()=>void;onTrips:()=>void;onExplore:()=>void;onReservations:()=>void;
  onOpenTrip:(plan:Plan)=>void;
 };
 
-export function HomeDashboard({plans,cloud,onNew,onTrips,onExplore,onReservations,onOpenTrip}:HomeProps){
+export function HomeDashboard({plans,cloud,draft,onNew,onTrips,onExplore,onReservations,onOpenTrip}:HomeProps){
  const featured=selectHomeTrip(plans,todayLocal());
  return <section className="home-viaja" aria-label="Inicio de Viaja">
   <div className="home-hero">
@@ -20,10 +21,10 @@ export function HomeDashboard({plans,cloud,onNew,onTrips,onExplore,onReservation
     <h1>Todo gran viaje empieza con una idea.</h1>
     <p>Elegí un destino, armá tus días a tu ritmo y tené tus planes y reservas en un solo lugar.</p>
     <div className="home-hero-actions">
-     <button className="primary" type="button" onClick={onNew}><Plus size={19}/>Planificar un viaje <ArrowRight size={17}/></button>
+     <button className="primary" type="button" onClick={onNew}><Plus size={19}/>{draft?'Continuar planificación':'Planificar un viaje'} <ArrowRight size={17}/></button>
      <button className="home-outline" type="button" onClick={onExplore}><Globe2 size={18}/>Explorar destinos</button>
     </div>
-    <p className="home-hero-note">Podés empezar sin crear una cuenta ni usar inteligencia artificial.</p>
+    <p className="home-hero-note">{draft?`Tenés un borrador de ${draft.trip.destination||'tu próximo viaje'} guardado en este dispositivo. Podés retomarlo cuando quieras.`:'Podés empezar sin crear una cuenta ni usar inteligencia artificial.'}</p>
    </div>
    <aside className="home-featured" aria-label={featured?'Viaje destacado':'Cómo empezar'}>
     {featured?<>

@@ -1,6 +1,7 @@
 'use client';
 import {useState} from 'react';
-import {ArrowLeft,ArrowRight,CalendarDays,Check,Clock3,Compass,MapPin,Settings2,Sparkles,Users} from 'lucide-react';
+import type {Dispatch,SetStateAction} from 'react';
+import {ArrowLeft,ArrowRight,CalendarDays,Check,Clock3,Compass,MapPin,RotateCcw,Settings2,Sparkles,Users} from 'lucide-react';
 import {DestinationSearch} from './destination-search';
 import {TripDateRange} from './trip-date-range';
 import {TripStopsEditor} from './trip-stops-editor';
@@ -14,6 +15,7 @@ type Props={
  onAdvanced:()=>void;aiReady:boolean;authenticated:boolean;busy:boolean;
  aiStatusReason?:string;aiStatusLoading?:boolean;aiStatusError?:boolean;onRefreshAI?:()=>void;
  onCancel:()=>void;
+ step:number;onStepChange:Dispatch<SetStateAction<number>>;canStartOver:boolean;onStartOver:()=>void;
 };
 const labels=['No me interesa','Un poco','Me gusta','Me encanta'];
 const steps=['Destino','Intereses','Tu estilo','Confirmar'];
@@ -26,8 +28,7 @@ const budgets:{name:BudgetStyle;hint:string}[]=[
  {name:'Intermedio',hint:'Equilibrar opciones gratuitas y de pago'},
  {name:'Cómodo',hint:'Más flexibilidad para experiencias'}
 ];
-export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiReady,authenticated,busy,onCancel,aiStatusReason,aiStatusLoading,aiStatusError,onRefreshAI}:Props){
- const [step,setStep]=useState(0);
+export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiReady,authenticated,busy,onCancel,aiStatusReason,aiStatusLoading,aiStatusError,onRefreshAI,step,onStepChange:setStep,canStartOver,onStartOver}:Props){
  const [notice,setNotice]=useState('');
  const [extraInterests,setExtraInterests]=useState(false);
  const [timesOpen,setTimesOpen]=useState(false);
@@ -73,7 +74,10 @@ export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiRe
  return <section className="viaja-wizard" aria-label="Nuevo planificador guiado de viajes">
   <div className="wizard-header">
    <div className="wizard-brand"><Compass size={18}/><strong>Planeá a tu ritmo</strong><span>Nuevo planificador</span></div>
-   <button type="button" className="wizard-advanced" onClick={onAdvanced}><Settings2 size={17}/>Opciones avanzadas</button>
+   <div className="wizard-header-actions">
+    {canStartOver&&<button type="button" className="wizard-reset" onClick={onStartOver} disabled={busy}><RotateCcw size={16}/>Empezar de cero</button>}
+    <button type="button" className="wizard-advanced" onClick={onAdvanced}><Settings2 size={17}/>Opciones avanzadas</button>
+   </div>
   </div>
   <div className="wizard-progress" aria-label={'Paso '+(step+1)+' de 4'}>
    {steps.map((name,i)=><div key={name} className={'wizard-progress-step'+(i===step?' active':i<step?' done':'')} aria-current={i===step?'step':undefined}>
