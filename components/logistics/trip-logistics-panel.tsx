@@ -10,7 +10,8 @@ import {TransportForm} from './transport-form';
 import {TransportList} from './transport-list';
 import {ConfirmDialog} from '../confirm-dialog';
 import {DocumentList} from './document-list';
-import {listReservations} from '../../lib/reservation-library';
+import {listReservations,type ReservationFile} from '../../lib/reservation-library';
+import {TravelPassWallet} from '../reservations/travel-pass-wallet';
 
 type ReservationTarget={kind:'accommodation'|'transport';id:string};
 type PendingAction=ReservationTarget&{action:'cancel'|'delete'};
@@ -18,12 +19,13 @@ export function TripLogisticsPanel({plan,onChange,onError,authenticated,onOpenRe
  const logistics=logisticsOf(plan),readOnly=plan.collaboration?.role==='viewer';
  const [form,setForm]=useState<ReservationTarget|null>(null);
  const [documentCount,setDocumentCount]=useState(0);
- const [linkedPdfCount,setLinkedPdfCount]=useState<number|null>(null);
+ const [linkedPdfs,setLinkedPdfs]=useState<ReservationFile[]|null>(null);
+ const linkedPdfCount=linkedPdfs?.length??null;
  useEffect(()=>{
-  if(!authenticated||!plan.collaboration?.version){setLinkedPdfCount(null);return}
+  if(!authenticated||!plan.collaboration?.version){setLinkedPdfs(null);return}
   let active=true;
-  listReservations().then(rows=>{if(active)setLinkedPdfCount(rows.filter(r=>r.linked_trip_id===plan.id).length)})
-   .catch(()=>{if(active)setLinkedPdfCount(null)});
+  listReservations().then(rows=>{if(active)setLinkedPdfs(rows.filter(r=>r.linked_trip_id===plan.id))})
+   .catch(()=>{if(active)setLinkedPdfs(null)});
   return()=>{active=false};
  },[authenticated,plan.id,plan.collaboration?.version]);
  const [pending,setPending]=useState<PendingAction|null>(null);
@@ -109,6 +111,9 @@ export function TripLogisticsPanel({plan,onChange,onError,authenticated,onOpenRe
    <div className="section-heading compact"><div><h3>Mis PDFs vinculados a este viaje</h3><p className="subtle">Billetes y comprobantes de tu biblioteca personal. Se mantienen privados, incluso si compartís el itinerario.</p></div>
     <button type="button" className="secondary" onClick={onOpenReservations}>Abrir Reservas →</button></div>
    <p className="subtle">{linkedPdfCount===null?'Consultá tu biblioteca de reservas para ver tus archivos.':linkedPdfCount===0?'Todavía no vinculaste ningún PDF a este viaje.':linkedPdfCount+' PDF '+(linkedPdfCount===1?'vinculado':'vinculados')+' a este viaje.'}</p>
+   {linkedPdfs&&linkedPdfs.length>0&&<TravelPassWallet items={linkedPdfs} compact limit={8}
+    title="Tu documentación de viaje, a un toque"
+    description="Abrí billetes y QR directamente desde Logística. El localizador y los horarios quedan visibles sin abrir el PDF."/>}
   </section>}
   <DocumentList tripId={plan.id} accommodations={logistics.accommodations} transports={logistics.transports}
    authenticated={authenticated} readOnly={readOnly} cloudSaved={Boolean(plan.collaboration?.version)}

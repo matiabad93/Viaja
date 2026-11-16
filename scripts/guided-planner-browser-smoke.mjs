@@ -19,7 +19,7 @@ try{
   assert.ok(await page.getByRole('button',{name:/Planificar un viaje/}).isVisible(),'Guest sees immediate plan CTA');
   await page.screenshot({path:'artifacts/guided-planner-v2/'+device.label+'-home.png',fullPage:true});
   await page.locator('.home-shortcuts .home-shortcut').nth(1).click();
-  await page.getByRole('heading',{name:'Guías para explorar'}).waitFor();
+  await page.getByRole('heading',{name:'Encontrá un viaje que te inspire.'}).waitFor();
   await page.getByRole('button',{name:'Inicio',exact:true}).click();
   await page.getByRole('button',{name:/Planificar un viaje/}).click();
   await page.getByRole('heading',{name:'¿A dónde te gustaría viajar?'}).waitFor();

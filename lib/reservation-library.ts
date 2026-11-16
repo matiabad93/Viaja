@@ -11,6 +11,7 @@ export type ReservationKind='unclassified'|'flight'|'accommodation'|'mixed'|'oth
 export type ExtractedFlight={
  company:string;serviceNumber:string;origin:string;destination:string;
  departureAt:string;arrivalAt:string;departureTimezone:string;arrivalTimezone:string;
+ terminal?:string;gate?:string;seat?:string;
 };
 export type ExtractedLodging={
  name:string;address:string;city:string;checkIn:string;checkOut:string;provider:string;
@@ -38,7 +39,8 @@ export function sanitizeReservationDetails(value:unknown):ReservationDetails{
   return {
    company:strip(d.company),serviceNumber:strip(d.serviceNumber,70),origin:strip(d.origin,180),destination:strip(d.destination,180),
    departureAt:strip(d.departureAt,36),arrivalAt:strip(d.arrivalAt,36),
-   departureTimezone:strip(d.departureTimezone,80),arrivalTimezone:strip(d.arrivalTimezone,80)
+   departureTimezone:strip(d.departureTimezone,80),arrivalTimezone:strip(d.arrivalTimezone,80),
+   terminal:strip(d.terminal,30),gate:strip(d.gate,30),seat:strip(d.seat,30)
   };
  }):[];
  const l=data.lodging&&typeof data.lodging==='object'&&!Array.isArray(data.lodging)?data.lodging as Record<string,unknown>:null;

@@ -85,8 +85,8 @@ try{
    await page.getByRole('button',{name:'Viajes compartidos',exact:true}).click();
    await selected(switcher.locator('button[aria-pressed="true"]'),'Community tab',theme);
    await page.getByRole('button',{name:'Guías de Viaja',exact:true}).click();
-   const barcelonaCard=page.locator('.visualguides .card').first();
-   await barcelonaCard.getByRole('button',{name:/Explorar/}).click();
+   const firstGuide=page.locator('.visualguides .explore-card').first();
+   await firstGuide.getByRole('button',{name:'Ver itinerario'}).click();
    const dayButtons=page.locator('.visualguides .tabs button');
    await dayButtons.first().waitFor();
    await selected(dayButtons.filter({hasText:'Día 1'}),'Guide day 1',theme);

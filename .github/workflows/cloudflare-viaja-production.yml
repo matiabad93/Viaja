@@ -70,7 +70,7 @@ jobs:
             --project-name viaja \
             --branch main \
             --commit-hash "$GITHUB_SHA" \
-            --commit-message "Viaja: corrección de contraste e iconos en modo oscuro"
+            --commit-message "Viaja: etapas 1 a 6 - exploracion, planificacion y reservas"
       - name: Verificar que Cloudflare sirva los nuevos estilos
         if: steps.credentials.outputs.available == 'true'
         run: node scripts/ui-delivery-a-live-check.mjs https://viaja.pages.dev

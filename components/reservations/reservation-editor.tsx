@@ -25,7 +25,7 @@ export function ReservationEditor({
  };
  const newFlight=()=>setDetails(prev=>({
   ...prev,flights:[...prev.flights,{company:'',serviceNumber:'',origin:'',destination:'',
-   departureAt:'',arrivalAt:'',departureTimezone:'',arrivalTimezone:''}]
+   departureAt:'',arrivalAt:'',departureTimezone:'',arrivalTimezone:'',terminal:'',gate:'',seat:''}]
  }));
  const editHotel=(key:keyof NonNullable<ReservationDetails['lodging']>,value:string)=>{
   setDetails(prev=>({...prev,lodging:{...(prev.lodging||{name:'',address:'',city:'',checkIn:'',checkOut:'',provider:''}),[key]:value}}));
@@ -75,6 +75,9 @@ export function ReservationEditor({
      {row('Llegada local',f.arrivalAt,v=>editFlight(i,'arrivalAt',v),'','datetime-local')}
      {row('Zona horaria salida (si se conoce)',f.departureTimezone,v=>editFlight(i,'departureTimezone',v),'Europe/Madrid')}
      {row('Zona horaria llegada (si se conoce)',f.arrivalTimezone,v=>editFlight(i,'arrivalTimezone',v),'Europe/Paris')}
+     {row('Terminal (si figura)',f.terminal||'',v=>editFlight(i,'terminal',v),'T1')}
+     {row('Puerta de embarque (si figura)',f.gate||'',v=>editFlight(i,'gate',v),'B24')}
+     {row('Asiento (si figura)',f.seat||'',v=>editFlight(i,'seat',v),'12A')}
     </div>
    </div>)}
   </section>}
