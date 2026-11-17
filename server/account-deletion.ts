@@ -109,6 +109,10 @@ async function deleteAuthUser(env:ViajaAIEnv,userId:string){
 
 export async function accountDeletionAPI(request:Request,env:ViajaAIEnv):Promise<Response>{
  if(request.method!=='POST')return reply({error:'Método no permitido.'},405);
+ // Disabled in production until isolated Storage/Auth QA and recovery are signed off.
+ // Unlike a client-only flag, this blocks every destructive server operation.
+ if(env.VIAJA_ACCOUNT_DELETION_ENABLED!=='true')
+  return reply({code:'ACCOUNT_DELETION_DISABLED',error:'La eliminación automática de cuentas está temporalmente deshabilitada.'},503);
  if(!isAllowedApiOrigin(request))return reply({error:'Origen no permitido.'},403);
  if(!safeConfig(env))return reply({error:'La eliminación de cuentas no está configurada.'},503);
  if(!request.headers.get('content-type')?.toLowerCase().startsWith('application/json'))

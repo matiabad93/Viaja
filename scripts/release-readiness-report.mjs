@@ -16,6 +16,8 @@ const gradle=read('mobile/android/app/build.gradle');
 const androidWorkflow=read('.github/workflows/android-play-release.yml');
 const iosWorkflow=read('.github/workflows/ios-native-preflight.yml');
 const appAccount=read('components/account-control.tsx');
+const deletionAPI=read('server/account-deletion.ts');
+const deletionPage=existsSync('public/delete-account.html')?read('public/delete-account.html'):'';
 const checks=[];
 function check(id,label,ok,{severity='critical',detail=''}={}){
  checks.push({id,label,ok:Boolean(ok),severity,detail});
@@ -46,9 +48,16 @@ check('web_artifact','Build distribuible generado por CI',
 check('privacy_url','Política de privacidad pública con responsable y contacto verificables',
  existsSync('public/privacy.html'),{severity:'release-blocker',detail:'Falta publicar política jurídica revisada y correo de contacto.'});
 check('account_deletion','Eliminación de cuenta iniciable desde la propia aplicación',
- /Eliminar (?:mi )?cuenta/.test(appAccount),{severity:'release-blocker',detail:'No existe aún un flujo autenticado de eliminación completa, incluyendo Storage y colaboraciones.'});
+ /Eliminar (?:mi )?cuenta/.test(appAccount)&&
+ appAccount.includes('VITE_VIAJA_ACCOUNT_DELETION_ENABLED')&&
+ deletionAPI.includes('VIAJA_ACCOUNT_DELETION_ENABLED')&&
+ process.env.VITE_VIAJA_ACCOUNT_DELETION_ENABLED==='true'&&
+ process.env.VIAJA_ACCOUNT_DELETION_ENABLED==='true',
+ {severity:'release-blocker',detail:'El flujo está implementado pero deshabilitado hasta completar QA real y activar ambas variables de lanzamiento.'});
 check('account_deletion_web','Solicitud de eliminación disponible también desde la web',
- existsSync('public/delete-account.html'),{severity:'release-blocker',detail:'Google Play requiere una vía web externa para iniciar la solicitud de eliminación, además de la app.'});
+ deletionPage.includes('Eliminar tu cuenta de Viaja')&&!deletionPage.includes('noindex,nofollow')&&
+ !deletionPage.includes('Funcionalidad en validación'),
+ {severity:'release-blocker',detail:'La página pública existe pero muestra la validación pendiente; debe activar el flujo real y ser indexable antes de las tiendas.'});
 check('account_deletion_live_qa','Eliminación y preservación de cuentas colaboradoras verificadas con dos cuentas descartables',
  false,{severity:'manual',detail:'Falta QA real con dos cuentas de prueba, Storage y Auth; se prohíbe probar con datos de usuarios reales.'});
 check('support_contact','Canal de soporte privado accesible',

@@ -16,6 +16,7 @@ export type ViajaAIEnv={
  SUPABASE_URL?:string;
  SUPABASE_PUBLISHABLE_KEY?:string;
  SUPABASE_SECRET_KEY?:string;
+ VIAJA_ACCOUNT_DELETION_ENABLED?:string;
 };
 const response=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const baseUrl=(env:ViajaAIEnv)=>env.SUPABASE_URL||'https://ovagewbmrirzrlvbvtbw.supabase.co';

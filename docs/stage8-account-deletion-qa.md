@@ -1,13 +1,15 @@
 # Viaja · Etapa 8 — Eliminación de cuenta (QA antes de tiendas)
 
-**Estado:** implementación en rama de QA; no marcar como lista para tiendas hasta completar las verificaciones manuales.
+**Estado:** código integrable en `main`, pero función de eliminación **deshabilitada por defecto** hasta completar las verificaciones manuales.
+
+Hay **dos controles independientes**: el backend exige `VIAJA_ACCOUNT_DELETION_ENABLED=true` en las variables de Cloudflare y el cliente exige `VITE_VIAJA_ACCOUNT_DELETION_ENABLED=true` al compilarse. Sin ambos, la operación no se anuncia en el menú ni se puede ejecutar. La página pública muestra un aviso de validación y usa `noindex` hasta la habilitación final.
 
 La rama se publica a través de `.github/workflows/viaja-stage8-account-preview.yml` en
 `https://feat-stage8-secure-account-deletion.viaja.pages.dev`. El workflow usa
 **solo credenciales de Cloudflare del entorno `preview`**, valida TypeScript y
-pruebas locales y comprueba la página pública y que el endpoint rechace `GET`.
+pruebas locales y, cuando hay credenciales, comprueba la página pública y que el endpoint rechace `GET`.
 **Nunca invoca el borrado de una cuenta.** Si faltan los secrets de preview, el
-workflow falla sin publicar: no se deben sustituir por credenciales de producción.
+workflow informa el bloqueo y omite la publicación sin marcar los tests locales como fallidos: no se deben sustituir por credenciales de producción.
 
 ## Alcance
 

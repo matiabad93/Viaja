@@ -9,6 +9,8 @@ import './account-deletion.css';
 
 declare const __VIAJA_NATIVE__: boolean;
 const isNativeApp = typeof __VIAJA_NATIVE__ !== 'undefined' && __VIAJA_NATIVE__;
+// Release gate: account deletion must pass real Supabase + Storage QA first.
+const accountDeletionUIEnabled=import.meta.env.VITE_VIAJA_ACCOUNT_DELETION_ENABLED==='true';
 
 export function AccountControl({session,onReload,onError}:{session:ViajaSession|null;onReload:()=>Promise<void>;onError:(message:string)=>void}){
  const [open,setOpen]=useState(false);
@@ -30,7 +32,7 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
  const triggerRef=useRef<HTMLButtonElement>(null);
  const dialogRef=useRef<HTMLElement>(null);
  const closeDialog=()=>{if(busyRef.current)return;setOpen(false);setConfirmDeletion(false);setDeletionPhrase('');triggerRef.current?.focus()};
- const deletionLinkRequested=()=>typeof window!=='undefined'&&new URLSearchParams(window.location.search).get('account')==='delete';
+ const deletionLinkRequested=()=>accountDeletionUIEnabled&&typeof window!=='undefined'&&new URLSearchParams(window.location.search).get('account')==='delete';
  useEffect(()=>{
   if(!deletionLinkRequested())return;
   setOpen(true);
@@ -96,7 +98,7 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
   finally{setWorking(false);}
  }
  async function deleteAccount(){
-  if(working||!session?.user.email||deletionPhrase.trim()!=='ELIMINAR MI CUENTA')return;
+  if(!accountDeletionUIEnabled||working||!session?.user.email||deletionPhrase.trim()!=='ELIMINAR MI CUENTA')return;
   setWorking(true);setNotice('');
   try{
    const token=await accessToken();
@@ -135,7 +137,7 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
       <button type="button" className="viaja-account-action" disabled={busy} onClick={importTrips}><CloudUpload size={17}/> Importar viajes anteriores de este dispositivo</button>
       {confirmImport&&<p className="viaja-account-help">Se conservará la copia local. Tocá «Importar» nuevamente para confirmar.</p>}
       <button type="button" className="viaja-account-action" disabled={busy} onClick={signOut}><LogOut size={17}/> Cerrar sesión</button>
-      {!confirmDeletion?<button type="button" className="viaja-account-danger-entry" disabled={busy} onClick={()=>{setConfirmDeletion(true);setNotice('')}}><Trash2 size={16}/> Eliminar mi cuenta</button>
+      {accountDeletionUIEnabled&&(!confirmDeletion?<button type="button" className="viaja-account-danger-entry" disabled={busy} onClick={()=>{setConfirmDeletion(true);setNotice('')}}><Trash2 size={16}/> Eliminar mi cuenta</button>
       :<div className="viaja-account-delete-panel">
        <h3>Eliminar tu cuenta definitivamente</h3>
        <p>Se eliminarán tus viajes propios, publicaciones, reservas, archivos y documentos asociados. Los miembros de tus viajes compartidos dejarán de acceder a ellos. Esta acción no se puede deshacer.</p>
@@ -147,7 +149,7 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
         <button type="button" className="viaja-account-action" disabled={busy} onClick={()=>{setConfirmDeletion(false);setDeletionPhrase('');setNotice('')}}>Cancelar</button>
         <button type="button" className="viaja-account-danger-submit" disabled={busy||deletionPhrase.trim()!=='ELIMINAR MI CUENTA'} onClick={()=>void deleteAccount()}>{working&&<LoaderCircle size={17} className="spin"/>} Eliminar definitivamente</button>
        </div>
-      </div>}
+      </div>)}
     </>:<>
       <h2>{mode==='login'?'Iniciar sesión':mode==='signup'?'Crear una cuenta':mode==='recover'?'Recuperar contraseña':'Nueva contraseña'}</h2>
       <p className="viaja-account-subtitle">Tus viajes, calendario y gastos estarán disponibles cuando ingreses con tu cuenta.</p>

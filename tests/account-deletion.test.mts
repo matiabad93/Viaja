@@ -8,7 +8,7 @@ const sharedTrip='33333333-3333-4333-8333-333333333333';
 const uploadedDoc='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const collaboratorDoc='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const reservationId='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
-const env={SUPABASE_URL:'https://example.supabase.co',SUPABASE_SECRET_KEY:'test-secret',SUPABASE_PUBLISHABLE_KEY:'test-publishable'};
+const env={SUPABASE_URL:'https://example.supabase.co',SUPABASE_SECRET_KEY:'test-secret',SUPABASE_PUBLISHABLE_KEY:'test-publishable',VIAJA_ACCOUNT_DELETION_ENABLED:'true'};
 const request=(body:unknown={confirmation:'ELIMINAR MI CUENTA',email:'user@example.com'},origin='https://viaja.pages.dev',authorization='Bearer test.jwt')=>
  new Request('https://viaja.pages.dev/api/account/delete',{method:'POST',headers:{Origin:origin,Authorization:authorization,'Content-Type':'application/json'},body:JSON.stringify(body)});
 
@@ -50,6 +50,10 @@ async function simulate(scenario:Scenario={}){
 const originalFetch=globalThis.fetch;
 globalThis.fetch=(async()=>{throw Error('Network must not be called')}) as typeof fetch;
 try{
+ const disabled=await accountDeletionAPI(request(),{...env,VIAJA_ACCOUNT_DELETION_ENABLED:'false'});
+ assert.equal(disabled.status,503,'Production must fail closed when the deletion flag is off');
+ assert.equal((await disabled.json() as {code?:string}).code,'ACCOUNT_DELETION_DISABLED');
+ assert.equal((await accountDeletionAPI(request(),{...env,VIAJA_ACCOUNT_DELETION_ENABLED:undefined})).status,503);
  assert.equal((await accountDeletionAPI(request({},'https://evil.example'),env)).status,403,'Reject foreign origins');
  assert.equal((await accountDeletionAPI(request(undefined,undefined,'Bearer'),env)).status,401,'Require session JWT');
  assert.equal((await accountDeletionAPI(request({confirmation:'sí',email:'user@example.com'}),env)).status,400,'Require literal consent');

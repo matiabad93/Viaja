@@ -38,11 +38,14 @@ jobs:
         with:
           node-version: '22'
       - name: Comprobar credenciales exclusivas de preview
+        id: credentials
         run: |
           set -euo pipefail
           if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]]; then
-            echo '::error::Faltan VIAJA_CF_PREVIEW_API_TOKEN y/o VIAJA_CF_PREVIEW_ACCOUNT_ID. No se publicó ningún despliegue.'
-            exit 1
+            echo '::warning::Faltan credenciales de preview; la publicación se omite sin usar producción.'
+            echo 'available=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'available=true' >> "$GITHUB_OUTPUT"
           fi
       - name: Instalar dependencias y validar cambios
         run: |
@@ -57,6 +60,7 @@ jobs:
           test -s web-dist/index.html
           test -s web-dist/delete-account.html
       - name: Publicar solo la rama de la etapa 8
+        if: steps.credentials.outputs.available == 'true'
         run: |
           set -euo pipefail
           npx wrangler pages deploy web-dist \
@@ -65,6 +69,7 @@ jobs:
             --commit-hash "$GITHUB_SHA" \
             --commit-message 'Viaja: Stage 8 account deletion preview, QA only'
       - name: Comprobar página pública y API sin eliminar cuentas
+        if: steps.credentials.outputs.available == 'true'
         run: |
           set -euo pipefail
           for n in $(seq 1 20); do
