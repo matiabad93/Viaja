@@ -2555,3 +2555,28 @@ html[data-theme] .experience-crash h1{font:26px/1.2 Georgia,serif;margin:0 0 12p
 html[data-theme] .experience-crash p{font-size:16px;line-height:1.6;color:var(--ink)}
 html[data-theme] .experience-crash button{width:100%;min-height:50px;margin-top:20px}
 html[data-theme] .experience-crash .experience-crash-help{font-size:14px;color:var(--muted);margin-top:18px}
+
+
+/* Explorar — compact guide CTA, clear catalog count and mobile-first hero hierarchy. */
+.visualguides .hero .guide-hero-cta{display:inline-flex;align-items:center;justify-content:center;gap:11px;min-height:54px;width:max-content;max-width:100%;padding:12px 20px;border-radius:13px;font-size:15px;font-weight:700;line-height:1.25;white-space:nowrap;text-align:center;background:#e8f0b7;color:#193b32;transition:background-color .18s,transform .18s}
+.visualguides .hero .guide-hero-cta svg{flex:none}
+.visualguides .hero .guide-hero-cta:hover:not(:disabled){background:#f1f6cd;transform:translateY(-1px)}
+.visualguides .hero .guide-hero-cta:focus-visible{outline:3px solid #f1f6cd;outline-offset:4px}
+.visualguides .hero .hero-guide-count{display:block;width:max-content;max-width:100%;margin-top:11px;color:#e8f0e7;font-size:12px;line-height:1.4}
+@media(max-width:700px){
+ .visualguides .topline{margin-bottom:16px}
+ .visualguides .hero{min-height:0;padding:26px 22px 28px}
+ .visualguides .hero h1{font-size:clamp(36px,9.2vw,46px);line-height:1.07;letter-spacing:-.035em;margin:14px 0 13px}
+ .visualguides .hero p{max-width:340px;font-size:14px;line-height:1.55;margin-bottom:20px}
+ .visualguides .hero .guide-hero-cta{min-height:52px;padding:12px 18px;border-radius:12px;font-size:14px}
+ .visualguides .hero .hero-guide-count{margin-top:10px}
+ .visualguides .explore-discovery{margin-top:22px}
+}
+@media(max-width:380px){
+ .visualguides .hero{padding:24px 18px 26px}
+ .visualguides .hero .guide-hero-cta{padding:12px 14px}
+}
+@media(prefers-reduced-motion:reduce){
+ .visualguides .hero .guide-hero-cta{transition:none}
+ .visualguides .hero .guide-hero-cta:hover:not(:disabled){transform:none}
+}
