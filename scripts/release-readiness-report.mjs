@@ -49,6 +49,8 @@ check('account_deletion','Eliminación de cuenta iniciable desde la propia aplic
  /Eliminar (?:mi )?cuenta/.test(appAccount),{severity:'release-blocker',detail:'No existe aún un flujo autenticado de eliminación completa, incluyendo Storage y colaboraciones.'});
 check('account_deletion_web','Solicitud de eliminación disponible también desde la web',
  existsSync('public/delete-account.html'),{severity:'release-blocker',detail:'Google Play requiere una vía web externa para iniciar la solicitud de eliminación, además de la app.'});
+check('account_deletion_live_qa','Eliminación y preservación de cuentas colaboradoras verificadas con dos cuentas descartables',
+ false,{severity:'manual',detail:'Falta QA real con dos cuentas de prueba, Storage y Auth; se prohíbe probar con datos de usuarios reales.'});
 check('support_contact','Canal de soporte privado accesible',
  existsSync('public/support.html'),{severity:'release-blocker',detail:'Definir correo de soporte o formulario privado antes de publicar en tiendas.'});
 check('apple_equivalent_login','Acceso alternativo privado equivalente para iOS con inicio Google',

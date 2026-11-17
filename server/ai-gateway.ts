@@ -4,6 +4,7 @@ import {plannerAPI,validateTrip} from './planner';
 import {geminiFreePlanner,FREE_GEMINI_MODEL} from './gemini-planner';
 import {reservationExtractionAPI} from './reservation-extraction';
 import {privateDocumentUploadAPI} from './private-document-upload';
+import {accountDeletionAPI} from './account-deletion';
 
 export type ViajaAIEnv={
  GEMINI_API_KEY?:string;
@@ -67,6 +68,7 @@ export async function secureAIGateway(request:Request,env:ViajaAIEnv):Promise<Re
  const path=new URL(request.url).pathname;
  if(path==='/api/reservations/extract')return reservationExtractionAPI(request,env);
  if(path==='/api/private-documents/upload')return privateDocumentUploadAPI(request,env);
+ if(path==='/api/account/delete')return accountDeletionAPI(request,env);
  const destinations=await destinationsAPI(request);
  if(destinations)return destinations;
  if(path!=='/api/status'&&path!=='/api/plan')return response({error:'No encontrado'},404);
