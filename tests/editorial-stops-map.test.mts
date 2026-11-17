@@ -32,6 +32,12 @@ assert.deepEqual(itineraryOf(copied)[0].activities.map(a=>a.title),days[0].activ
 const mapSource=readFileSync(new URL('../components/trip-map.tsx',import.meta.url),'utf8');
 assert.ok(mapSource.includes('https://tiles.openfreemap.org/styles/liberty'));
 assert.ok(mapSource.includes('maplibreGL('));
+assert.ok(mapSource.includes('L.divIcon('),'Safari-safe HTML destination markers must not depend on Leaflet PNG paths');
+assert.ok(mapSource.includes('order:i+1'),'Map pins must preserve their original itinerary numbering');
+assert.ok(mapSource.includes('layer.clearLayers()'),'Reloading pin positions must not leave duplicate markers');
+const markerCss=readFileSync(new URL('../components/trip-map-markers.css',import.meta.url),'utf8');
+assert.match(markerCss,/\.viaja-destination-marker-label/,'The number badge must be styled');
+assert.match(markerCss,/background:#155440/,'Destination pins must have a visible opaque background');
 assert.ok(mapSource.includes("glMap.once('load'"),'The map must verify real vector rendering, not merely mount an empty canvas');
 assert.ok(mapSource.includes('Cargando mapa…'),'A slow map provider must show a visible loading state');
 assert.ok(!mapSource.includes('tile.openstreetmap.org/{z}/{x}/{y}.png'),'Do not depend on the blocked OSM volunteer raster endpoint');
