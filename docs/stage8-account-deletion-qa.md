@@ -2,6 +2,13 @@
 
 **Estado:** implementación en rama de QA; no marcar como lista para tiendas hasta completar las verificaciones manuales.
 
+La rama se publica a través de `.github/workflows/viaja-stage8-account-preview.yml` en
+`https://feat-stage8-secure-account-deletion.viaja.pages.dev`. El workflow usa
+**solo credenciales de Cloudflare del entorno `preview`**, valida TypeScript y
+pruebas locales y comprueba la página pública y que el endpoint rechace `GET`.
+**Nunca invoca el borrado de una cuenta.** Si faltan los secrets de preview, el
+workflow falla sin publicar: no se deben sustituir por credenciales de producción.
+
 ## Alcance
 
 - El usuario inicia la solicitud desde **Mi cuenta → Eliminar mi cuenta** o la página pública `/delete-account.html`.
