@@ -483,6 +483,9 @@ html{scroll-padding-top:86px}
 .team-invites h4{display:flex;gap:8px;align-items:center}
 .team-invite-row{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;border-top:1px solid #edf1ed;padding:8px 0}
 .team-badge{display:inline-flex;gap:6px;align-items:center;padding:5px 9px;margin:8px 0;border-radius:999px;background:#e9f3ef;color:#26694e;font-size:12px;font-weight:700}
+.journey-team-slot{display:flex;align-items:center;min-height:44px;min-width:0}
+.journey-team-slot .team-badge{margin:0;max-width:100%;flex-wrap:wrap}
+.journey-team-slot + .card-budget{margin-top:8px}
 .team-invitation-banner{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:14px 18px;background:#e9f3ef;color:#154f3c;border-radius:14px}
 .team-invitation-banner span{flex:1;min-width:220px}
 .team-invitation-banner button{white-space:nowrap}
@@ -1767,7 +1770,7 @@ html[data-theme] .reservation-center {
 }
 html[data-theme] .reservation-page-header {
  display:flex;justify-content:space-between;align-items:flex-start;gap:22px;
- min-width:0;flex-wrap:wrap;
+ min-width:0;flex-wrap:wrap;height:auto;
 }
 html[data-theme] .reservation-page-header>div {flex:1 1 270px;min-width:0;}
 html[data-theme] .reservation-page-header h1 {
