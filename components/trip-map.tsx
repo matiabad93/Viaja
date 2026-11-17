@@ -56,7 +56,7 @@ async function lookup(query:string):Promise<Coordinate|null>{
 }
 export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
  const element=useRef<HTMLDivElement>(null),map=useRef<MapInterface|null>(null),leaflet=useRef<LeafletApi|null>(null),markerLayer=useRef<Leaflet.LayerGroup|null>(null),generation=useRef(0);
- const [mapReady,setMapReady]=useState(false),[mapVisualReady,setMapVisualReady]=useState(false),[points,setPoints]=useState<DisplayPoint[]>([]),[missing,setMissing]=useState<string[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(''),[loadError,setLoadError]=useState(''),[loadAttempt,setLoadAttempt]=useState(0),[mode,setMode]=useState<'walking'|'driving'|'transit'>('walking');
+ const [mapReady,setMapReady]=useState(false),[mapVisualReady,setMapVisualReady]=useState(false),[points,setPoints]=useState<DisplayPoint[]>([]),[missing,setMissing]=useState<string[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(''),[loadError,setLoadError]=useState(''),[noWebGL,setNoWebGL]=useState(false),[loadAttempt,setLoadAttempt]=useState(0),[mode,setMode]=useState<'walking'|'driving'|'transit'>('walking');
  const stops=mapStops(activities,trip.destination,trip.additionalDestinations);
  const fallback=trip.city&&pointValid(trip.city.latitude,trip.city.longitude)?{lat:trip.city.latitude,lon:trip.city.longitude}:null;
  const pinStops=useCallback(async()=>{
@@ -82,6 +82,7 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
  useEffect(()=>{
   let cancelled=false;
   setLoadError('');
+  setNoWebGL(false);
   setMapVisualReady(false);
   let observer:ResizeObserver|undefined;
   let frame=0,settledFrame=0;
@@ -102,6 +103,7 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
   (async()=>{
    try{
     if(!supportsWebGL2()){
+     setNoWebGL(true);
      setLoadError('Este dispositivo no admite el mapa interactivo. Podés usar el mapa alternativo o abrir la ruta en Google Maps.');
      return;
     }
@@ -194,7 +196,8 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
    <div ref={element} className="viaja-osm-map" role="region" aria-label={'Mapa de '+trip.destination} aria-busy={!mapVisualReady} data-map-status={mapVisualReady?'ready':'loading'}/>
    {!mapVisualReady&&!loadError&&<div className="viaja-map-loading" role="status"><LoaderCircle size={20} className="spin"/> Cargando mapa…</div>}
   </div>
-  {loadError&&iframeSource&&<iframe className="viaja-osm-map" loading="lazy" title={'Mapa alternativo de '+trip.destination} src={iframeSource} referrerPolicy="no-referrer-when-downgrade"/>}
+  {loadError&&noWebGL&&<div className="viaja-map-no-webgl" role="region" aria-label={'Recorrido sin mapa integrado de '+trip.destination}><MapPin size={28} aria-hidden="true"/><strong>Tu recorrido sigue disponible</strong><p>Consultá las paradas de abajo o abrí la ruta en Google Maps para navegar.</p></div>}
+  {loadError&&!noWebGL&&iframeSource&&<iframe className="viaja-osm-map" loading="lazy" title={'Mapa alternativo de '+trip.destination} src={iframeSource} referrerPolicy="no-referrer-when-downgrade"/>}
   <div className="viaja-map-list">{stops.map((stop,i)=><div key={stop.id} className="viaja-map-stop"><span className="viaja-map-stop-number">{i+1}</span><div><strong>{stop.title}</strong><small>{stop.time} · {stop.query}</small></div><a href={'https://www.google.com/maps/search/?'+new URLSearchParams({api:'1',query:stop.query})} target="_blank" rel="noopener noreferrer" aria-label={'Buscar '+stop.title+' en Google Maps'}><ExternalLink size={17}/></a></div>)}</div>
   {stops.length>MAX_STOPS&&<p className="subtle">Por respeto a los límites de geocodificación, se ubican hasta {MAX_STOPS} puntos por consulta. Podés abrir el resto individualmente en Google Maps.</p>}
   {missing.length>0&&<p className="subtle"><AlertCircle size={14}/> No se pudieron localizar: {missing.join(', ')}. Podés corregir las ubicaciones en Itinerario.</p>}
