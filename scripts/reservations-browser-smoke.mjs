@@ -118,7 +118,7 @@ try{
   const ctx=await browser.newContext({viewport:{width:dim.width,height:dim.height},colorScheme:'dark',locale:'es-ES',acceptDownloads:true,serviceWorkers:'block'});
   const backend=await setup(ctx);
   const page=await ctx.newPage(),pageErrors=[];
-  page.on('pageerror',e=>pageErrors.push(e.message));
+  page.on('pageerror',e=>pageErrors.push(e.stack||e.message));
   await page.goto(base,{waitUntil:'domcontentloaded'});
   const nav=page.getByRole('navigation',{name:'Navegación principal'});
   assert.equal(await nav.getByRole('button',{name:'Reservas'}).count(),1);
