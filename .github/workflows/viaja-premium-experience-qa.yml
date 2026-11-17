@@ -1,0 +1,68 @@
+name: Viaja etapa 7 - Experiencia premium QA
+on:
+  push:
+    branches:
+      - feat/ux-viaja-23-premium-integral-20261117
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: viaja-premium-experience-qa
+  cancel-in-progress: true
+jobs:
+  premium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Dependencias bloqueadas
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: TypeScript, pruebas core y preferencias de lectura
+        run: |
+          set -euo pipefail
+          npx tsc --noEmit
+          npm run test:core
+          node --experimental-strip-types tests/premium-experience.test.mts
+      - name: Compilar web y verificar distribución
+        run: |
+          npm run build:demo
+          test -s web-dist/index.html
+      - name: Instalar navegador
+        run: |
+          command -v google-chrome
+          npm install --prefix /tmp/viaja-ui-smoke --no-package-lock --no-audit --no-fund playwright@1.56.1
+      - name: Abrir la app compilada
+        run: |
+          nohup npx vite preview --config vite.portable.config.ts --host 127.0.0.1 --port 4173 >/tmp/viaja-premium-preview.log 2>&1 &
+          for n in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/viaja-premium-preview.log
+          exit 1
+      - name: QA premium móvil y escritorio
+        run: node scripts/premium-experience-browser-smoke.mjs
+      - name: Regresión UX etapas anteriores
+        run: |
+          node scripts/guided-planner-browser-smoke.mjs
+          node scripts/trip-list-browser-smoke.mjs
+          node scripts/reservations-browser-smoke.mjs
+          node scripts/ui-polish-audit-smoke.mjs
+      - name: Capturas visuales
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Viaja-Etapa7-Premium-QA
+          path: |
+            artifacts/premium-experience/
+            artifacts/guided-planner-v2/
+            artifacts/trip-list-ux/
+            artifacts/reservations-c/
+            artifacts/ui-delivery-a/polish/
+          retention-days: 7
+          if-no-files-found: ignore
