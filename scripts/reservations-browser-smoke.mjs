@@ -25,11 +25,16 @@ const setup=async(ctx)=>{
    sub:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',role:'authenticated',
    exp:Math.floor(Date.now()/1000)+36000
   }),'mock'].join('.');
-  localStorage.setItem('viaja-theme','dark');
-  localStorage.setItem('viaja-auth-session-v1',JSON.stringify({
-   access_token:token,refresh_token:'mock-refresh',expires_at:Math.floor(Date.now()/1000)+36000,
-   user:{id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',email:'test@example.invalid'}
-  }));
+  // addInitScript also runs in the private PDF viewer's cross-origin frame,
+  // where localStorage may be null; seed only frames with available storage.
+  try{
+   if(!window.localStorage)return;
+   localStorage.setItem('viaja-theme','dark');
+   localStorage.setItem('viaja-auth-session-v1',JSON.stringify({
+    access_token:token,refresh_token:'mock-refresh',expires_at:Math.floor(Date.now()/1000)+36000,
+    user:{id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',email:'test@example.invalid'}
+   }));
+  }catch{ /* Opaque PDF document: intentionally no origin storage. */ }
  });
  await ctx.route(/\/api\/private-documents\/upload\?/,async route=>{
   const req=route.request(),query=new URL(req.url()).searchParams;
