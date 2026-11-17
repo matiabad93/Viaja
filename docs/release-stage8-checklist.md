@@ -22,6 +22,7 @@ Capturas y reportes técnicos se conservan como artefactos de GitHub Actions, no
 4. **Firma.** Configurar Android Play App Signing/keystore de subida; disponer de Apple Developer, equipo de firma y certificados. Nunca subir claves al repo.
 5. **Fichas.** Capturas verdaderas de iPhone y Android, descripción, clasificación por edad, política de datos, URL de soporte, declaración de SDKs, Data Safety y App Privacy.
 6. **Pruebas físicas.** Validar los flujos principales en dispositivos reales antes de TestFlight y pista interna de Google Play.
+7. **Inicio de sesión iOS.** Como Viaja ofrece Google para la cuenta principal, comprobar si existe otra opción de inicio equivalente que satisfaga [App Review 4.8](https://developer.apple.com/app-store/review/guidelines/#login-services), incluyendo privacidad de correo, minimización de datos y publicidad. Corregir antes de App Store.
 
 ## Reglas de publicación
 
