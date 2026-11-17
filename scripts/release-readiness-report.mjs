@@ -47,6 +47,8 @@ check('privacy_url','Política de privacidad pública con responsable y contacto
  existsSync('public/privacy.html'),{severity:'release-blocker',detail:'Falta publicar política jurídica revisada y correo de contacto.'});
 check('account_deletion','Eliminación de cuenta iniciable desde la propia aplicación',
  /Eliminar (?:mi )?cuenta/.test(appAccount),{severity:'release-blocker',detail:'No existe aún un flujo autenticado de eliminación completa, incluyendo Storage y colaboraciones.'});
+check('account_deletion_web','Solicitud de eliminación disponible también desde la web',
+ existsSync('public/delete-account.html'),{severity:'release-blocker',detail:'Google Play requiere una vía web externa para iniciar la solicitud de eliminación, además de la app.'});
 check('support_contact','Canal de soporte privado accesible',
  existsSync('public/support.html'),{severity:'release-blocker',detail:'Definir correo de soporte o formulario privado antes de publicar en tiendas.'});
 check('apple_signing','Firma y distribución Apple configuradas',
