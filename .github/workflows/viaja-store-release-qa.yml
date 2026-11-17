@@ -1,0 +1,184 @@
+name: Viaja etapa 8 - QA y preflight para tiendas
+on:
+  push:
+    branches: [feat/ux-viaja-24-store-readiness-20261117]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: viaja-stage8-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web-privacy-performance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Dependencias, tipos y regresiones
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npx tsc --noEmit
+          npm run test:core
+          node --experimental-strip-types tests/security-baseline.test.mts
+          node --experimental-strip-types tests/mobile-store-readiness.test.mts
+          node scripts/check-preview-isolation.mjs
+      - name: Compilar cliente de distribución y verificar secretos
+        run: |
+          npm run build:demo
+          test -s web-dist/index.html
+          node scripts/security-bundle-scan.mjs
+          node scripts/release-readiness-report.mjs
+      - name: Instalar navegadores de QA
+        run: |
+          command -v google-chrome
+          npm install --prefix /tmp/viaja-ui-smoke --no-package-lock --no-audit --no-fund playwright@1.56.1
+      - name: Servir compilado
+        run: |
+          nohup npx vite preview --config vite.portable.config.ts --host 127.0.0.1 --port 4173 >/tmp/viaja-stage8-preview.log 2>&1 &
+          for n in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/viaja-stage8-preview.log
+          exit 1
+      - name: QA iPhone Android y escritorio con Chromium
+        run: node scripts/store-cross-device-browser-smoke.mjs
+      - name: Instalar WebKit para Safari
+        run: /tmp/viaja-ui-smoke/node_modules/.bin/playwright install --with-deps webkit
+      - name: QA iPhone Safari y escritorio con WebKit
+        env:
+          VIAJA_BROWSER: webkit
+        run: node scripts/store-cross-device-browser-smoke.mjs
+      - name: Evidencia de QA y reporte go-no-go
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Viaja-Etapa8-Web-Privacy-Performance
+          path: artifacts/store-readiness/
+          retention-days: 14
+          if-no-files-found: warn
+
+  android-debug-emulator:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      VIAJA_NATIVE: 'true'
+      VIAJA_API_BASE: https://viaja.pages.dev
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v4
+      - name: Crear recursos web Android y sincronizar
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build:demo
+          npm ci --prefix mobile --ignore-scripts --no-audit --no-fund
+          node scripts/restore-gradle-wrapper.mjs
+          cd mobile
+          npx cap sync android
+      - name: SDK y APK debug reproducible
+        run: |
+          sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+          cd mobile/android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          test -s app/build/outputs/apk/debug/app-debug.apk
+      - name: Permitir aceleración de emulador en CI
+        run: sudo chmod 666 /dev/kvm
+      - name: Iniciar Android en emulador, detectar cierre crítico y capturar pantalla
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: |
+            mkdir -p artifacts/store-readiness/android
+            adb install mobile/android/app/build/outputs/apk/debug/app-debug.apk
+            adb shell am start -W -n com.matiabad.viaja/.MainActivity
+            sleep 8
+            adb shell pidof com.matiabad.viaja
+            adb shell screencap -p /sdcard/viaja-stage8.png
+            adb pull /sdcard/viaja-stage8.png artifacts/store-readiness/android/home.png
+            adb logcat -d -s AndroidRuntime:E > artifacts/store-readiness/android/android-runtime.log
+            if grep -Fq 'Process: com.matiabad.viaja' artifacts/store-readiness/android/android-runtime.log; then echo 'Critical Android crash detected'; exit 1; fi
+      - name: Empaquetar APK de pruebas con hash
+        if: always()
+        run: |
+          mkdir -p artifacts/store-readiness/android
+          if test -s mobile/android/app/build/outputs/apk/debug/app-debug.apk; then
+            cp mobile/android/app/build/outputs/apk/debug/app-debug.apk artifacts/store-readiness/android/Viaja-stage8-debug.apk
+            sha256sum artifacts/store-readiness/android/Viaja-stage8-debug.apk > artifacts/store-readiness/android/SHA256SUMS
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Viaja-Etapa8-Android-Debug
+          path: artifacts/store-readiness/android/
+          retention-days: 14
+          if-no-files-found: warn
+
+  ios-unsigned-simulator:
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      VIAJA_NATIVE: 'true'
+      VIAJA_API_BASE: https://viaja.pages.dev
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar Xcode disponible
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphonesimulator --show-sdk-version
+      - name: Compilar app web y preparar Capacitor iOS
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build:demo
+          npm ci --prefix mobile --ignore-scripts --no-audit --no-fund
+          npm install --prefix mobile --no-save --no-package-lock --no-audit --no-fund @capacitor/ios@8.6.0
+          cd mobile
+          npx cap add ios --packagemanager SPM
+          npx cap sync ios
+      - name: Compilar Xcode Simulator sin secretos Apple
+        working-directory: mobile
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App \
+            -configuration Debug -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            -derivedDataPath "$RUNNER_TEMP/viaja-stage8-ios" build
+      - name: Guardar app iOS no firmada
+        run: |
+          mkdir -p artifacts/store-readiness/ios
+          find "$RUNNER_TEMP/viaja-stage8-ios/Build/Products" -name '*.app' -type d -print
+          ditto -c -k --sequesterRsrc --keepParent \
+            "$RUNNER_TEMP/viaja-stage8-ios/Build/Products/Debug-iphonesimulator/App.app" \
+            artifacts/store-readiness/ios/Viaja-unsigned-simulator.zip
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Viaja-Etapa8-iOS-Simulator-Unsigned
+          path: artifacts/store-readiness/ios/
+          retention-days: 7
+          if-no-files-found: warn
