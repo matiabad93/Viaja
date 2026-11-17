@@ -27,16 +27,20 @@ await mkdir('artifacts/documents-c',{recursive:true});
 const mockSupabase=async(context,userId,seed=[])=>{
  let docs=[...seed],files=new Map(),uploads=0,deletes=0,signs=0;
  await context.addInitScript(({userId})=>{
-  localStorage.setItem('viaja-theme','dark');
-  localStorage.setItem('viaja-auth-session-v1',JSON.stringify({
-   access_token:[
-    btoa(JSON.stringify({alg:'HS256',typ:'JWT'})),
-    btoa(JSON.stringify({sub:userId,role:'authenticated',aud:'authenticated',exp:Math.floor(Date.now()/1000)+36000})),
-    'mock-signature'
-   ].join('.'),refresh_token:'test-refresh',
-   expires_at:Math.floor(Date.now()/1000)+36000,
-   user:{id:userId,email:'test@example.invalid'}
-  }));
+  // PDF iframes can have opaque origins with no localStorage available.
+  try{
+   if(!window.localStorage)return;
+   localStorage.setItem('viaja-theme','dark');
+   localStorage.setItem('viaja-auth-session-v1',JSON.stringify({
+    access_token:[
+     btoa(JSON.stringify({alg:'HS256',typ:'JWT'})),
+     btoa(JSON.stringify({sub:userId,role:'authenticated',aud:'authenticated',exp:Math.floor(Date.now()/1000)+36000})),
+     'mock-signature'
+    ].join('.'),refresh_token:'test-refresh',
+    expires_at:Math.floor(Date.now()/1000)+36000,
+    user:{id:userId,email:'test@example.invalid'}
+   }));
+  }catch{ /* Opaque cross-origin document, not app storage. */ }
  },{userId});
  await context.route(/\/api\/private-documents\/upload\?/,async route=>{
   const req=route.request(),query=new URL(req.url()).searchParams;
