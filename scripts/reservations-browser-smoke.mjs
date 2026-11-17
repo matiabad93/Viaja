@@ -25,11 +25,16 @@ const setup=async(ctx)=>{
    sub:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',role:'authenticated',
    exp:Math.floor(Date.now()/1000)+36000
   }),'mock'].join('.');
-  localStorage.setItem('viaja-theme','dark');
-  localStorage.setItem('viaja-auth-session-v1',JSON.stringify({
-   access_token:token,refresh_token:'mock-refresh',expires_at:Math.floor(Date.now()/1000)+36000,
-   user:{id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',email:'test@example.invalid'}
-  }));
+  // addInitScript also runs in the private PDF viewer's cross-origin frame,
+  // where localStorage may be null; seed only frames with available storage.
+  try{
+   if(!window.localStorage)return;
+   localStorage.setItem('viaja-theme','dark');
+   localStorage.setItem('viaja-auth-session-v1',JSON.stringify({
+    access_token:token,refresh_token:'mock-refresh',expires_at:Math.floor(Date.now()/1000)+36000,
+    user:{id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',email:'test@example.invalid'}
+   }));
+  }catch{ /* Opaque PDF document: intentionally no origin storage. */ }
  });
  await ctx.route(/\/api\/private-documents\/upload\?/,async route=>{
   const req=route.request(),query=new URL(req.url()).searchParams;
@@ -118,7 +123,7 @@ try{
   const ctx=await browser.newContext({viewport:{width:dim.width,height:dim.height},colorScheme:'dark',locale:'es-ES',acceptDownloads:true,serviceWorkers:'block'});
   const backend=await setup(ctx);
   const page=await ctx.newPage(),pageErrors=[];
-  page.on('pageerror',e=>pageErrors.push(e.message));
+  page.on('pageerror',e=>pageErrors.push(e.stack||e.message));
   await page.goto(base,{waitUntil:'domcontentloaded'});
   const nav=page.getByRole('navigation',{name:'Navegación principal'});
   assert.equal(await nav.getByRole('button',{name:'Reservas'}).count(),1);

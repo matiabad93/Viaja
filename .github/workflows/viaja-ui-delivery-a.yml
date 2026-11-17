@@ -53,6 +53,10 @@ jobs:
         run: node scripts/guided-planner-browser-smoke.mjs
       - name: Verify dark theme contrast and left-icon spacing
         run: node scripts/dark-mode-contrast-smoke.mjs
+      - name: Verify premium accessibility, comfortable reading and responsive navigation
+        run: |
+          node --experimental-strip-types tests/premium-experience.test.mts
+          node scripts/premium-experience-browser-smoke.mjs
       - name: Verify new frontend really reached Cloudflare
         if: github.ref == 'refs/heads/feat/v1-production-release-plan' || github.ref == 'refs/heads/main'
         run: |
@@ -68,4 +72,5 @@ jobs:
           path: |
             artifacts/ui-delivery-a/
             artifacts/logistics-b/
+            artifacts/premium-experience/
           retention-days: 7

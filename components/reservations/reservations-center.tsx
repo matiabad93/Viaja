@@ -1,5 +1,5 @@
 'use client';
-import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
+import {lazy,Suspense,useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {CalendarCheck,CheckCircle2,CloudUpload,FileText,Filter,FolderLock,Hotel,Info,Link2,LockKeyhole,Plane,Plus,Search,ShieldCheck,Sparkles,Trash2,Eye,Pencil,UploadCloud,X} from 'lucide-react';
 import type {Plan} from '../../lib/travel';
 import type {ViajaSession} from '../../lib/supabase-client';
@@ -9,7 +9,8 @@ import {
 } from '../../lib/reservation-library';
 import {ReservationEditor} from './reservation-editor';
 import {getPrivateDocumentUsage,type ViajaDocumentUsage} from '../../lib/private-upload-client.ts';
-import {ReservationPdfViewer} from './reservation-pdf-viewer';
+import {FeedbackState} from '../experience/feedback-state';
+const ReservationPdfViewer=lazy(()=>import('./reservation-pdf-viewer').then(m=>({default:m.ReservationPdfViewer})));
 import {TravelPassWallet} from './travel-pass-wallet';
 import {ConfirmDialog} from '../confirm-dialog';
 
@@ -122,17 +123,17 @@ export function ReservationsCenter({
  const closeEditor=()=>{setEditing(null);setSuccess('')};
  const filterOptions=[['all','Todas'],['flight','Vuelos'],['accommodation','Alojamientos'],['pending','Por revisar'],['other','Otros']] as const;
  const tripName=(id:string|null)=>id?plans.find(p=>p.id===id)?.trip.destination||'Viaje no disponible':'Sin viaje';
- const scrollAdd=()=>addRef.current?.scrollIntoView({behavior:'smooth',block:'center'});
+ const scrollAdd=()=>addRef.current?.scrollIntoView({behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});
  return <section className="reservation-center" aria-labelledby="reservations-main-heading">
   <header className="reservation-page-header"><div><span className="eyebrow">DOCUMENTOS EN UN SOLO LUGAR</span>
    <h1 id="reservations-main-heading">Tus reservas, siempre a mano.</h1>
    <p>Guardá vuelos, alojamientos y billetes en PDF. No necesitás crear un viaje ni usar IA para organizarte.</p>
-  </div><button className="primary" type="button" onClick={scrollAdd}><Plus size={18}/>Importar PDF</button></header>
-  <div className="reservation-overview" aria-label="Resumen de reservas">
+  </div><button className="primary" type="button" onClick={scrollAdd}><Plus size={18}/>{owner?'Importar PDF':'Cómo guardar mis PDF'}</button></header>
+  {owner&&<div className="reservation-overview" aria-label="Resumen de reservas">
    <div><FileText size={23}/><strong>{items.length}</strong><span>PDF privados</span></div>
    <div><CalendarCheck size={23}/><strong>{items.filter(x=>x.linked_trip_id).length}</strong><span>Con viaje</span></div>
    <div><ShieldCheck size={23}/><strong>{items.filter(x=>!x.reviewed_at).length}</strong><span>Por revisar</span></div>
-  </div>
+  </div>}
   {owner&&!loading&&items.length>0&&<TravelPassWallet
    items={items} title="Acceso rápido a tus billetes"
    description="Las próximas reservas aparecen primero. Abrí el QR y consultá el localizador sin buscar entre archivos."
@@ -174,7 +175,7 @@ export function ReservationsCenter({
    <div className="reservation-section-heading"><div><h2>Mi biblioteca</h2><p>Accedé a los originales, completá la información y vinculá tus viajes cuando quieras.</p></div>
     {owner&&<button type="button" className="secondary" onClick={reload} disabled={loading}>Actualizar</button>}
    </div>
-   <div className="reservation-search-toolbar"><label className="reservation-search"><Search size={18}/><input value={search} onChange={e=>setSearch(e.target.value)}
+   {owner&&items.length>0&&<><div className="reservation-search-toolbar"><label className="reservation-search"><Search size={18}/><input value={search} onChange={e=>setSearch(e.target.value)}
     placeholder="Buscar compañía, destino, hotel..." aria-label="Buscar reservas"/></label>
     <label className="reservation-trip-filter"><Filter size={17}/><select value={onlyTrip} onChange={e=>setOnlyTrip(e.target.value)} aria-label="Filtrar por viaje">
      <option value="">Todos los viajes</option>{plans.filter(p=>p.collaboration?.version).map(p=><option key={p.id} value={p.id}>{p.trip.destination}</option>)}
@@ -182,13 +183,14 @@ export function ReservationsCenter({
    </div>
    <div className="reservation-filters" role="group" aria-label="Filtrar tipo de reserva">
     {filterOptions.map(([value,label])=><button type="button" key={value} aria-pressed={kindFilter===value} onClick={()=>setKindFilter(value)}>{label}</button>)}
-   </div>
+   </div></>}
    {!owner?<div className="reservation-empty"><FolderLock size={34}/><h3>Tu biblioteca personal está protegida.</h3><p>Iniciá sesión desde el menú superior para acceder a tus PDF privados.</p></div>:
-    loading?<div className="reservation-empty" role="status">Cargando tus reservas privadas…</div>:
-    !filtered.length?<div className="reservation-empty"><FileText size={33}/><h3>{items.length?'No hay coincidencias':'Todavía no guardaste reservas.'}</h3>
-      <p>{items.length?'Probá otro filtro o buscá por un nombre diferente.':'Podés empezar por un billete de avión o una confirmación de alojamiento en PDF.'}</p>
-      {!items.length&&<button className="secondary" type="button" onClick={scrollAdd}>Importar mi primer PDF</button>}
-     </div>:
+    loading?<FeedbackState compact kind="loading" title="Preparando tus reservas" description="Estamos recuperando tus documentos privados. Un momento…"/>:
+    error&&!items.length?<FeedbackState compact kind="error" title="No pudimos cargar la biblioteca" description="Comprobá tu conexión e intentá otra vez. Tus PDF no se borraron." action={{label:"Reintentar",onClick:reload}}/>:
+    !filtered.length?<FeedbackState compact kind="empty"
+     title={items.length?'No encontramos coincidencias':'Todavía no guardaste reservas.'}
+     description={items.length?'Probá otro nombre o volvé a mostrar todas las reservas.':'Guardá tu primer billete o confirmación de alojamiento: después podés vincularlo con un viaje.'}
+     action={{label:items.length?'Limpiar búsqueda y filtros':'Importar mi primer PDF',onClick:items.length?()=>{setSearch('');setKindFilter('all');setOnlyTrip('')}:scrollAdd}}/>:
     <div className="reservation-card-grid">{filtered.map(record=>{
      const associated=plans.find(p=>p.id===record.linked_trip_id);
      const Icon=record.kind==='flight'?Plane:record.kind==='accommodation'?Hotel:FileText;
@@ -215,7 +217,7 @@ export function ReservationsCenter({
     })}</div>}
    <p className="reservation-private-note"><LockKeyhole size={16}/>Tus PDFs no se publican en Explorar destinos. Vincularlos a un viaje no comparte los archivos automáticamente.</p>
   </section>
-  {viewing&&<ReservationPdfViewer reservation={viewing} onClose={()=>setViewing(null)}/>}
+  {viewing&&<Suspense fallback={<FeedbackState compact kind="loading" title="Abriendo tu documento" description="Preparamos el visor privado de PDF."/>}><ReservationPdfViewer reservation={viewing} onClose={()=>setViewing(null)}/></Suspense>}
   <ConfirmDialog open={!!deleting} title="¿Eliminar esta reserva PDF?"
    description={deleting?'Se eliminará definitivamente el documento “'+deleting.filename+'”. No se borrará ningún viaje ni gasto.':''}
    confirmLabel="Eliminar PDF" danger busy={deletingBusy} onCancel={()=>setDeleting(null)} onConfirm={()=>void erase()}/>
