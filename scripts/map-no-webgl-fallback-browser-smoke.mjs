@@ -20,12 +20,12 @@ for(const [name,browserType] of [['chrome',chromium],['safari',webkit]]){
    };
    const locations=[
     ['coliseo, roma, italia',41.8902,12.4922],
-    ['foro romano',41.8925,12.4853],
+    ['foro romano, roma, italia',41.8925,12.4853],
     ['colina capitolina, roma, italia',41.8933,12.4829],
     ['piazza venezia, roma, italia',41.8959,12.4822]
    ];
    for(const [query,lat,lon] of locations){
-    localStorage.setItem('viaja-place-v1:'+query,JSON.stringify({lat,lon,saved:Date.now()}));
+    try { localStorage.setItem('viaja-place-v1:'+query,JSON.stringify({lat,lon,saved:Date.now()})); } catch { /* Cross-origin and sandboxed frames cannot access storage. */ }
    }
   });
   const page=await ctx.newPage(),errors=[];
