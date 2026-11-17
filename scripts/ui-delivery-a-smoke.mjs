@@ -31,6 +31,7 @@ try{
   await page.emulateMedia({colorScheme:'light'});
   await page.waitForFunction(()=>document.documentElement.dataset.theme==='light');
 
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:'Explorar destinos'}).click();
   const favorite=page.getByRole('button',{name:/Guardar en favoritos:/}).first();
   await favorite.waitFor();
   const before=await favorite.boundingBox();

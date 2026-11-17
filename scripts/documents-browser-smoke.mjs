@@ -112,7 +112,7 @@ try{
   const page=await ctx.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin,{waitUntil:'domcontentloaded'});
-  await page.getByRole('button',{name:/Mis viajes/}).click();
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:/Mis viajes/}).click();
   await page.getByRole('button',{name:'Ver viaje →'}).click();
   await page.getByRole('navigation',{name:'Secciones del viaje'}).getByRole('button',{name:'Logística'}).click();
   await page.getByRole('heading',{name:'Documentos y comprobantes'}).waitFor();
@@ -151,7 +151,7 @@ try{
   await page.getByRole('button',{name:'Cerrar vista previa'}).click();
   await page.screenshot({path:'artifacts/documents-c/'+device.name+'-'+(webkitMode?'webkit':'chromium')+'.png',fullPage:true});
   await page.reload({waitUntil:'domcontentloaded'});
-  await page.getByRole('button',{name:/Mis viajes/}).click();
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:/Mis viajes/}).click();
   await page.getByRole('button',{name:'Ver viaje →'}).click();
   await page.getByRole('navigation',{name:'Secciones del viaje'}).getByRole('button',{name:'Logística'}).click();
   await page.locator('.document-row').getByText('Billete Colmar.pdf').waitFor();
@@ -175,7 +175,7 @@ try{
  const backend=await mockSupabase(ctx,viewer,[seed]);
  const page=await ctx.newPage();
  await page.goto(origin,{waitUntil:'domcontentloaded'});
- await page.getByRole('button',{name:/Mis viajes/}).click();
+ await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:/Mis viajes/}).click();
  await page.getByRole('button',{name:'Ver viaje →'}).click();
  await page.getByRole('navigation',{name:'Secciones del viaje'}).getByRole('button',{name:'Logística'}).click();
  await page.getByText('Billete privado.pdf').waitFor();

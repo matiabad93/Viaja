@@ -29,6 +29,9 @@ const guides=readFileSync(new URL('../components/travel-hub.tsx',import.meta.url
 const stops=readFileSync(new URL('../components/trip-stops-editor.tsx',import.meta.url),'utf8');
 const css=readFileSync(new URL('../app/globals.css',import.meta.url),'utf8');
 assert.ok(home.includes("onClick={()=>showGuide('madrid')}"),'Madrid teaser opens the published guide');
+assert.ok(home.includes("[tab,setTab]=useState('home')"),'First visit opens the traveler home, not a buried guide');
+assert.ok(home.includes("tab==='home'?<HomeDashboard"),'Home provides shortcuts and resumable trips');
+assert.ok(home.includes("if(sharedLinkId)setTab('guides')"),'Shared trip links still open the community explorer');
 assert.ok(home.includes("initialGuideId={tab==='guides'?guideTarget||undefined:undefined}"),'Guide target passed to catalog');
 assert.ok(guides.includes('useState<string|null>(initialGuideId||null)'),'Guide opens selected on mount');
 assert.ok(stops.includes('disabled={!canAdd}'),'Cannot add an unselected stop');
@@ -37,6 +40,7 @@ assert.ok(stops.includes('onChange(swapTripStops(trip,index,other))'),'Primary a
 assert.ok(stops.includes("i===0?'Destino principal'"),'The primary city is the first rendered route position');
 assert.ok(css.includes('All route positions share identical input geometry'),'All city controls use the same dimensions');
 assert.ok(css.includes('.topbar nav:has(>button:nth-child(4))'),'Bottom nav supports 3 and 4 sections');
+assert.ok(css.includes('grid-template-columns:repeat(5,minmax(0,1fr))'),'Mobile navigation supports five main destinations');
 assert.ok(css.includes('env(safe-area-inset-bottom)'),'Bottom nav accommodates iPhone safe area');
 // AI regeneration must use Viaja's dialog, not window.confirm(), and must not
 // reserve the provider request before the user has actively confirmed.

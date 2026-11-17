@@ -82,7 +82,7 @@ assert.equal(supplied.travelers,2);
 const editor=createEditorialStarter(sample);
 assert.ok(editor?.length===3,'Undated Roma wizard must create three editorial days');
 assert.ok(editor.every(d=>d.activities.length>0),'Rome day should contain useful activity suggestions');
-assert.ok(editor[0].activities.some(a=>/coliseo/i.test(a.description)),'Rome should retain the Coliseum');
+assert.ok(editor[0].activities.some(a=>/coliseo/i.test(a.title+' '+a.description)),'Rome should retain the Coliseum as a real stop');
 assert.equal(createEditorialStarter({...sample,destination:'Destino sin guía'}),null);
 const page=readFileSync(new URL('../app/page.tsx',import.meta.url),'utf8');
 assert.match(page,/plannerMode==='guided'\?<GuidedPlanner/);

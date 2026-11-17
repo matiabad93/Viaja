@@ -18,6 +18,7 @@ packageImportMethod: auto
 verifyDepsBeforeRun: false
 optimisticRepeatInstall: false
 overrides:
+  '@maplibre/maplibre-gl-style-spec': 26.5.0
   miniflare>sharp: 0.35.5
   browserslist: 4.29.5
   source-map-js: 1.2.2

@@ -77,6 +77,7 @@ try{
    await page.goto(BASE,{waitUntil:'domcontentloaded'});
    await page.getByRole('button',{name:/Apariencia:/}).waitFor();
    await page.waitForFunction(expected=>document.documentElement.dataset.theme===expected,theme);
+   await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:'Explorar destinos'}).click();
 
    // Destination sub-navigation and the editorial guide day tabs.
    const switcher=page.locator('.explore-switch');
@@ -84,8 +85,8 @@ try{
    await page.getByRole('button',{name:'Viajes compartidos',exact:true}).click();
    await selected(switcher.locator('button[aria-pressed="true"]'),'Community tab',theme);
    await page.getByRole('button',{name:'Guías de Viaja',exact:true}).click();
-   const barcelonaCard=page.locator('.visualguides .card').first();
-   await barcelonaCard.getByRole('button',{name:/Explorar/}).click();
+   const firstGuide=page.locator('.visualguides .explore-card').first();
+   await firstGuide.getByRole('button',{name:'Ver itinerario'}).click();
    const dayButtons=page.locator('.visualguides .tabs button');
    await dayButtons.first().waitFor();
    await selected(dayButtons.filter({hasText:'Día 1'}),'Guide day 1',theme);
@@ -100,9 +101,9 @@ try{
    await selected(page.locator('.topbar nav button.navactive'),'Main selected nav',theme);
    const journeyTabs=page.locator('.journey-toolbar .filterpills');
    await selected(journeyTabs.locator('button[aria-pressed="true"]'),'Journey filter',theme);
-   await journeyTabs.getByRole('button',{name:'Próximo'}).click();
+   await journeyTabs.getByRole('button',{name:/^Próximo/}).click();
    await selected(journeyTabs.locator('button[aria-pressed="true"]'),'Journey upcoming',theme);
-   await journeyTabs.getByRole('button',{name:'Todos'}).click();
+   await journeyTabs.getByRole('button',{name:/^Todos/}).click();
    await selected(journeyTabs.locator('button[aria-pressed="true"]'),'Journey all',theme);
    await take(page,device.name,theme,'my-trips');
 

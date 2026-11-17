@@ -10,6 +10,7 @@ import {
 import {ReservationEditor} from './reservation-editor';
 import {getPrivateDocumentUsage,type ViajaDocumentUsage} from '../../lib/private-upload-client.ts';
 import {ReservationPdfViewer} from './reservation-pdf-viewer';
+import {TravelPassWallet} from './travel-pass-wallet';
 import {ConfirmDialog} from '../confirm-dialog';
 
 const labelKind:Record<ReservationKind,string>={
@@ -132,6 +133,10 @@ export function ReservationsCenter({
    <div><CalendarCheck size={23}/><strong>{items.filter(x=>x.linked_trip_id).length}</strong><span>Con viaje</span></div>
    <div><ShieldCheck size={23}/><strong>{items.filter(x=>!x.reviewed_at).length}</strong><span>Por revisar</span></div>
   </div>
+  {owner&&!loading&&items.length>0&&<TravelPassWallet
+   items={items} title="Acceso rápido a tus billetes"
+   description="Las próximas reservas aparecen primero. Abrí el QR y consultá el localizador sin buscar entre archivos."
+   limit={4}/>}
   {owner&&usage&&<p className="reservation-quota-status" role="status">
    <LockKeyhole size={16}/>Almacenamiento privado: <strong>{usage.files} de {usage.maxFiles} documentos</strong>
    · <strong>{(usage.bytes/1048576).toFixed(1)} de {(usage.maxBytes/1048576).toFixed(0)} MB</strong>

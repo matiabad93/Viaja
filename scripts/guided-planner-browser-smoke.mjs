@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {chromium} from '/tmp/viaja-ui-smoke/node_modules/playwright/index.mjs';
-const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']});
+const browser=await chromium.launch({headless:true,executablePath:process.env.VIAJA_BROWSER_BIN||'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']});
 await mkdir('artifacts/guided-planner-v2',{recursive:true});
 try{
  for(const device of [
@@ -15,7 +15,13 @@ try{
   const page=await ctx.newPage();
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
-  await page.getByRole('button',{name:/Planificar/}).click();
+  await page.getByRole('heading',{name:'Todo gran viaje empieza con una idea.'}).waitFor();
+  assert.ok(await page.getByRole('button',{name:/Planificar un viaje/}).isVisible(),'Guest sees immediate plan CTA');
+  await page.screenshot({path:'artifacts/guided-planner-v2/'+device.label+'-home.png',fullPage:true});
+  await page.locator('.home-shortcuts .home-shortcut').nth(1).click();
+  await page.getByRole('heading',{name:'Encontrá un viaje que te inspire.'}).waitFor();
+  await page.getByRole('button',{name:'Inicio',exact:true}).click();
+  await page.getByRole('button',{name:/Planificar un viaje/}).click();
   await page.getByRole('heading',{name:'¿A dónde te gustaría viajar?'}).waitFor();
   assert.equal(await page.getByRole('button',{name:/Opciones avanzadas/}).count(),1);
   await page.screenshot({path:'artifacts/guided-planner-v2/'+device.label+'-step1.png',fullPage:true});
@@ -24,6 +30,25 @@ try{
   await dest.fill('Roma, Italia');
   await dest.press('Tab');
   assert.equal(await dest.inputValue(),'Roma, Italia');
+  await page.getByRole('button',{name:/Continuar/}).click();
+  await page.getByRole('heading',{name:'¿Qué te gusta hacer?'}).waitFor();
+  await page.waitForFunction(()=>Boolean(localStorage.getItem('viaja-guided-planner-draft-v1')));
+  await page.getByRole('button',{name:'Inicio',exact:true}).click();
+  await page.getByRole('button',{name:/Continuar planificación/}).click();
+  await page.getByRole('heading',{name:'¿Qué te gusta hacer?'}).waitFor();
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.getByRole('button',{name:/Continuar planificación/}).click();
+  await page.getByRole('heading',{name:'¿Qué te gusta hacer?'}).waitFor();
+  assert.equal(await page.getByRole('combobox',{name:'Destino principal'}).count(),0,'Resumed wizard must stay on its saved step');
+  await page.getByRole('button',{name:/Empezar de cero/}).click();
+  await page.getByRole('alertdialog',{name:'¿Empezar un viaje nuevo?'}).getByRole('button',{name:'Cancelar'}).click();
+  await page.getByRole('heading',{name:'¿Qué te gusta hacer?'}).waitFor();
+  await page.getByRole('button',{name:/Empezar de cero/}).click();
+  await page.getByRole('alertdialog',{name:'¿Empezar un viaje nuevo?'}).getByRole('button',{name:'Sí, empezar de cero'}).click();
+  await page.getByRole('heading',{name:'¿A dónde te gustaría viajar?'}).waitFor();
+  assert.equal(await page.evaluate(()=>localStorage.getItem('viaja-guided-planner-draft-v1')),null,'Reset removes only pending planner draft');
+  await page.getByRole('combobox',{name:'Destino principal'}).fill('Roma, Italia');
+  await page.getByRole('combobox',{name:'Destino principal'}).press('Tab');
   await page.getByRole('button',{name:/Continuar/}).click();
   await page.getByRole('heading',{name:'¿Qué te gusta hacer?'}).waitFor();
   for(const label of ['Historia y monumentos','Gastronomía','Naturaleza']){
@@ -70,6 +95,7 @@ try{
    const v=localStorage.getItem('viaja-ai-trips-v1');
    try {const arr=JSON.parse(v||'[]');return Array.isArray(arr)&&arr.some(p=>p.trip?.destination==='Roma, Italia'&&p.itinerary?.length===3);}catch{return false}
   },{timeout:8000});
+  assert.equal(await page.evaluate(()=>localStorage.getItem('viaja-guided-planner-draft-v1')),null,'Created trips must clear the pending wizard draft');
   const model=await page.evaluate(()=>{
    const trips=JSON.parse(localStorage.getItem('viaja-ai-trips-v1')||'[]');
    return trips.find(p=>p.trip.destination==='Roma, Italia');
@@ -83,7 +109,25 @@ try{
   assert.equal(model.trip.travelers,2,'Back to couple must reset party to exactly two');
   assert.equal(model.trip.preferences.dayTimes[0].start,'12:00');
   assert.equal(model.itinerary.length,3);
-  assert.ok(model.itinerary.every(d=>d.activities.length>0),'Rome draft must not start with empty days');
+  assert.ok(model.itinerary.every(d=>d.activities.length>=3),'Rome draft needs concrete stops on every day');
+  assert.deepEqual(model.itinerary[0].activities.map(a=>a.title),['Coliseo','Foro Romano','Colina Capitolina','Piazza Venezia']);
+  assert.ok(model.itinerary.every(d=>d.activities.every(a=>a.location&&!/^(Mañana|Tarde) en /i.test(a.title))),'No generic morning/afternoon placeholders');
+  await page.locator('.detail-tabs').getByRole('button',{name:'Itinerario'}).click();
+  await page.getByRole('button',{name:'Mapa',exact:true}).click();
+  await page.getByRole('region',{name:'Mapa de Roma, Italia'}).waitFor();
+  assert.ok(await page.getByRole('link',{name:/Abrir ruta en Google Maps/}).isVisible(),'Map alternative remains accessible');
+  await page.waitForFunction(()=>{
+   const map=document.querySelector('.viaja-osm-map[data-map-status="ready"]');
+   const fallback=document.querySelector('.viaja-map-section .error')?.textContent?.includes('mapa de fondo');
+   return Boolean(map||fallback);
+  },{timeout:20000});
+  assert.equal(await page.locator('.viaja-map-loading').count(),0,'Loading state must finish before presenting the map');
+  await page.screenshot({path:'artifacts/guided-planner-v2/'+device.label+'-map.png',fullPage:true});
+  await page.getByRole('button',{name:'Inicio',exact:true}).click();
+  await page.getByRole('button',{name:/Abrir este viaje/}).waitFor();
+  assert.match(await page.locator('.home-featured').innerText(),/Roma, Italia/,'Home highlights the recently created trip');
+  await page.getByRole('button',{name:/Abrir este viaje/}).click();
+  await page.getByRole('button',{name:/Itinerario/}).first().waitFor();
   await page.getByRole('button',{name:/Planificar/}).click();
   await page.getByRole('button',{name:/Opciones avanzadas/}).click();
   await page.getByRole('heading',{name:'Contanos tu próximo viaje'}).waitFor();
@@ -130,8 +174,8 @@ try{
  await signedPage.getByRole('button',{name:'Opciones de mi cuenta'}).waitFor();
  await signedPage.getByRole('button',{name:'Administración'}).waitFor();
  const nav=signedPage.locator('.topbar nav button');
- assert.equal(await nav.count(),5,'Signed-in fixture must show 5 tabs');
- for(let i=0;i<5;i++){
+ assert.equal(await nav.count(),6,'Signed-in fixture must show 6 tabs');
+ for(let i=0;i<6;i++){
   const button=nav.nth(i);
   const box=()=>button.evaluate(el=>({w:Math.round(el.getBoundingClientRect().width),h:Math.round(el.getBoundingClientRect().height)}));
   const initial=await box();

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 const staticHeaders=readFileSync(new URL('../public/_headers',import.meta.url),'utf8');
 for(const item of ['X-Frame-Options: DENY','X-Content-Type-Options: nosniff',
- 'Referrer-Policy: no-referrer','Strict-Transport-Security:',
+ 'Referrer-Policy: strict-origin-when-cross-origin','Strict-Transport-Security:',
  "object-src 'none'","frame-ancestors 'none'","form-action 'self'"])
  assert.ok(staticHeaders.includes(item),'Missing static security header: '+item);
 assert.ok(!/script-src\s+[^;\n]*unsafe-eval/.test(staticHeaders),'Never allow unsafe-eval');

@@ -163,6 +163,22 @@ try{
   assert.equal(backend.docs[0].linked_trip_id,tripId);
   assert.equal(backend.docs[0].kind,'flight');
   assert.ok(backend.docs[0].reviewed_at);
+  // Stage 6: important travel details and the original QR are one tap away.
+  const quick=page.locator('.reservation-center .travel-pass-wallet');
+  await quick.getByText('Barcelona → Basilea').waitFor();
+  await quick.getByText('AB123').waitFor();
+  await quick.getByRole('button',{name:'Abrir billete / QR'}).click();
+  await page.getByRole('dialog',{name:'Billete PDF billete-basel.pdf'}).waitFor();
+  await page.getByRole('button',{name:'Cerrar PDF'}).click();
+  // The same linked document must be reachable inside the trip's Logística tab.
+  await page.getByRole('button',{name:'Abrir viaje'}).click();
+  await page.getByRole('navigation',{name:'Secciones del viaje'}).getByRole('button',{name:'Logística'}).click();
+  const inTrip=page.locator('.logistics-linked-reservations .travel-pass-wallet');
+  await inTrip.getByText('AB123').waitFor();
+  await inTrip.getByRole('button',{name:'Abrir billete / QR'}).click();
+  await page.getByRole('dialog',{name:'Billete PDF billete-basel.pdf'}).waitFor();
+  await page.getByRole('button',{name:'Cerrar PDF'}).click();
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:'Reservas'}).click();
   await page.getByRole('button',{name:'Vuelos',exact:true}).click();
   assert.equal(await page.locator('.reservation-card').count(),1);
   await page.screenshot({path:'artifacts/reservations-c/'+dim.name+'-'+(safari?'webkit':'chromium')+'.png',fullPage:true});

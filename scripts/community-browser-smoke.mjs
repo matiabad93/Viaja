@@ -22,6 +22,7 @@ try{
    body:JSON.stringify(route.request().url().includes('id=eq.')?[example]:[example])}));
   await page.goto(origin,{waitUntil:'domcontentloaded'});
   // Public journeys are a new Explore category; existing editorial guides remain default.
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:'Explorar destinos'}).click();
   await page.getByRole('button',{name:'Viajes compartidos'}).click();
   await page.getByRole('heading',{name:'Ideas que se comparten.'}).waitFor({state:'visible'});
   await page.getByRole('heading',{name:'Colmar y Alsacia'}).waitFor({state:'visible'});

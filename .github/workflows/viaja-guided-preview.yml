@@ -1,7 +1,7 @@
 name: Viaja 2.0 — Guided Planner Preview QA
 on:
   push:
-    branches: [feat/viaja-guided-planner-v2-20261104]
+    branches: [feat/viaja-guided-planner-v2-20261104, feat/ux-viaja-21-itinerarios-mapas-20261116]
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,8 +12,6 @@ jobs:
   guided-preview:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    # Cloudflare Pages already deploys preview branches directly from GitHub.
-    # CI only validates the branch and never needs Cloudflare credentials.
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,6 +28,7 @@ jobs:
           npm run test:core
           node --experimental-strip-types tests/guided-planner-v2.test.mts
           node --check scripts/guided-planner-browser-smoke.mjs
+          node --check scripts/trip-list-browser-smoke.mjs
       - name: Build exact Viaja web client
         run: |
           npm run build:demo
@@ -49,10 +48,16 @@ jobs:
           exit 1
       - name: End-to-end guided planning on phone, dark theme and desktop
         run: node scripts/guided-planner-browser-smoke.mjs
+      - name: Verify trip list discovery and sorting on phone and desktop
+        run: node scripts/trip-list-browser-smoke.mjs
+      # Cloudflare Pages' GitHub integration deploys preview branches automatically.
+      # This workflow validates the branch without requiring deployment credentials.
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: Viaja-Guided-Planner-UX-QA
-          path: artifacts/guided-planner-v2/
+          path: |
+            artifacts/guided-planner-v2/
+            artifacts/trip-list-ux/
           retention-days: 7
           if-no-files-found: ignore

@@ -40,8 +40,8 @@ try{
   const page=await context.newPage();
   const errors=[];page.on('pageerror',err=>errors.push(err.message));
   await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
-  await page.getByRole('button',{name:/Mis viajes/}).first().waitFor({state:'visible',timeout:30000});
-  await page.getByRole('button',{name:/Mis viajes/}).first().click();
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:/Mis viajes/}).waitFor({state:'visible',timeout:30000});
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:/Mis viajes/}).click();
   await page.locator('.journey-card').first().waitFor({state:'visible',timeout:10000});
   assert.ok(await page.locator('.journey-card').first().innerText().then(s=>s.includes('Barcelona')),'Fixture trip is visible');
   await page.locator('.journey-card button.journey-cover').first().click();
@@ -81,7 +81,7 @@ try{
   await page.screenshot({path:'artifacts/preview-browser/'+browserName+'-'+device.name+'-planner.png',fullPage:false});
   assert.equal(errors.length,0,'No fatal browser page errors: '+errors.join('; '));
   console.log('PASS '+device.name+' planner fields, date focus and no browser page errors');
-  await page.getByRole('button',{name:/Mis viajes/}).first().click();
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:/Mis viajes/}).click();
   await page.getByRole('button',{name:'Crear viaje',exact:true}).click();
   await page.getByRole('combobox',{name:'¿A dónde querés ir?'}).fill('París, Francia');
   await page.getByRole('button',{name:'Fecha de salida',exact:true}).click();
