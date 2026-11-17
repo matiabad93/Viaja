@@ -12,6 +12,11 @@ for(const [name,browserType] of [['chrome',chromium],['safari',webkit]]){
  }: {})});
  try{
   const ctx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'es-ES',serviceWorkers:'block'});
+  // This smoke test exercises the no-WebGL UI, not the external geocoder.
+  // Keep it deterministic when Nominatim is slow or unavailable in CI.
+  await ctx.route('https://nominatim.openstreetmap.org/**',route=>route.fulfill({
+   status:200,contentType:'application/json',body:JSON.stringify([{lat:'41.8902',lon:'12.4922'}])
+  }));
   await ctx.addInitScript(()=>{
    const original=HTMLCanvasElement.prototype.getContext;
    HTMLCanvasElement.prototype.getContext=function(type,...args){
