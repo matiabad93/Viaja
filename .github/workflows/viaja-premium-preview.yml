@@ -1,0 +1,63 @@
+name: Viaja etapa 7 - Preview aislado de producción
+on:
+  push:
+    branches:
+      - feat/ux-viaja-23-premium-integral-20261117
+    paths:
+      - '.github/workflows/viaja-premium-preview.yml'
+      - 'app/**'
+      - 'components/**'
+      - 'lib/**'
+      - 'portable/**'
+      - 'public/**'
+      - 'functions/**'
+      - 'server/**'
+      - 'vite.portable.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'pnpm-lock.yaml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: viaja-premium-preview
+  cancel-in-progress: true
+jobs:
+  preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.VIAJA_CF_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.VIAJA_CF_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CF_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Comprobar permisos de publicación sin mostrar valores
+        id: credentials
+        run: |
+          set -euo pipefail
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+            echo "::notice::Preview no publicado: credenciales Cloudflare no disponibles en esta rama."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Compilar y validar TypeScript
+        if: steps.credentials.outputs.ready == 'true'
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npx tsc --noEmit
+          npm run build:demo
+          test -s web-dist/index.html
+      - name: Desplegar solamente la rama Preview en el proyecto existente
+        if: steps.credentials.outputs.ready == 'true'
+        run: |
+          npx wrangler pages deploy web-dist \
+            --project-name viaja \
+            --branch feat/ux-viaja-23-premium-integral-20261117 \
+            --commit-hash "$GITHUB_SHA" \
+            --commit-message "Viaja etapa 7: experiencia premium - preview"
