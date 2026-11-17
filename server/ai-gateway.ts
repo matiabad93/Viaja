@@ -4,6 +4,7 @@ import {plannerAPI,validateTrip} from './planner';
 import {geminiFreePlanner,FREE_GEMINI_MODEL} from './gemini-planner';
 import {reservationExtractionAPI} from './reservation-extraction';
 import {privateDocumentUploadAPI} from './private-document-upload';
+import {accountDeletionAPI} from './account-deletion';
 
 export type ViajaAIEnv={
  GEMINI_API_KEY?:string;
@@ -15,6 +16,7 @@ export type ViajaAIEnv={
  SUPABASE_URL?:string;
  SUPABASE_PUBLISHABLE_KEY?:string;
  SUPABASE_SECRET_KEY?:string;
+ VIAJA_ACCOUNT_DELETION_ENABLED?:string;
 };
 const response=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const baseUrl=(env:ViajaAIEnv)=>env.SUPABASE_URL||'https://ovagewbmrirzrlvbvtbw.supabase.co';
@@ -67,6 +69,7 @@ export async function secureAIGateway(request:Request,env:ViajaAIEnv):Promise<Re
  const path=new URL(request.url).pathname;
  if(path==='/api/reservations/extract')return reservationExtractionAPI(request,env);
  if(path==='/api/private-documents/upload')return privateDocumentUploadAPI(request,env);
+ if(path==='/api/account/delete')return accountDeletionAPI(request,env);
  const destinations=await destinationsAPI(request);
  if(destinations)return destinations;
  if(path!=='/api/status'&&path!=='/api/plan')return response({error:'No encontrado'},404);

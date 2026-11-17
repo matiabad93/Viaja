@@ -1,0 +1,89 @@
+name: Viaja etapa 8 — preview de eliminación de cuenta
+on:
+  push:
+    branches: [feat/stage8-secure-account-deletion]
+    paths:
+      - '.github/workflows/viaja-stage8-account-preview.yml'
+      - 'app/**'
+      - 'components/**'
+      - 'functions/**'
+      - 'lib/**'
+      - 'public/**'
+      - 'server/**'
+      - 'scripts/account-deletion-live-e2e.mjs'
+      - 'tests/account-deletion*.test.mts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.portable.config.ts'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: viaja-stage8-account-preview
+  cancel-in-progress: true
+jobs:
+  verified-preview:
+    runs-on: ubuntu-24.04
+    environment: preview
+    timeout-minutes: 25
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.VIAJA_CF_PREVIEW_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.VIAJA_CF_PREVIEW_ACCOUNT_ID }}
+      VIAJA_PREVIEW_URL: https://feat-stage8-secure-account-deletion.viaja.pages.dev
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Comprobar credenciales exclusivas de preview
+        id: credentials
+        run: |
+          set -euo pipefail
+          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]]; then
+            echo '::warning::Faltan credenciales de preview; la publicación se omite sin usar producción.'
+            echo 'available=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'available=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Instalar dependencias y validar cambios
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+          npx tsc --noEmit
+          npm run test:core
+      - name: Compilar el mismo cliente que producción
+        run: |
+          set -euo pipefail
+          npm run build:demo
+          test -s web-dist/index.html
+          test -s web-dist/delete-account.html
+      - name: Publicar solo la rama de la etapa 8
+        if: steps.credentials.outputs.available == 'true'
+        run: |
+          set -euo pipefail
+          npx wrangler pages deploy web-dist \
+            --project-name viaja \
+            --branch feat/stage8-secure-account-deletion \
+            --commit-hash "$GITHUB_SHA" \
+            --commit-message 'Viaja: Stage 8 account deletion preview, QA only'
+      - name: Comprobar página pública y API sin eliminar cuentas
+        if: steps.credentials.outputs.available == 'true'
+        run: |
+          set -euo pipefail
+          for n in $(seq 1 20); do
+            if curl --fail --silent --show-error --max-time 10 "$VIAJA_PREVIEW_URL/delete-account.html" | grep -q 'Eliminar tu cuenta de Viaja'; then
+              break
+            fi
+            if [[ "$n" -eq 20 ]]; then
+              echo '::error::La página pública de baja no está disponible en preview.'
+              exit 1
+            fi
+            sleep 3
+          done
+          status=$(curl --silent --show-error --max-time 15 -o /dev/null -w '%{http_code}' "$VIAJA_PREVIEW_URL/api/account/delete")
+          if [[ "$status" != '405' ]]; then
+            echo "::error::El endpoint de baja devolvió $status en vez de 405 para GET. No se ejecutó POST."
+            exit 1
+          fi

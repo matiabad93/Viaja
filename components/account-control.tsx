@@ -1,12 +1,16 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
-import {cloudReady,logIn,register,logOut,sendRecovery,changePassword,recoveryPending,importLocalTrips,getSocialProviderAvailability,beginSocialSignIn,type ViajaSession} from '../lib/supabase-client';
+import {cloudReady,logIn,register,logOut,sendRecovery,changePassword,recoveryPending,importLocalTrips,getSocialProviderAvailability,beginSocialSignIn,accessToken,type ViajaSession} from '../lib/supabase-client';
+import {requestAPI} from '../lib/api-client';
 import {unavailableSocialProviders,socialProviders,type SocialAvailability,type SocialProvider} from '../lib/social-auth';
-import {UserRound,LogOut,CloudUpload,X,LoaderCircle} from 'lucide-react';
+import {UserRound,LogOut,CloudUpload,X,LoaderCircle,Trash2} from 'lucide-react';
+import './account-deletion.css';
 
 declare const __VIAJA_NATIVE__: boolean;
 const isNativeApp = typeof __VIAJA_NATIVE__ !== 'undefined' && __VIAJA_NATIVE__;
+// Release gate: account deletion must pass real Supabase + Storage QA first.
+const accountDeletionUIEnabled=import.meta.env.VITE_VIAJA_ACCOUNT_DELETION_ENABLED==='true';
 
 export function AccountControl({session,onReload,onError}:{session:ViajaSession|null;onReload:()=>Promise<void>;onError:(message:string)=>void}){
  const [open,setOpen]=useState(false);
@@ -17,12 +21,23 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
  const [working,setWorking]=useState(false);
  const [importing,setImporting]=useState(false);
  const [confirmImport,setConfirmImport]=useState(false);
+ const [confirmDeletion,setConfirmDeletion]=useState(false);
+ const [deletionPhrase,setDeletionPhrase]=useState('');
+ const [deleteLocalData,setDeleteLocalData]=useState(true);
  const [availableProviders,setAvailableProviders]=useState<SocialAvailability>(unavailableSocialProviders);
  const [socialStatusLoading,setSocialStatusLoading]=useState(false);
  const busy=working||importing;
+ const busyRef=useRef(busy);
+ busyRef.current=busy;
  const triggerRef=useRef<HTMLButtonElement>(null);
  const dialogRef=useRef<HTMLElement>(null);
- const closeDialog=()=>{setOpen(false);triggerRef.current?.focus()};
+ const closeDialog=()=>{if(busyRef.current)return;setOpen(false);setConfirmDeletion(false);setDeletionPhrase('');triggerRef.current?.focus()};
+ const deletionLinkRequested=()=>accountDeletionUIEnabled&&typeof window!=='undefined'&&new URLSearchParams(window.location.search).get('account')==='delete';
+ useEffect(()=>{
+  if(!deletionLinkRequested())return;
+  setOpen(true);
+  if(session)setConfirmDeletion(true);
+ },[session]);
  useEffect(()=>{if(!open||session)return;let active=true;setSocialStatusLoading(true);getSocialProviderAvailability().then(result=>{if(active)setAvailableProviders(result)}).finally(()=>{if(active)setSocialStatusLoading(false)});return()=>{active=false}},[open,session]);
  const signInSocial=(provider:SocialProvider)=>{
   if(!availableProviders[provider]||socialStatusLoading)return;
@@ -50,10 +65,10 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
   e.preventDefault();if(busy)return;
   setWorking(true);setNotice('');
   try{
-   if(mode==='login'){await logIn(email,password);await onReload();setOpen(false);}
+   if(mode==='login'){await logIn(email,password);await onReload();setOpen(deletionLinkRequested());setConfirmDeletion(deletionLinkRequested());}
    else if(mode==='signup'){
     const active=await register(email,password);
-    if(active){await onReload();setOpen(false);}
+    if(active){await onReload();setOpen(deletionLinkRequested());setConfirmDeletion(deletionLinkRequested());}
     else setNotice('Si el correo es válido, recibirás un enlace de confirmación. Revisá también spam.');
    }else if(mode==='recover'){
     await sendRecovery(email);
@@ -82,18 +97,59 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
   try{await logOut();await onReload();setOpen(false);}catch(err){onError(err instanceof Error?err.message:'Error al cerrar sesión.');}
   finally{setWorking(false);}
  }
+ async function deleteAccount(){
+  if(!accountDeletionUIEnabled||working||!session?.user.email||deletionPhrase.trim()!=='ELIMINAR MI CUENTA')return;
+  setWorking(true);setNotice('');
+  try{
+   const token=await accessToken();
+   if(!token)throw Error('Volvé a iniciar sesión para continuar.');
+   const response=await requestAPI('/api/account/delete',{
+    method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({confirmation:'ELIMINAR MI CUENTA',email:session.user.email})
+   });
+   const result=await response.json().catch(()=>({})) as {deleted?:boolean;error?:string};
+   if(!response.ok||result.deleted!==true)throw Error(result.error||'No pudimos eliminar la cuenta.');
+   await logOut();
+   if(deletionLinkRequested()){
+    const target=new URL(window.location.href);target.searchParams.delete('account');
+    window.history.replaceState({},'',target.pathname+target.search+target.hash);
+   }
+   if(deleteLocalData){
+    try{
+     for(const key of ['viaja-ai-trips-v1','viaja-ai-current','viaja-guided-planner-draft-v1','viaja-favorites-v1'])
+      localStorage.removeItem(key);
+    }catch{/* Private browsing may disallow local storage. */}
+   }
+   setConfirmDeletion(false);setDeletionPhrase('');setOpen(false);
+   await onReload();
+  }catch(e){setNotice(e instanceof Error?e.message:'La eliminación no se completó.');}
+  finally{setWorking(false)}
+ }
  if(!cloudReady)return <span className="profile" title="Conexión de cuentas pendiente de configurar en Cloudflare">Cuentas pendientes</span>;
  return <div className="viaja-account">
-  <button ref={triggerRef} type="button" className="viaja-account-trigger" onClick={()=>{setMode(recoveryPending()?'password':'login');setOpen(v=>!v);setNotice('');}} aria-expanded={open} aria-label={session?'Opciones de mi cuenta':'Iniciar sesión o registrarse'}>
+  <button ref={triggerRef} type="button" className="viaja-account-trigger" onClick={()=>{setMode(recoveryPending()?'password':'login');setConfirmDeletion(false);setDeletionPhrase('');setOpen(v=>!v);setNotice('');}} aria-expanded={open} aria-label={session?'Opciones de mi cuenta':'Iniciar sesión o registrarse'}>
    <UserRound size={16}/> {session?(session.user.email||'Mi cuenta'):'Entrar / Registrarme'}
   </button>
   {open&&typeof document!=='undefined'&&createPortal(<div className="viaja-account-backdrop" role="presentation" onMouseDown={(e)=>{if(e.target===e.currentTarget)closeDialog()}}>
    <section ref={dialogRef} className="viaja-account-dialog" role="dialog" aria-modal="true" aria-label={session?'Mi cuenta':'Acceder a Viaja'}>
-    <button className="viaja-account-close" type="button" onClick={closeDialog} aria-label="Cerrar"><X size={20}/></button>
+    <button className="viaja-account-close" type="button" disabled={busy} onClick={closeDialog} aria-label="Cerrar"><X size={20}/></button>
     {session?<><h2>Mi cuenta</h2><p className="viaja-account-subtitle">Sesión iniciada como <strong>{session.user.email||'usuario'}</strong>. Tus viajes se guardan en Supabase.</p>
       <button type="button" className="viaja-account-action" disabled={busy} onClick={importTrips}><CloudUpload size={17}/> Importar viajes anteriores de este dispositivo</button>
       {confirmImport&&<p className="viaja-account-help">Se conservará la copia local. Tocá «Importar» nuevamente para confirmar.</p>}
       <button type="button" className="viaja-account-action" disabled={busy} onClick={signOut}><LogOut size={17}/> Cerrar sesión</button>
+      {accountDeletionUIEnabled&&(!confirmDeletion?<button type="button" className="viaja-account-danger-entry" disabled={busy} onClick={()=>{setConfirmDeletion(true);setNotice('')}}><Trash2 size={16}/> Eliminar mi cuenta</button>
+      :<div className="viaja-account-delete-panel">
+       <h3>Eliminar tu cuenta definitivamente</h3>
+       <p>Se eliminarán tus viajes propios, publicaciones, reservas, archivos y documentos asociados. Los miembros de tus viajes compartidos dejarán de acceder a ellos. Esta acción no se puede deshacer.</p>
+       <p>Por seguridad, debés haber iniciado sesión en los últimos 15 minutos. Si no es así, cerrá sesión y volvé a entrar.</p>
+       <label htmlFor="viaja-confirm-delete">Escribí <strong>ELIMINAR MI CUENTA</strong> para confirmar</label>
+       <input id="viaja-confirm-delete" autoComplete="off" value={deletionPhrase} maxLength={25} onChange={e=>setDeletionPhrase(e.target.value)} placeholder="ELIMINAR MI CUENTA"/>
+       <label className="viaja-account-local-choice"><input type="checkbox" checked={deleteLocalData} onChange={e=>setDeleteLocalData(e.target.checked)}/> Borrar también mis borradores y favoritos guardados en este dispositivo</label>
+       <div className="viaja-account-delete-actions">
+        <button type="button" className="viaja-account-action" disabled={busy} onClick={()=>{setConfirmDeletion(false);setDeletionPhrase('');setNotice('')}}>Cancelar</button>
+        <button type="button" className="viaja-account-danger-submit" disabled={busy||deletionPhrase.trim()!=='ELIMINAR MI CUENTA'} onClick={()=>void deleteAccount()}>{working&&<LoaderCircle size={17} className="spin"/>} Eliminar definitivamente</button>
+       </div>
+      </div>)}
     </>:<>
       <h2>{mode==='login'?'Iniciar sesión':mode==='signup'?'Crear una cuenta':mode==='recover'?'Recuperar contraseña':'Nueva contraseña'}</h2>
       <p className="viaja-account-subtitle">Tus viajes, calendario y gastos estarán disponibles cuando ingreses con tu cuenta.</p>
