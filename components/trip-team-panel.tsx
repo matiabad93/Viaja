@@ -80,10 +80,10 @@ export function TripTeamPanel({plan,onRefresh,onError}:{plan:Plan;onRefresh:()=>
    {remoteVersion!==null&&<div className="team-state-banner team-remote-change" role="status"><RefreshCw size={18}/><span>Otro integrante modificó el viaje. Guardá una copia de tus cambios pendientes antes de actualizar.</span><button className="secondary" type="button" disabled={loadingRemote} onClick={()=>void refresh()}>Cargar cambios nuevos</button></div>}
    <div className="surface">
      <div className="section-heading compact"><h3>Colaboradores ({members.length+1})</h3><button className="textbtn" type="button" onClick={()=>void load()}><RefreshCw size={15}/>Actualizar</button></div>
-     <div className="team-member-row"><span className="team-avatar"><ShieldCheck size={18}/></span><span><strong>Organizador {owner?'(vos)':''}</strong><small>{ownerEmail?ownerEmail+' · ':''}Control total del viaje</small></span><strong className="team-role">Propietario</strong></div>
+     <div className="team-member-row"><span className="team-avatar"><ShieldCheck size={18}/></span><span style={{minWidth:0,overflowWrap:'anywhere'}}><strong>Organizador {owner?'(vos)':''}</strong><small>{ownerEmail?ownerEmail+' · ':''}Control total del viaje</small></span><strong className="team-role">Propietario</strong></div>
      {members.map(member=><div className="team-member-row" key={member.user_id}>
        <span className="team-avatar"><Users size={17}/></span>
-       <span><strong>{member.user_id===me?'Vos':member.email||'Integrante '+member.user_id.slice(0,6)}</strong><small>{member.user_id===me&&member.email?member.email+' · ':''}{member.role==='editor'?'Puede editar':'Solo lectura'}</small></span>
+       <span style={{minWidth:0,overflowWrap:'anywhere'}}><strong>{member.user_id===me?'Vos':member.email||'Integrante '+member.user_id.slice(0,6)}</strong><small>{member.user_id===me&&member.email?member.email+' · ':''}{member.role==='editor'?'Puede editar':'Solo lectura'}</small></span>
        {owner&&<button type="button" className="iconbtn" disabled={busy} title="Quitar colaborador" aria-label={'Quitar '+member.user_id.slice(0,6)} onClick={()=>void remove(member.user_id)}><Trash2 size={17}/></button>}
      </div>)}
      {loaded&&members.length===0&&<p className="subtle">Todavía no hay colaboradores. Sumá a alguien para empezar.</p>}
