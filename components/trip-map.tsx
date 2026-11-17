@@ -4,12 +4,13 @@ import {MapPin,Navigation,ExternalLink,LoaderCircle,AlertCircle} from 'lucide-re
 import type * as Leaflet from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import './trip-map-markers.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import type {Activity,Trip} from '../lib/travel.ts';
 import {mapBounds,mapRouteUrl,mapStops,pointValid} from '../lib/map-helpers.ts';
 
 type Coordinate={lat:number;lon:number};
-type DisplayPoint={id:string;title:string;time:string;coordinate:Coordinate};
+type DisplayPoint={id:string;title:string;time:string;order:number;coordinate:Coordinate};
 type MapInterface=Leaflet.Map;
 type LeafletApi=typeof import('leaflet');
 type MaplibreLayerFactory=typeof import('@maplibre/maplibre-gl-leaflet').maplibreGL;
@@ -43,7 +44,7 @@ async function lookup(query:string):Promise<Coordinate|null>{
  const value={lat,lon};cache(query,value);return value;
 }
 export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
- const element=useRef<HTMLDivElement>(null),map=useRef<MapInterface|null>(null),leaflet=useRef<LeafletApi|null>(null),generation=useRef(0);
+ const element=useRef<HTMLDivElement>(null),map=useRef<MapInterface|null>(null),leaflet=useRef<LeafletApi|null>(null),markerLayer=useRef<Leaflet.LayerGroup|null>(null),generation=useRef(0);
  const [mapReady,setMapReady]=useState(false),[mapVisualReady,setMapVisualReady]=useState(false),[points,setPoints]=useState<DisplayPoint[]>([]),[missing,setMissing]=useState<string[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(''),[loadError,setLoadError]=useState(''),[loadAttempt,setLoadAttempt]=useState(0),[mode,setMode]=useState<'walking'|'driving'|'transit'>('walking');
  const stops=mapStops(activities,trip.destination,trip.additionalDestinations);
  const fallback=trip.city&&pointValid(trip.city.latitude,trip.city.longitude)?{lat:trip.city.latitude,lon:trip.city.longitude}:null;
@@ -59,7 +60,7 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
     let location:Coordinate|null=null;
     try{location=await lookup(stop.query)}catch{unlocated.push(stop.title);continue}
     if(ticket!==generation.current)return;
-    if(location)output.push({id:stop.id,title:stop.title,time:stop.time,coordinate:location});else unlocated.push(stop.title);
+    if(location)output.push({id:stop.id,title:stop.title,time:stop.time,order:i+1,coordinate:location});else unlocated.push(stop.title);
    }
    if(ticket!==generation.current)return;
    setPoints(output);setMissing(unlocated);
@@ -92,6 +93,7 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
     const initial=fallback?[fallback.lat,fallback.lon] as [number,number]:[45,9] as [number,number];
     const m=L.map(element.current,{zoomAnimation:false}).setView(initial,fallback?11:4);
     map.current=m;
+    markerLayer.current=L.layerGroup().addTo(m);
     setMapReady(true);
     // OpenFreeMap's public vector style supports published web/mobile applications
     // without an API key. Do not call OSM's volunteer-run raster tile service.
@@ -130,16 +132,28 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
    window.removeEventListener('resize',refreshSize);
    window.removeEventListener('pageshow',refreshSize);
    setMapReady(false);
+   markerLayer.current?.clearLayers();
+   markerLayer.current=null;
    map.current?.remove();
    map.current=null;
   };
  },[trip.destination,fallback?.lat,fallback?.lon,loadAttempt]);
  useEffect(()=>{
-  if(!mapReady||!points.length||!map.current||!leaflet.current)return;
-  // Refresh the map when pin collection changes.
-  const L=leaflet.current,m=map.current;
-  // Leave the existing map for tiles, recreate only marker overlays via layer group if available.
-  for(const p of points)L.marker([p.coordinate.lat,p.coordinate.lon]).addTo(m).bindPopup('<strong>'+safeText(p.title)+'</strong><div>'+safeText(p.time)+'</div>');
+  if(!mapReady||!map.current||!leaflet.current||!markerLayer.current)return;
+  const L=leaflet.current,m=map.current,layer=markerLayer.current;
+  // Leaflet's default PNG marker relies on runtime CSS asset URLs that can break in iOS Safari.
+  // Numbered DivIcons use ordinary HTML/CSS, need no external PNG and match the itinerary list.
+  layer.clearLayers();
+  if(!points.length)return;
+  for(const p of points){
+   const icon=L.divIcon({
+    className:'viaja-destination-marker',
+    html:'<span class="viaja-destination-marker-label" aria-hidden="true">'+p.order+'</span>',
+    iconSize:[38,46],iconAnchor:[19,45],popupAnchor:[0,-43]
+   });
+   L.marker([p.coordinate.lat,p.coordinate.lon],{icon,title:p.title,riseOnHover:true})
+    .addTo(layer).bindPopup('<strong>'+safeText(p.title)+'</strong><div>'+safeText(p.time)+'</div>');
+  }
   m.fitBounds(mapBounds(points.map(p=>[p.coordinate.lat,p.coordinate.lon])),{padding:[35,35],maxZoom:14});
  },[points,mapReady]);
  const link=mapRouteUrl(activities,trip.destination,mode,trip.additionalDestinations);
