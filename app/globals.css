@@ -2545,3 +2545,13 @@ html[data-comfort="on"] .theme-menu-hint{font-size:14px}
  html[data-theme] :is(.home-shortcut,.journey-card,.reservation-card,.home-featured){transition:none!important}
  html[data-theme] :is(.home-shortcut,.journey-card,.reservation-card):hover{transform:none!important}
 }
+
+
+html[data-theme] .experience-crash{min-height:100vh;max-width:none;display:grid;place-items:center;background:var(--paper);padding:28px 18px;font-family:Arial,sans-serif;color:var(--ink)}
+html[data-theme] .experience-crash-card{width:min(500px,100%);padding:clamp(22px,5vw,36px);background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--app-menu-shadow)}
+html[data-theme] .experience-crash-logo{font:700 34px Georgia,serif;margin-bottom:22px}
+html[data-theme] .experience-crash-logo span{color:var(--orange)}
+html[data-theme] .experience-crash h1{font:26px/1.2 Georgia,serif;margin:0 0 12px}
+html[data-theme] .experience-crash p{font-size:16px;line-height:1.6;color:var(--ink)}
+html[data-theme] .experience-crash button{width:100%;min-height:50px;margin-top:20px}
+html[data-theme] .experience-crash .experience-crash-help{font-size:14px;color:var(--muted);margin-top:18px}
