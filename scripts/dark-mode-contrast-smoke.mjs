@@ -134,10 +134,10 @@ try{
   await readable(page.locator('.example-open'));
   await page.getByRole('button',{name:/Abrir guía de Madrid/}).click();
   await page.getByRole('heading',{name:'Madrid imprescindible',exact:true}).waitFor();
-  await page.getByRole('button',{name:/Todas las guías/}).click();
+  await page.getByRole('button',{name:/Volver a Explorar/}).click();
   const parisCard=page.locator('.visualguides article').filter({has:page.getByRole('heading',{name:'París',exact:true})});
   await inset(parisCard.locator('.cardbody'),parisCard.locator('.cardbody h3'));
-  await parisCard.getByRole('button',{name:/Explorar/}).click();
+  await parisCard.getByRole('button',{name:'Ver itinerario'}).click();
   const panel=page.locator('.guidehead');
   await inset(panel,panel.locator('h1'));
   await inset(panel,panel.locator('.stop').first());
