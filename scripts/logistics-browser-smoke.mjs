@@ -31,6 +31,8 @@ try{
   await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('button',{name:/Mis viajes/}).click();
   await page.getByRole('button',{name:'Ver viaje →'}).click();
   const tabs=page.getByRole('navigation',{name:'Secciones del viaje'});
+  // Stage 7 loads the trip detail on demand; wait for its accessible tabs to appear.
+  await tabs.getByRole('button',{name:'Logística'}).waitFor({state:'visible'});
   assert.equal(await tabs.getByRole('button').count(),5,'Five trip tabs expected');
   await tabs.getByRole('button',{name:'Logística'}).click();
   await page.getByRole('heading',{name:'La logística de tu viaje'}).waitFor();
