@@ -9,6 +9,8 @@ import {join} from 'node:path';
 const read=path=>readFileSync(path,'utf8');
 const manifest=JSON.parse(read('public/manifest.webmanifest'));
 const capacitor=JSON.parse(read('mobile/capacitor.config.json'));
+const webVersion=JSON.parse(read('package.json')).version;
+const nativeVersion=JSON.parse(read('mobile/package.json')).version;
 const android=read('mobile/android/app/src/main/AndroidManifest.xml');
 const gradle=read('mobile/android/app/build.gradle');
 const androidWorkflow=read('.github/workflows/android-play-release.yml');
@@ -32,6 +34,7 @@ check('android_permissions','Android solicita únicamente INTERNET',
  [...android.matchAll(/<uses-permission\s+android:name="([^"]+)"/g)].map(x=>x[1]).join(',')==='android.permission.INTERNET');
 check('android_signing','Release AAB firmada solo con secretos y ejecución manual',
  androidWorkflow.includes('workflow_dispatch')&&androidWorkflow.includes('environment: android-release')&&androidWorkflow.includes('bundleRelease')&&androidWorkflow.includes('jarsigner -verify'));
+check('version_alignment','Versión web y nativa alineadas',webVersion===nativeVersion);
 check('ios_unsigned','Xcode preflight compilable sin claves de distribución',
  iosWorkflow.includes('xcodebuild')&&iosWorkflow.includes('CODE_SIGNING_ALLOWED=NO')&&iosWorkflow.includes('macos-26'));
 check('preview_isolation','Workflows Preview sin credenciales de producción',
@@ -51,7 +54,7 @@ check('apple_signing','Firma y distribución Apple configuradas',
 check('play_signing','Keystore de subida Google Play provisto',
  false,{severity:'manual',detail:'Requiere secretos Android del entorno android-release y Play Console.'});
 const technical=checks.filter(x=>x.severity==='critical'),blockers=checks.filter(x=>x.severity!=='critical'&&!x.ok);
-const report={product:'Viaja',stage:8,version:capacitor.appId,generatedAt:new Date().toISOString(),
+const report={product:'Viaja',stage:8,appId:capacitor.appId,version:webVersion,generatedAt:new Date().toISOString(),
  technicalPassed:technical.every(x=>x.ok),readyForSubmission:checks.every(x=>x.ok),checks,blockers:blockers.map(x=>({id:x.id,detail:x.detail}))};
 const dir='artifacts/store-readiness';mkdirSync(dir,{recursive:true});
 writeFileSync(join(dir,'report.json'),JSON.stringify(report,null,2)+'\n');
