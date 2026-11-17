@@ -28,6 +28,17 @@ function ensureMapModules(){
 }
 const safeText=(s:string)=>s.replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]||ch));
 const wait=(ms:number)=>new Promise<void>(resolve=>setTimeout(resolve,ms));
+// MapLibre GL JS 6 requires WebGL2. Do not mount a half-initialised Leaflet adapter.
+function supportsWebGL2(){
+ try{return Boolean(document.createElement('canvas').getContext('webgl2'))}catch{return false}
+}
+function removeMapSafely(current:MapInterface|null){
+ if(!current)return;
+ try{current.remove()}catch{
+  // maplibre-gl-leaflet 0.1.4 can throw during onRemove after a GPU init failure.
+  // A failed map must never tear down the entire travel experience.
+ }
+}
 function readCache(query:string):Coordinate|null{
  try{const raw=localStorage.getItem('viaja-place-v1:'+query.toLowerCase());if(!raw)return null;const d=JSON.parse(raw);if(d.saved>Date.now()-30*86400000&&pointValid(d.lat,d.lon))return {lat:d.lat,lon:d.lon}}catch{}
  return null;
@@ -80,21 +91,27 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
    cancelAnimationFrame(settledFrame);
    frame=requestAnimationFrame(()=>{
     settledFrame=requestAnimationFrame(()=>{
-     if(!cancelled)map.current?.invalidateSize({pan:false,debounceMoveend:true});
+     if(!cancelled){
+      try{map.current?.invalidateSize({pan:false,debounceMoveend:true})}
+      catch{setMapReady(false);setLoadError('El mapa interactivo dejó de responder. Podés usar el mapa alternativo o abrir la ruta en Google Maps.')}
+     }
     });
    });
   };
   if(!element.current)return;
   (async()=>{
    try{
+    if(!supportsWebGL2()){
+     setLoadError('Este dispositivo no admite el mapa interactivo. Podés usar el mapa alternativo o abrir la ruta en Google Maps.');
+     return;
+    }
     const {L,maplibreGL}=await ensureMapModules();if(cancelled||!element.current)return;
     leaflet.current=L;
-    if(map.current){map.current.remove();map.current=null}
+    if(map.current){removeMapSafely(map.current);map.current=null}
     const initial=fallback?[fallback.lat,fallback.lon] as [number,number]:[45,9] as [number,number];
     const m=L.map(element.current,{zoomAnimation:false}).setView(initial,fallback?11:4);
     map.current=m;
     markerLayer.current=L.layerGroup().addTo(m);
-    setMapReady(true);
     // OpenFreeMap's public vector style supports published web/mobile applications
     // without an API key. Do not call OSM's volunteer-run raster tile service.
     const base=maplibreGL({style:MAP_STYLE,attributionControl:false}).addTo(m);
@@ -102,11 +119,12 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
     // A mounted Leaflet canvas is not proof that vector tiles have rendered.
     // Wait for MapLibre's first complete load and explain persistent failures.
     const glMap=base.getMaplibreMap();
+    if(!glMap)throw Error('MapLibre did not initialize');
     let loaded=false;
     glMap.once('load',()=>{
      loaded=true;
      if(styleTimeout)clearTimeout(styleTimeout);
-     if(!cancelled)setMapVisualReady(true);
+     if(!cancelled){setMapReady(true);setMapVisualReady(true)}
     });
     styleTimeout=setTimeout(()=>{
      if(!cancelled&&!loaded)setLoadError('El mapa de fondo no respondió. Podés abrir la ruta en Google Maps o reintentar.');
@@ -121,7 +139,7 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
     window.addEventListener('resize',refreshSize);
     window.addEventListener('pageshow',refreshSize);
     refreshSize();
-   }catch(e){if(!cancelled)setLoadError('No pudimos cargar el mapa integrado. Podés reintentar o abrir la ruta en Google Maps.')}
+   }catch(e){if(!cancelled){setMapReady(false);setLoadError('No pudimos cargar el mapa integrado. Podés reintentar o abrir la ruta en Google Maps.')}}
   })();
   return()=>{
    cancelled=true;
@@ -132,9 +150,9 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
    window.removeEventListener('resize',refreshSize);
    window.removeEventListener('pageshow',refreshSize);
    setMapReady(false);
-   markerLayer.current?.clearLayers();
+   try{markerLayer.current?.clearLayers()}catch{}
    markerLayer.current=null;
-   map.current?.remove();
+   removeMapSafely(map.current);
    map.current=null;
   };
  },[trip.destination,fallback?.lat,fallback?.lon,loadAttempt]);
@@ -143,9 +161,10 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
   const L=leaflet.current,m=map.current,layer=markerLayer.current;
   // Leaflet's default PNG marker relies on runtime CSS asset URLs that can break in iOS Safari.
   // Numbered DivIcons use ordinary HTML/CSS, need no external PNG and match the itinerary list.
-  layer.clearLayers();
-  if(!points.length)return;
-  for(const p of points){
+  try{
+   layer.clearLayers();
+   if(!points.length)return;
+   for(const p of points){
    const icon=L.divIcon({
     className:'viaja-destination-marker',
     html:'<span class="viaja-destination-marker-label" aria-hidden="true">'+p.order+'</span>',
@@ -154,7 +173,11 @@ export function TripMap({trip,activities}:{trip:Trip;activities:Activity[]}){
    L.marker([p.coordinate.lat,p.coordinate.lon],{icon,title:p.title,riseOnHover:true})
     .addTo(layer).bindPopup('<strong>'+safeText(p.title)+'</strong><div>'+safeText(p.time)+'</div>');
   }
-  m.fitBounds(mapBounds(points.map(p=>[p.coordinate.lat,p.coordinate.lon])),{padding:[35,35],maxZoom:14});
+   m.fitBounds(mapBounds(points.map(p=>[p.coordinate.lat,p.coordinate.lon])),{padding:[35,35],maxZoom:14});
+  }catch{
+   setMapReady(false);
+   setLoadError('No pudimos actualizar las ubicaciones en el mapa interactivo. Podés usar el mapa alternativo o abrir la ruta en Google Maps.');
+  }
  },[points,mapReady]);
  const link=mapRouteUrl(activities,trip.destination,mode,trip.additionalDestinations);
  const mapCenter=fallback||points[0]?.coordinate;
