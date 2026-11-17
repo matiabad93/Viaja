@@ -117,10 +117,7 @@ jobs:
             adb shell screencap -p /sdcard/viaja-stage8.png
             adb pull /sdcard/viaja-stage8.png artifacts/store-readiness/android/home.png
             adb logcat -d -s AndroidRuntime:E > artifacts/store-readiness/android/android-runtime.log
-            if grep -F 'Process: com.matiabad.viaja' artifacts/store-readiness/android/android-runtime.log; then
-              echo 'Critical Android crash detected'
-              exit 1
-            fi
+            if grep -Fq 'Process: com.matiabad.viaja' artifacts/store-readiness/android/android-runtime.log; then echo 'Critical Android crash detected'; exit 1; fi
       - name: Empaquetar APK de pruebas con hash
         if: always()
         run: |
