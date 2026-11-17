@@ -15,6 +15,9 @@ export function mapLocationQueries(activities:Activity[],destination:string,addi
  let current=initial;
  return activities.map(a=>{
   const place=(a.location||a.title).trim();
+  // Multi-city editorial routes provide explicit city AND country on each
+  // stop. Appending the trip's first destination would geocode another city.
+  if(/,\s*(?:Italia|Francia|Bélgica|Países Bajos|Reino Unido|Grecia|Irlanda|España|Portugal|Ciudad del Vaticano)\s*$/i.test(place))return place.slice(0,200);
   const match=matchCity(place);
   if(match)current=match;
   return [place,match?'':current].filter(Boolean).join(', ').slice(0,200);

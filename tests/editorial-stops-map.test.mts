@@ -43,4 +43,9 @@ assert.ok(mapSource.includes('Cargando mapa…'),'A slow map provider must show 
 assert.ok(!mapSource.includes('tile.openstreetmap.org/{z}/{x}/{y}.png'),'Do not depend on the blocked OSM volunteer raster endpoint');
 const headers=readFileSync(new URL('../public/_headers',import.meta.url),'utf8');
 assert.ok(headers.includes('Referrer-Policy: strict-origin-when-cross-origin'),'Map/geocoding services need an identifiable HTTPS origin');
+const migration=readFileSync(new URL('../supabase/migrations/20261117160000_viaja_trip_member_emails.sql',import.meta.url),'utf8');
+assert.match(migration,/private\.viaja_trip_role\(p_trip_id\) is null/,'Email lookup must enforce trip membership');
+assert.match(migration,/revoke all on function public\.viaja_list_trip_member_emails\(uuid\) from public,anon,authenticated/,'No default public email access');
+assert.match(migration,/grant execute on function public\.viaja_list_trip_member_emails\(uuid\) to authenticated/,'Only authenticated RPC calls');
+assert.ok(migration.includes('auth.users u'),'Email must come from verified auth identities');
 console.log('PASS editorial: concrete stops, guide-copy parity, geocodable routes and compliant vector map');

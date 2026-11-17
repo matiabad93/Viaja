@@ -3,13 +3,20 @@ import {db} from './supabase-client';
 import type {Plan} from './travel';
 
 export type TripRole='owner'|'editor'|'viewer';
-export type TripMember={trip_id:string;user_id:string;role:'editor'|'viewer';joined_at:string};
+export type TripMember={trip_id:string;user_id:string;role:'editor'|'viewer';joined_at:string;email?:string|null};
+export type TripMemberEmail={user_id:string;email:string};
 export type TripInvite={id:string;invite_email:string|null;role:'editor'|'viewer';expires_at:string;accepted_at:string|null;revoked_at:string|null};
 const uuid=(id:string)=>/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(id);
 
 export async function listTripMembers(tripId:string):Promise<TripMember[]>{
  if(!uuid(tripId))throw Error('Viaje inválido.');
  const rows=await db<TripMember[]>('trip_members?select=trip_id,user_id,role,joined_at&trip_id=eq.'+encodeURIComponent(tripId)+'&order=joined_at.asc&limit=50');
+ return Array.isArray(rows)?rows:[];
+}
+/** Database RPC checks that the signed-in user belongs to this specific trip. */
+export async function listTripMemberEmails(tripId:string):Promise<TripMemberEmail[]>{
+ if(!uuid(tripId))throw Error('Viaje inválido.');
+ const rows=await db<TripMemberEmail[]>('rpc/viaja_list_trip_member_emails',{method:'POST',body:JSON.stringify({p_trip_id:tripId})});
  return Array.isArray(rows)?rows:[];
 }
 export async function listTripInvites(tripId:string):Promise<TripInvite[]>{

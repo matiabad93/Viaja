@@ -6,6 +6,8 @@ import {useEffect,useState} from 'react';
 import {Heart,Search,MapPin,ArrowRight,ArrowDownRight} from 'lucide-react';
 import {guideCountries,selectVisibleGuides,previewGuideStops,type GuideSort} from '../lib/guide-discovery';
 import {initial,extra,legacyEditorialDays,type Guide} from '../lib/curated-guides';
+import {syncEuropeanGuides} from '../lib/guide-catalog-sync';
+import {europeGuides} from '../lib/curated-europe-guides';
 import {FavoriteButton} from './design/favorite-button';
 
 
@@ -16,6 +18,10 @@ useEffect(()=>{try{const raw=JSON.parse(localStorage.getItem('viaja-guides-v1')|
  // Only bundled, byte-for-byte legacy text is migrated; editor changes survive intact.
  all=all.map((item:Guide)=>{const legacy=legacyEditorialDays[item.id];const current=initial.find(g=>g.id===item.id);return legacy&&current&&item.days.length===legacy.length&&item.days.every((day,i)=>day===legacy[i])?{...item,days:[...current.days]}:item});
  localStorage.setItem('viaja-guides-v1',JSON.stringify(all));localStorage.setItem('viaja-editorial-stops-v1','1');
+}if(localStorage.getItem('viaja-europe-guides-v1')!=='1'){
+ all=syncEuropeanGuides(all,europeGuides);
+ localStorage.setItem('viaja-guides-v1',JSON.stringify(all));
+ localStorage.setItem('viaja-europe-guides-v1','1');
 }setGuides(all);const f=JSON.parse(localStorage.getItem('viaja-favorites-v1')||'[]');if(Array.isArray(f))setFavorites(f)}catch{setNotice('No se pudieron recuperar los datos locales.')}},[]);
 function persist(next:Guide[]){try{localStorage.setItem('viaja-guides-v1',JSON.stringify(next));setGuides(next);setNotice('Cambios guardados.');return true}catch{setNotice('No se pudo guardar. Revisá el espacio disponible.');return false}}
 function favorite(id:string){const next=favorites.includes(id)?favorites.filter(x=>x!==id):[...favorites,id];try{localStorage.setItem('viaja-favorites-v1',JSON.stringify(next));setFavorites(next)}catch{setNotice('No se pudo guardar el favorito.')}}

@@ -2,7 +2,7 @@ import type {Day,Trip,Activity} from './travel.ts';
 import {daysCount,newId} from './travel.ts';
 import {initial,extra,type Guide} from './curated-guides.ts';
 
-const canonicalDestinations:Record<string,string>={paris:'París, Francia',roma:'Roma, Italia',colmar:'Colmar, Francia',barcelona:'Barcelona, España',lisboa:'Lisboa, Portugal',madrid:'Madrid, España'};
+const canonicalDestinations:Record<string,string>={paris:'París, Francia',roma:'Roma, Italia',colmar:'Colmar, Francia',barcelona:'Barcelona, España',lisboa:'Lisboa, Portugal',madrid:'Madrid, España',amsterdam:'Ámsterdam, Países Bajos',dublin:'Dublín, Irlanda',londres:'Londres, Reino Unido',edimburgo:'Edimburgo, Reino Unido',valencia:'Valencia, España',alicante:'Alicante, España'};
 export function guideDestination(guide:Guide){return canonicalDestinations[guide.id]||guide.title}
 
 /** Both entry points use the same stops. No generic "morning in city" marker. */
@@ -38,7 +38,7 @@ export function createEditorialStarter(trip:Trip):Day[]|null{
  const normalize=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  const city=normalize(trip.destination);
  const guides=[...extra,...initial];
- const names:Record<string,string>={paris:'paris',roma:'roma',colmar:'colmar',barcelona:'barcelona',lisboa:'lisboa',madrid:'madrid'};
+ const names:Record<string,string>={paris:'paris',roma:'roma',barcelona:'barcelona',lisboa:'lisboa',madrid:'madrid',amsterdam:'amsterdam',dublin:'dublin',londres:'londres',edimburgo:'edimburgo',valencia:'valencia',alicante:'alicante',bruselas:'belgica-clasica',belgica:'belgica-clasica',grecia:'grecia'};
  const match=Object.entries(names).find(([name])=>city.includes(name));
  const guide=match?guides.find(g=>g.id===match[1]):undefined;
  if(!guide)return null;

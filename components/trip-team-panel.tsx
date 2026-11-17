@@ -3,11 +3,12 @@ import {useEffect,useState} from 'react';
 import {Users,UserPlus,Link2,Copy,RefreshCw,ShieldCheck,Eye,Trash2,Check,Clock3,LockKeyhole} from 'lucide-react';
 import type {Plan} from '../lib/travel';
 import {getCurrentSession} from '../lib/supabase-client';
-import {listTripMembers,listTripInvites,createTripInvite,revokeTripInvite,removeTripMember,fetchTripUpdate,type TripMember,type TripInvite} from '../lib/trip-collaboration';
+import {listTripMembers,listTripMemberEmails,listTripInvites,createTripInvite,revokeTripInvite,removeTripMember,fetchTripUpdate,type TripMember,type TripInvite} from '../lib/trip-collaboration';
 
 export function TripTeamPanel({plan,onRefresh,onError}:{plan:Plan;onRefresh:()=>Promise<void>;onError:(message:string)=>void}){
  const role=plan.collaboration?.role||null;
  const [members,setMembers]=useState<TripMember[]>([]);
+ const [ownerEmail,setOwnerEmail]=useState<string|null>(null);
  const [invites,setInvites]=useState<TripInvite[]>([]);
  const [busy,setBusy]=useState(false);
  const [loaded,setLoaded]=useState(false);
@@ -24,8 +25,15 @@ export function TripTeamPanel({plan,onRefresh,onError}:{plan:Plan;onRefresh:()=>
  const load=async()=>{
    if(!plan.collaboration)return;
    try{
-     const [people,pending]=await Promise.all([listTripMembers(plan.id),owner?listTripInvites(plan.id):Promise.resolve([])]);
-     setMembers(people);setInvites(pending);setLoaded(true);
+     const [people,emails,pending]=await Promise.all([
+       listTripMembers(plan.id),
+       listTripMemberEmails(plan.id).catch(()=>[]),
+       owner?listTripInvites(plan.id):Promise.resolve([])
+     ]);
+     const emailById=new Map(emails.map(({user_id,email})=>[user_id,email]));
+     setMembers(people.map(member=>({...member,email:emailById.get(member.user_id)||null})));
+     setOwnerEmail(emailById.get(plan.collaboration.ownerId)||null);
+     setInvites(pending);setLoaded(true);
    }catch(e){onError(e instanceof Error?e.message:'No pudimos consultar el equipo.');}
  };
  useEffect(()=>{void load()},[plan.id,role]);
@@ -72,10 +80,10 @@ export function TripTeamPanel({plan,onRefresh,onError}:{plan:Plan;onRefresh:()=>
    {remoteVersion!==null&&<div className="team-state-banner team-remote-change" role="status"><RefreshCw size={18}/><span>Otro integrante modificó el viaje. Guardá una copia de tus cambios pendientes antes de actualizar.</span><button className="secondary" type="button" disabled={loadingRemote} onClick={()=>void refresh()}>Cargar cambios nuevos</button></div>}
    <div className="surface">
      <div className="section-heading compact"><h3>Colaboradores ({members.length+1})</h3><button className="textbtn" type="button" onClick={()=>void load()}><RefreshCw size={15}/>Actualizar</button></div>
-     <div className="team-member-row"><span className="team-avatar"><ShieldCheck size={18}/></span><span><strong>Organizador {owner?'(vos)':''}</strong><small>Control total del viaje</small></span><strong className="team-role">Propietario</strong></div>
+     <div className="team-member-row"><span className="team-avatar"><ShieldCheck size={18}/></span><span><strong>Organizador {owner?'(vos)':''}</strong><small>{ownerEmail?ownerEmail+' · ':''}Control total del viaje</small></span><strong className="team-role">Propietario</strong></div>
      {members.map(member=><div className="team-member-row" key={member.user_id}>
        <span className="team-avatar"><Users size={17}/></span>
-       <span><strong>{member.user_id===me?'Vos':'Integrante '+member.user_id.slice(0,6)}</strong><small>{member.role==='editor'?'Puede editar':'Solo lectura'}</small></span>
+       <span><strong>{member.user_id===me?'Vos':member.email||'Integrante '+member.user_id.slice(0,6)}</strong><small>{member.user_id===me&&member.email?member.email+' · ':''}{member.role==='editor'?'Puede editar':'Solo lectura'}</small></span>
        {owner&&<button type="button" className="iconbtn" disabled={busy} title="Quitar colaborador" aria-label={'Quitar '+member.user_id.slice(0,6)} onClick={()=>void remove(member.user_id)}><Trash2 size={17}/></button>}
      </div>)}
      {loaded&&members.length===0&&<p className="subtle">Todavía no hay colaboradores. Sumá a alguien para empezar.</p>}
