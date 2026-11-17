@@ -32,6 +32,10 @@ El test `tests/account-deletion.test.mts` simula las llamadas HTTP y comprueba:
 
 **No ejecutar sobre la cuenta personal de Matías ni sobre viajes reales.** Usar dos cuentas nuevas A y B, creadas exclusivamente para QA, y datos ficticios sin información personal. Acordar antes con quien hace la prueba que ambas cuentas se podrán eliminar.
 
+Se incluye `scripts/account-deletion-live-e2e.mjs`, un test destructivo **exclusivamente manual** y nunca incluido en los workflows habituales. No puede ejecutarse sin un consentimiento literal y una URL de preview de Cloudflare (rechaza la URL de producción). Admite únicamente correos con prefijo `viaja-e2e-delete-` y cuentas creadas hace menos de 7 días; comprueba que ambas estén vacías antes de crear dos viajes y dos PDFs sintéticos. Elimina **solo A**, verifica que B conserve el viaje y el PDF y limpia las pruebas de B al terminar.
+
+Para ejecutarlo desde un entorno privado con acceso al preview, configurar `VIAJA_E2E_PUBLISHABLE_KEY`, `VIAJA_E2E_DELETE_USER_A_EMAIL`, `VIAJA_E2E_DELETE_USER_A_PASSWORD`, `VIAJA_E2E_DELETE_USER_B_EMAIL` y `VIAJA_E2E_DELETE_USER_B_PASSWORD`. También se exigen `VIAJA_E2E_DELETE_PREVIEW_URL`, `VIAJA_E2E_DELETE_CONFIRM_EMAIL` (idéntico al de A) y `VIAJA_E2E_DELETE_ALLOW=DELETE_QA_ACCOUNT`. **Nunca compartir contraseñas en un PR ni en el chat.** No se agrega un workflow automático de borrado: GitHub solo permite ejecutar workflows manuales definidos en la rama por defecto, mientras que esta prueba necesita correr sobre el preview **antes** de integrar el PR.
+
 1. A crea un viaje privado y una reserva PDF de prueba; B se une como colaborador y adjunta un documento de prueba al viaje de A.
 2. B crea otro viaje privado, al cual invita a A. A sube un documento de prueba al viaje de B.
 3. Como A, intentar eliminar con frase equivocada, sin token y con sesión de más de 15 minutos. Confirmar que las pruebas son rechazadas y que todo sigue visible.
