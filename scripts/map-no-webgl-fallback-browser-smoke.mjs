@@ -39,7 +39,9 @@ for(const [name,browserType] of [['chrome',chromium],['safari',webkit]]){
   await page.getByRole('alert').filter({hasText:'Este dispositivo no admite el mapa interactivo'}).waitFor({timeout:15000});
   await page.getByRole('button',{name:'Mostrar lugares en el mapa'}).click();
   await page.getByRole('button',{name:'Mostrar lugares en el mapa'}).waitFor({timeout:15000});
-  await page.locator('iframe[title^="Mapa alternativo de"]').waitFor({timeout:10000});
+  await page.locator('.viaja-map-no-webgl').waitFor({timeout:10000});
+  assert.ok(await page.getByText('Tu recorrido sigue disponible').isVisible(),'No-WebGL devices need a usable route summary');
+  assert.equal(await page.locator('iframe[title^="Mapa alternativo de"]').count(),0,'Do not show a WebGL-dependent iframe on unsupported devices');
   assert.ok(await page.getByRole('link',{name:'Abrir ruta en Google Maps'}).isVisible(),'Google Maps fallback remains available');
   assert.ok(await page.getByRole('heading',{name:'Roma',exact:true}).isVisible(),'Guide must remain open');
   assert.equal(await page.getByRole('heading',{name:'No pudimos abrir Viaja'}).count(),0,'Global app error boundary opened');
