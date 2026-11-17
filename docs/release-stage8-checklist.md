@@ -17,7 +17,7 @@ Capturas y reportes técnicos se conservan como artefactos de GitHub Actions, no
 ## Bloqueantes de envío
 
 1. **Privacidad y soporte.** Validar el borrador `docs/privacy-policy-draft.md` con titular legal, dirección de contacto, bases jurídicas, plazos de conservación y ubicación de proveedores. Publicar política y soporte por URL HTTPS.
-2. **Eliminación de cuenta.** Diseñar y verificar eliminación autenticada de cuenta, viajes, documentos privados de Storage y referencias de colaboración. Hoy no hay acción de eliminación de cuenta en Mi cuenta; no presentar la app a Apple/Google como lista.
+2. **Eliminación de cuenta.** Diseñar y verificar eliminación autenticada de cuenta, viajes, documentos privados de Storage y referencias de colaboración. Google Play también exige una vía web externa accesible para iniciar la solicitud de eliminación. Hoy no hay acción de eliminación de cuenta en Mi cuenta ni página web externa; no presentar la app a Apple/Google como lista.
 3. **Supabase Auth.** Activar, si el plan lo permite, protección contra contraseñas filtradas; [guía oficial](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
 4. **Firma.** Configurar Android Play App Signing/keystore de subida; disponer de Apple Developer, equipo de firma y certificados. Nunca subir claves al repo.
 5. **Fichas.** Capturas verdaderas de iPhone y Android, descripción, clasificación por edad, política de datos, URL de soporte, declaración de SDKs, Data Safety y App Privacy.
