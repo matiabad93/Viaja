@@ -2479,3 +2479,69 @@ html[data-theme="dark"] .visualguides .explore-empty{background:#253c2e;border-c
 @media(max-width:780px){.visualguides .explore-discovery{padding:24px 20px}.visualguides .explore-discovery-heading{align-items:flex-start;flex-direction:column;gap:12px}.visualguides .explore-filter-bar{grid-template-columns:1fr 1fr}.visualguides .explore-search{grid-column:1/-1}.visualguides .explore-favorite-toggle{grid-column:1/-1}.visualguides .explore-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:540px){.visualguides .explore-discovery{margin:34px 0 18px;padding:20px 16px 16px;border-radius:18px}.visualguides .explore-filter-bar{grid-template-columns:1fr}.visualguides .explore-select,.visualguides .explore-search,.visualguides .explore-favorite-toggle{grid-column:1/-1}.visualguides .explore-filter-footer{align-items:flex-start;flex-direction:column}.visualguides .explore-cards{grid-template-columns:1fr}.visualguides .explore-card .guide-cover-rotating img{height:210px}}
 @media(prefers-reduced-motion:reduce){.visualguides .explore-card{transition:none}.visualguides .explore-card:hover{transform:none}}
+
+
+/* Etapa 7 · experiencia premium integrada y lectura cómoda. */
+.experience-announcer{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#main-content:focus{outline:none}
+html[data-theme] .experience-state{
+ display:flex;align-items:flex-start;gap:18px;max-width:100%;
+ padding:clamp(22px,3vw,34px);border:1px solid var(--line);
+ border-radius:20px;background:var(--surface);color:var(--ink);margin:16px auto 28px;
+}
+html[data-theme] .experience-state-icon{
+ flex:none;display:grid;place-items:center;width:52px;height:52px;border-radius:15px;
+ background:var(--surface-muted);color:var(--green);
+}
+html[data-theme] .experience-state-copy{min-width:0}
+html[data-theme] .experience-state h2{font:clamp(22px,3vw,27px)/1.25 Georgia,serif;margin:2px 0 9px;color:var(--ink)}
+html[data-theme] .experience-state p{font-size:15px;line-height:1.6;color:var(--muted);margin:0 0 14px;max-width:600px}
+html[data-theme] .experience-state button{min-height:48px}
+html[data-theme] .experience-state.is-compact{margin:0;gap:14px}
+html[data-theme] .experience-state.is-compact .experience-state-icon{width:42px;height:42px}
+.theme-menu-divider{height:1px;margin:5px 7px;background:var(--line)}
+html[data-theme] .theme-menu-hint{margin:0 8px 7px;color:var(--muted);font-size:12px;line-height:1.5}
+html[data-theme] .theme-menu:focus-within{border-color:var(--green)}
+html[data-theme] :is(.home-shortcut,.journey-card,.reservation-card,.home-featured){
+ transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+@media(hover:hover){
+ html[data-theme] :is(.home-shortcut,.journey-card,.reservation-card):hover{transform:translateY(-2px)}
+}
+html[data-theme] :is(.topbar nav button,.home-shortcut,.reservation-card-actions button,.journey-card button,.theme-menu button):focus-visible{
+ outline:3px solid var(--focus-ring,#3f9b72);outline-offset:3px;
+}
+html[data-theme] .topbar nav button[aria-current="page"]{font-weight:750}
+html[data-theme] .topbar nav button[aria-current="page"] svg{stroke-width:2.5}
+html[data-comfort="on"] body{font-size:16px;line-height:1.6}
+html[data-comfort="on"] :is(
+ .home-hero-copy>p,.home-shortcut p,.home-featured p,.home-hero-note,
+ .journeys p,.journey-content .inline-meta,.reservation-center p,
+ .viaja-wizard p,.trip-detail p,.visualguides p,.community-card p,
+ .experience-state p,.message,.error
+){font-size:max(16px,1em)!important;line-height:1.65}
+html[data-comfort="on"] :is(
+ .home-shortcut strong,.home-shortcut-action,.reservation-kind,.journey-results,
+ .journey-content .eyebrow,.journey-card .card-actions button,
+ .reservation-card-actions button,.viaja-wizard button,.theme-menu button
+){font-size:max(15px,1em)!important;line-height:1.4}
+html[data-comfort="on"] :is(
+ .primary,.secondary,.home-shortcut,.journey-toolbar button,
+ .reservation-filters button,.reservation-card-actions button,.visualguides button
+){min-height:48px}
+html[data-comfort="on"] :is(.eyebrow,.subtle,.fieldhelp,.reservation-overview span,.home-storage-state){font-size:14px!important;line-height:1.5}
+html[data-comfort="on"] .theme-menu{width:min(270px,calc(100vw - 20px))}
+html[data-comfort="on"] .theme-menu-hint{font-size:14px}
+@media(max-width:700px){
+ html[data-theme] .topbar nav{padding-bottom:calc(7px + env(safe-area-inset-bottom))}
+ html[data-theme] .topbar nav button{min-height:52px;line-height:1.3}
+ html[data-comfort="on"] .topbar nav{height:calc(86px + env(safe-area-inset-bottom))}
+ html[data-comfort="on"] .topbar nav button{font-size:13px;line-height:1.2;gap:5px}
+ html[data-comfort="on"] .topbar nav button svg{width:21px;height:21px}
+ html[data-comfort="on"] main{padding-bottom:calc(138px + env(safe-area-inset-bottom))}
+ html[data-theme] .experience-state{flex-direction:column;gap:12px}
+}
+@media(prefers-reduced-motion:reduce){
+ html[data-theme] :is(.home-shortcut,.journey-card,.reservation-card,.home-featured){transition:none!important}
+ html[data-theme] :is(.home-shortcut,.journey-card,.reservation-card):hover{transform:none!important}
+}
