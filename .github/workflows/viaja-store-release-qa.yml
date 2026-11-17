@@ -99,6 +99,8 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
           test -s app/build/outputs/apk/debug/app-debug.apk
+      - name: Permitir aceleración de emulador en CI
+        run: sudo chmod 666 /dev/kvm
       - name: Iniciar Android en emulador, detectar cierre crítico y capturar pantalla
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -115,7 +117,7 @@ jobs:
             adb shell screencap -p /sdcard/viaja-stage8.png
             adb pull /sdcard/viaja-stage8.png artifacts/store-readiness/android/home.png
             adb logcat -d -s AndroidRuntime:E > artifacts/store-readiness/android/android-runtime.log
-            if grep -E 'FATAL EXCEPTION|Process: com.matiabad.viaja' artifacts/store-readiness/android/android-runtime.log; then
+            if grep -F 'Process: com.matiabad.viaja' artifacts/store-readiness/android/android-runtime.log; then
               echo 'Critical Android crash detected'
               exit 1
             fi
@@ -172,7 +174,7 @@ jobs:
       - name: Guardar app iOS no firmada
         run: |
           mkdir -p artifacts/store-readiness/ios
-          find "$RUNNER_TEMP/viaja-stage8-ios/Build/Products" -name '*.app' -type d -maxdepth 3 -print
+          find "$RUNNER_TEMP/viaja-stage8-ios/Build/Products" -name '*.app' -type d -print
           ditto -c -k --sequesterRsrc --keepParent \
             "$RUNNER_TEMP/viaja-stage8-ios/Build/Products/Debug-iphonesimulator/App.app" \
             artifacts/store-readiness/ios/Viaja-unsigned-simulator.zip
