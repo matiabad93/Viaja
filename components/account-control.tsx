@@ -9,8 +9,8 @@ import './account-deletion.css';
 
 declare const __VIAJA_NATIVE__: boolean;
 const isNativeApp = typeof __VIAJA_NATIVE__ !== 'undefined' && __VIAJA_NATIVE__;
-// Release gate: account deletion must pass real Supabase + Storage QA first.
-const accountDeletionUIEnabled=import.meta.env.VITE_VIAJA_ACCOUNT_DELETION_ENABLED==='true';
+// Account deletion is available by default; emergency rollback can set the flag to 'false'.
+const accountDeletionUIEnabled=import.meta.env.VITE_VIAJA_ACCOUNT_DELETION_ENABLED!=='false';
 
 export function AccountControl({session,onReload,onError}:{session:ViajaSession|null;onReload:()=>Promise<void>;onError:(message:string)=>void}){
  const [open,setOpen]=useState(false);
@@ -185,6 +185,7 @@ export function AccountControl({session,onReload,onError}:{session:ViajaSession|
     </>}
     {notice&&<p className="viaja-account-notice" role="status">{notice}</p>}
     <p className="viaja-account-help">No compartas tu contraseña. La cuenta pertenece a Viaja y utiliza Supabase Auth.</p>
+    <p className="viaja-account-help"><a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacidad</a> · <a href="/support.html" target="_blank" rel="noopener noreferrer">Soporte</a> · <a href="/delete-account.html" target="_blank" rel="noopener noreferrer">Eliminar cuenta</a></p>
    </section>
   </div>,document.body)}
  </div>;

@@ -46,14 +46,15 @@ check('web_artifact','Build distribuible generado por CI',
 
 // Blocking business/compliance items must remain visible, not silently passed.
 check('privacy_url','Política de privacidad pública con responsable y contacto verificables',
- existsSync('public/privacy.html'),{severity:'release-blocker',detail:'Falta publicar política jurídica revisada y correo de contacto.'});
+ existsSync('public/privacy.html')&&read('public/privacy.html').includes('viaja.app.soporte@gmail.com'),
+ {severity:'release-blocker',detail:'Revisar periódicamente texto legal, proveedores y contacto.'});
 check('account_deletion','Eliminación de cuenta iniciable desde la propia aplicación',
  /Eliminar (?:mi )?cuenta/.test(appAccount)&&
  appAccount.includes('VITE_VIAJA_ACCOUNT_DELETION_ENABLED')&&
  deletionAPI.includes('VIAJA_ACCOUNT_DELETION_ENABLED')&&
- process.env.VITE_VIAJA_ACCOUNT_DELETION_ENABLED==='true'&&
- process.env.VIAJA_ACCOUNT_DELETION_ENABLED==='true',
- {severity:'release-blocker',detail:'El flujo está implementado pero deshabilitado hasta completar QA real y activar ambas variables de lanzamiento.'});
+ appAccount.includes("VITE_VIAJA_ACCOUNT_DELETION_ENABLED!=='false'")&&
+ deletionAPI.includes("VIAJA_ACCOUNT_DELETION_ENABLED==='false'"),
+ {severity:'release-blocker',detail:'Verificar el despliegue y que no exista un kill-switch configurado a false en Cloudflare.'});
 check('account_deletion_web','Solicitud de eliminación disponible también desde la web',
  deletionPage.includes('Eliminar tu cuenta de Viaja')&&!deletionPage.includes('noindex,nofollow')&&
  !deletionPage.includes('Funcionalidad en validación'),
@@ -61,7 +62,8 @@ check('account_deletion_web','Solicitud de eliminación disponible también desd
 check('account_deletion_live_qa','Eliminación y preservación de cuentas colaboradoras verificadas con dos cuentas descartables',
  false,{severity:'manual',detail:'Falta QA real con dos cuentas de prueba, Storage y Auth; se prohíbe probar con datos de usuarios reales.'});
 check('support_contact','Canal de soporte privado accesible',
- existsSync('public/support.html'),{severity:'release-blocker',detail:'Definir correo de soporte o formulario privado antes de publicar en tiendas.'});
+ existsSync('public/support.html')&&read('public/support.html').includes('mailto:viaja.app.soporte@gmail.com'),
+ {severity:'release-blocker',detail:'Verificar recepción del correo en el buzón de soporte.'});
 check('apple_equivalent_login','Acceso alternativo privado equivalente para iOS con inicio Google',
  false,{severity:'manual',detail:'El acceso Google está disponible, pero falta verificar o incorporar otro acceso equivalente que cumpla el requisito 4.8 de Apple (privacidad de email, datos mínimos, no rastreo sin consentimiento).'});
 check('apple_signing','Firma y distribución Apple configuradas',

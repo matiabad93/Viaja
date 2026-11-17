@@ -53,7 +53,8 @@ try{
  const disabled=await accountDeletionAPI(request(),{...env,VIAJA_ACCOUNT_DELETION_ENABLED:'false'});
  assert.equal(disabled.status,503,'Production must fail closed when the deletion flag is off');
  assert.equal((await disabled.json() as {code?:string}).code,'ACCOUNT_DELETION_DISABLED');
- assert.equal((await accountDeletionAPI(request(),{...env,VIAJA_ACCOUNT_DELETION_ENABLED:undefined})).status,503);
+ // Default-on production mode must still enforce request authorization.
+ assert.equal((await accountDeletionAPI(request({},'https://evil.example'),{...env,VIAJA_ACCOUNT_DELETION_ENABLED:undefined})).status,403);
  assert.equal((await accountDeletionAPI(request({},'https://evil.example'),env)).status,403,'Reject foreign origins');
  assert.equal((await accountDeletionAPI(request(undefined,undefined,'Bearer'),env)).status,401,'Require session JWT');
  assert.equal((await accountDeletionAPI(request({confirmation:'sí',email:'user@example.com'}),env)).status,400,'Require literal consent');
