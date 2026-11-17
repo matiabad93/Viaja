@@ -1,0 +1,13 @@
+{
+  "language": "es-ES",
+  "appName": "Viaja · Planificador de viajes",
+  "shortDescription": "Planeá itinerarios, organizá reservas y compartí viajes con quien quieras.",
+  "fullDescription": "Cada viaje empieza con una idea. Viaja te ayuda a transformarla en un plan claro, flexible y fácil de compartir.\n\nPLANIFICÁ A TU MANERA\nCreá itinerarios por día, organizá actividades y ajustá horarios, destinos y presupuesto según tu estilo de viaje. Si querés inspiración, podés usar la asistencia opcional de inteligencia artificial y luego editar el resultado.\n\nDESCUBRÍ LUGARES\nExplorá guías de destinos y recorridos para inspirar tu próxima escapada. Guardá ideas y adaptalas a las fechas y preferencias de tu viaje.\n\nORGANIZÁ TUS RESERVAS\nReuní tus documentos de viaje en un solo lugar. Podés importar archivos PDF y asociarlos a un viaje para tener a mano la información que necesitás. Los documentos privados no se publican junto con las guías.\n\nVIAJÁ EN EQUIPO\nInvitá colaboradores a un itinerario para preparar juntos actividades y decisiones. Vos controlás a quién le das acceso. También podés compartir itinerarios publicados con otros viajeros.\n\nTUS PLANES, BAJO TU CONTROL\nAccedé con tu cuenta, gestioná tus viajes y consultá las opciones de privacidad y eliminación de cuenta desde la aplicación.\n\nViaja es una herramienta de planificación: los itinerarios y sugerencias de IA son orientativos y conviene comprobar horarios, disponibilidad y precios antes de reservar.",
+  "categorySuggestion": "Travel & Local",
+  "contactEmail": "viaja.app.soporte@gmail.com",
+  "websiteUrl": "https://viaja.pages.dev/",
+  "privacyPolicyUrl": "https://viaja.pages.dev/privacy.html",
+  "supportUrl": "https://viaja.pages.dev/support.html",
+  "accountDeletionUrl": "https://viaja.pages.dev/delete-account.html",
+  "packageName": "com.matiabad.viaja"
+}

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 500" width="1024" height="500" role="img" aria-label="Viaja. Planeá, explorá y compartí cada aventura.">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#113b30"/><stop offset="1" stop-color="#245c49"/></linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b7d7bc"/><stop offset="1" stop-color="#f6f1c2"/></linearGradient>
+    <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" stroke="#d2e7c7" stroke-opacity=".065" stroke-width="1"/></pattern>
+  </defs>
+  <rect width="1024" height="500" fill="url(#bg)"/>
+  <rect width="1024" height="500" fill="url(#grid)"/>
+  <path d="M613-100C911-57 732 160 982 167S1136 425 845 531" fill="none" stroke="#90c5a7" stroke-opacity=".24" stroke-width="2"/>
+  <path d="M656-111C964-56 782 194 1003 209S1172 433 882 528" fill="none" stroke="#90c5a7" stroke-opacity=".15" stroke-width="2"/>
+  <path d="M688-120C1008-44 827 215 1024 250S1199 453 907 534" fill="none" stroke="#90c5a7" stroke-opacity=".12" stroke-width="2"/>
+  <circle cx="823" cy="253" r="161" fill="none" stroke="url(#ring)" stroke-opacity=".8" stroke-width="1.5"/>
+  <circle cx="823" cy="253" r="120" fill="none" stroke="#b6dbc4" stroke-opacity=".3" stroke-width="1.5"/>
+  <circle cx="823" cy="253" r="76" fill="#d6eacb" fill-opacity=".10" stroke="#f0ecc0" stroke-width="2"/>
+  <path d="M780 296 801 231 865 208 845 275z" fill="#f4efbf"/>
+  <path d="M801 231 845 275 780 296z" fill="#a8d4b3"/>
+  <circle cx="823" cy="253" r="7" fill="#e39a79"/>
+  <circle cx="823" cy="92" r="6" fill="#e39a79"/>
+  <circle cx="984" cy="253" r="6" fill="#f4efbf"/>
+  <path d="M680 254h-25M990 252h25M823 77V52M823 429v25" stroke="#d4e4c3" stroke-opacity=".46" stroke-width="2"/>
+  <g fill="#f6f5e9"><text x="74" y="154" font-family="Georgia,serif" font-weight="bold" font-size="83" letter-spacing="-4">viaja</text></g>
+  <circle cx="285" cy="141" r="10" fill="#e19d79"/>
+  <path d="M75 197h393" stroke="#8fc7a9" stroke-opacity=".35" stroke-width="2"/>
+  <text x="76" y="260" fill="#f5f1cf" font-family="Arial,sans-serif" font-weight="bold" font-size="30">Tu viaje empieza acá.</text>
+  <text x="76" y="309" fill="#d5e9dc" font-family="Arial,sans-serif" font-size="22">Planeá · Explorá · Compartí</text>
+  <rect x="76" y="360" width="365" height="57" rx="28.5" fill="#9dd3b1"/>
+  <text x="258" y="396" text-anchor="middle" font-family="Arial,sans-serif" font-size="20" font-weight="bold" fill="#153c2f">Organizá tu próxima aventura</text>
+</svg>
