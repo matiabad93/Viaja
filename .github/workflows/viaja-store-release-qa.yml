@@ -59,7 +59,7 @@ jobs:
         run: node scripts/store-cross-device-browser-smoke.mjs
       - name: Regresión de pines en mapa para Safari iPhone y Chrome móvil
         run: node scripts/map-destination-pins-browser-smoke.mjs
-      - name: Fallback sin WebGL2: Safari y Chrome móvil sin cierre global
+      - name: 'Fallback sin WebGL2: Safari y Chrome móvil sin cierre global'
         run: node scripts/map-no-webgl-fallback-browser-smoke.mjs
       - name: Evidencia de QA y reporte go-no-go
         if: always()
