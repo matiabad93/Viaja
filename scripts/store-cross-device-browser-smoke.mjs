@@ -67,6 +67,25 @@ try{
   assert.ok(metrics.buttons.every(b=>b.height>=44),'Touch targets smaller than 44 px');
   await assertNoOverflow(page,device.name+' home');
   await page.screenshot({path:out+'/'+(isSafari?'safari':'chrome')+'-'+device.name+'-home.png',fullPage:true});
+  // Explore search uses a single visible focus ring and iOS-safe input font size.
+  await nav.getByRole('button',{name:/Explorar/}).click();
+  await page.getByRole('heading',{name:'Encontrá un viaje que te inspire.'}).waitFor();
+  const exploreSearch=page.locator('.explore-search input');
+  await exploreSearch.click();
+  const focus=await exploreSearch.evaluate(element=>{
+   const inside=getComputedStyle(element),outside=getComputedStyle(element.parentElement);
+   return {fontSize:parseFloat(inside.fontSize),marginTop:inside.marginTop,
+    innerShadow:inside.boxShadow,innerRadius:inside.borderRadius,outerShadow:outside.boxShadow};
+  });
+  assert.ok(focus.fontSize>=16,'Explore search triggers iOS auto-zoom '+JSON.stringify(focus));
+  assert.equal(focus.marginTop,'0px','Explore search nested top margin');
+  assert.equal(focus.innerShadow,'none','Explore search has a duplicated inner focus ring');
+  assert.equal(focus.innerRadius,'0px','Explore search has a nested rounded rectangle');
+  assert.notEqual(focus.outerShadow,'none','Explore search must retain accessible outer focus');
+  await exploreSearch.fill('Roma');
+  await page.getByText('1 guía disponible').waitFor();
+  await assertNoOverflow(page,device.name+' explore');
+  await page.screenshot({path:out+'/'+(isSafari?'safari':'chrome')+'-'+device.name+'-explore.png',fullPage:true});
   await nav.getByRole('button',{name:/Planificar/}).click();
   await page.getByRole('heading',{name:'¿A dónde te gustaría viajar?'}).waitFor();
   await assertNoOverflow(page,device.name+' planner');
