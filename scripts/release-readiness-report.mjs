@@ -51,6 +51,8 @@ check('account_deletion_web','Solicitud de eliminación disponible también desd
  existsSync('public/delete-account.html'),{severity:'release-blocker',detail:'Google Play requiere una vía web externa para iniciar la solicitud de eliminación, además de la app.'});
 check('support_contact','Canal de soporte privado accesible',
  existsSync('public/support.html'),{severity:'release-blocker',detail:'Definir correo de soporte o formulario privado antes de publicar en tiendas.'});
+check('apple_equivalent_login','Acceso alternativo privado equivalente para iOS con inicio Google',
+ false,{severity:'manual',detail:'El acceso Google está disponible, pero falta verificar o incorporar otro acceso equivalente que cumpla el requisito 4.8 de Apple (privacidad de email, datos mínimos, no rastreo sin consentimiento).'});
 check('apple_signing','Firma y distribución Apple configuradas',
  false,{severity:'manual',detail:'Requiere Apple Developer Program, equipo, certificados/perfiles y App Store Connect.'});
 check('play_signing','Keystore de subida Google Play provisto',
