@@ -21,9 +21,13 @@ async function probe(name,path,options,expectedStatus,{staticPage=false}={}){
    name+': expected HTTP '+expectedStatus+', received '+response.status);
   for(const [header,expected] of [
    ['x-content-type-options','nosniff'],
-   ['x-frame-options','DENY'],
-   ['referrer-policy','strict-origin-when-cross-origin']
+   ['x-frame-options','DENY']
   ])assert.equal(response.headers.get(header),expected,name+': missing '+header);
+  // Cloudflare applies "no-referrer" in production; that is stricter than the default.
+  // Reject missing, "unsafe-url" and other privacy-weaker policies.
+  const referrerPolicy=response.headers.get('referrer-policy');
+  assert.ok(['strict-origin-when-cross-origin','strict-origin','same-origin','no-referrer'].includes(referrerPolicy),
+   name+': insecure or missing referrer-policy: '+referrerPolicy);
   const csp=response.headers.get('content-security-policy')||'';
   assert.match(csp,/frame-ancestors 'none'/,name+': missing anti-framing CSP');
   if(staticPage){
