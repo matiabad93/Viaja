@@ -20,8 +20,10 @@ const account={
  a:{email:required('VIAJA_E2E_DELETE_USER_A_EMAIL'),password:required('VIAJA_E2E_DELETE_USER_A_PASSWORD')},
  b:{email:required('VIAJA_E2E_DELETE_USER_B_EMAIL'),password:required('VIAJA_E2E_DELETE_USER_B_PASSWORD')}
 };
+// Also accepts Gmail-style +aliases delivered to an inbox the tester owns.
+const disposableEmail=/^(?:viaja-e2e-delete-[a-z0-9-]+|[a-z0-9._-]+\+viaja-e2e-delete-[a-z0-9-]+)@[^@]+\.[^@]+$/i;
 for(const {email} of Object.values(account))
- assert.match(email,/^viaja-e2e-delete-[a-z0-9-]+@[^@]+\.[^@]+$/i,'Only explicitly named disposable accounts');
+ assert.match(email,disposableEmail,'Only explicitly named disposable accounts');
 assert.notEqual(account.a.email.toLowerCase(),account.b.email.toLowerCase());
 assert.equal(required('VIAJA_E2E_DELETE_CONFIRM_EMAIL').toLowerCase(),account.a.email.toLowerCase(),
  'The exact email of the account to be deleted must be confirmed separately');
