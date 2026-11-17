@@ -188,7 +188,7 @@ export function ReservationsCenter({
     loading?<FeedbackState compact kind="loading" title="Preparando tus reservas" description="Estamos recuperando tus documentos privados. Un momento…"/>:
     error&&!items.length?<FeedbackState compact kind="error" title="No pudimos cargar la biblioteca" description="Comprobá tu conexión e intentá otra vez. Tus PDF no se borraron." action={{label:"Reintentar",onClick:reload}}/>:
     !filtered.length?<FeedbackState compact kind="empty"
-     title={items.length?'No encontramos coincidencias':'Tu biblioteca está lista para empezar'}
+     title={items.length?'No encontramos coincidencias':'Todavía no guardaste reservas.'}
      description={items.length?'Probá otro nombre o volvé a mostrar todas las reservas.':'Guardá tu primer billete o confirmación de alojamiento: después podés vincularlo con un viaje.'}
      action={{label:items.length?'Limpiar búsqueda y filtros':'Importar mi primer PDF',onClick:items.length?()=>{setSearch('');setKindFilter('all');setOnlyTrip('')}:scrollAdd}}/>:
     <div className="reservation-card-grid">{filtered.map(record=>{
