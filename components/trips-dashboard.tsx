@@ -14,7 +14,7 @@ const today=todayLocal();
 const counts=tripFilterCounts(plans,today);
 const list=selectVisibleTrips(plans,query,filter,sort,today);
 const clearFilters=()=>{setQuery('');setFilter('Todos');setSort('Relevancia')};
-return <section className="journeys"><div className="section-heading"><div><span className="eyebrow">TU COLECCIÓN PERSONAL</span><h1>Mis viajes</h1><p>Encontrá tus próximos destinos, retomá tus planes y organizá cada viaje desde acá.</p></div><button className="primary" onClick={onNew}><Plus size={18}/>Crear viaje</button></div>{plans.length>0&&<><div className="journey-toolbar journey-toolbar-v2">
+return <section className="journeys"><div className="section-heading"><div><span className="eyebrow">TU COLECCIÓN PERSONAL</span><h1>Mis viajes</h1><p>Encontrá tus próximos destinos, retomá tus planes y organizá cada viaje desde acá.</p></div>{plans.length>0&&<button className="primary" onClick={onNew}><Plus size={18}/>Crear viaje</button>}</div>{plans.length>0&&<><div className="journey-toolbar journey-toolbar-v2">
 <label className="searchbox"><Search size={18}/><input aria-label="Buscar mis viajes" placeholder="Buscar ciudad, país u origen…" value={query} onChange={e=>setQuery(e.target.value)}/></label>
 <div className="journey-toolbar-controls">
  <div className="filterpills" role="group" aria-label="Filtrar viajes por estado">{tripFilters.map(f=><button type="button" aria-pressed={filter===f} key={f} onClick={()=>setFilter(f)}>{f} <span className="journey-filter-count">{counts[f]}</span></button>)}</div>
