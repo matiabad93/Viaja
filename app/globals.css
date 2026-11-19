@@ -2586,3 +2586,13 @@ html[data-theme] .experience-crash .experience-crash-help{font-size:14px;color:v
  .visualguides .hero .guide-hero-cta{transition:none}
  .visualguides .hero .guide-hero-cta:hover:not(:disabled){transform:none}
 }
+
+/* Iterative AI improvements and reversible-feeling day controls. */
+.day-heading .planbuttons{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.refinement-box{margin-top:18px;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--surface,#fff)}
+.refinement-box textarea{min-height:100px}
+.refinement-history{margin-top:16px;font-size:13px;color:var(--muted)}
+.refinement-history summary{cursor:pointer;font-weight:600}
+.refinement-history ol{padding-left:22px;margin-top:10px}
+.refinement-history li{margin:8px 0;line-height:1.5}
+@media(max-width:700px){.day-heading .planbuttons{justify-content:flex-start}.refinement-box{padding:14px}}
