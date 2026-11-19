@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {mergeRefinedItinerary,refinementContext,removeItineraryDay} from '../lib/itinerary-refinement.ts';
 import {validateTrip} from '../server/planner.ts';
 import {geminiRequest} from '../server/gemini-planner.ts';
+import {reconcileItinerarySchedule} from '../lib/itinerary-schedule.ts';
+import {overlaps} from '../lib/agenda.ts';
 import type {Day,Plan} from '../lib/travel.ts';
 
 const existing:Day[]=[
@@ -61,12 +63,60 @@ const plan:Plan={id:'test',trip,kind:'draft',createdAt:'2026-11-01',itinerary:ex
  collaboration:{version:2,ownerId:'secret-email',role:'owner'},refinementHistory:[{requestedAt:'2026-11-01',prompt:'Quiero mercados navideños',addedActivities:1,updatedActivities:0}]};
 const context=refinementContext(plan);
 assert.ok(context.includes('Museo Unterlinden'));
+assert.ok(context.includes('"id":"museum"'));
 assert.ok(context.includes('Quiero mercados navideños'));
 for(const privateValue of ['Mi dirección privada','Compra privada','secret-email','Confirmada por mí'])assert.ok(!context.includes(privateValue),`No debe enviar ${privateValue} a la IA`);
 const huge:Plan={...plan,itinerary:Array.from({length:31},(_,i)=>({id:String(i),title:'Jornada '+i,activities:Array.from({length:30},(_,j)=>({id:i+'-'+j,title:'Actividad '+i+' '+j,description:'Descripción de actividad'.repeat(20)}))}))};
-const compact=refinementContext(huge);
+assert.throws(()=>refinementContext(huge),/demasiado extenso/,'No oculta actividades sin avisar a la IA');
+const normal:Plan={...plan,itinerary:Array.from({length:4},(_,i)=>({id:String(i),title:'Jornada '+i,activities:Array.from({length:7},(_,j)=>({id:i+'-'+j,title:'Actividad '+i+' '+j,description:'Descripción de actividad'.repeat(20)}))}))};
+const compact=refinementContext(normal);
 assert.ok(compact.length<=7200);
-assert.equal(JSON.parse(compact).days.length,31);
+assert.equal(JSON.parse(compact).days.flatMap((d:any)=>d.activities).length,28,'Incluye todas las paradas existentes');
+
+const unsorted:Day[]=[{id:'strasbourg',title:'Estrasburgo',activities:[
+ {id:'tree',title:'Árbol de Place Kléber',time:'17:00',duration:'45 min',description:''},
+ {id:'train',title:'Tren Mulhouse a Estrasburgo',time:'08:45',duration:'55 min',costCategory:'Transporte',description:''}
+]}];
+const sorted=reconcileItinerarySchedule(unsorted);
+assert.deepEqual(sorted.days[0].activities.map(a=>a.id),['train','tree'],'El tren de las 08:45 aparece antes de la visita de las 17:00');
+assert.equal(sorted.conflicts.length,0);
+assert.equal(JSON.stringify(unsorted[0].activities.map(a=>a.id)),JSON.stringify(['tree','train']),'Ordenar no muta el viaje original');
+const overlapping=reconcileItinerarySchedule([{...unsorted[0],activities:[
+ unsorted[0].activities[1],{id:'sight',title:'Catedral',description:'',time:'09:00',duration:'60 min'}
+]}]);
+assert.equal(overlapping.days[0].activities[1].time,'09:55','Evita superponer visitas con el tren y reserva un margen para desplazarse');
+assert.equal(overlapping.adjustments,1);
+assert.equal(overlapping.days[0].activities.some(a=>overlaps(a,overlapping.days[0].activities)),false);
+const blocked=reconcileItinerarySchedule([{...unsorted[0],activities:[
+ unsorted[0].activities[1],{id:'booked',title:'Actividad con entrada confirmada',description:'',time:'09:00',duration:'60 min',reservation:'Confirmada por mí'}
+]}]);
+assert.ok(blocked.conflicts.length>0,'Rechaza reservas y transportes incompatibles sin cambiarlos silenciosamente');
+const renamed=mergeRefinedItinerary(existing,[{id:'d',title:'Visitas',activities:[{id:'generated',refinesId:'museum',title:'Gran Museo de Unterlinden',description:'Historia ampliada',time:'12:00'}]}]);
+assert.equal(renamed.itinerary[0].activities.filter(a=>a.id==='museum').length,1);
+assert.equal(renamed.itinerary[0].activities[0].time,'09:00','Conserva reserva a pesar de propuesta de hora distinta');
+assert.equal(renamed.addedActivities,0);
+const refinable:Day[]=[{id:'day',title:'Estrasburgo',activities:[
+ {id:'tree',title:'Árbol de Place Kléber',description:'Ya está en mi agenda',time:'17:00',duration:'45 min'},
+ {id:'train',title:'Tren Mulhouse a Estrasburgo',description:'Mi traslado',time:'08:45',duration:'55 min',costCategory:'Transporte'}
+]}];
+const enriched=mergeRefinedItinerary(refinable,[{id:'suggested',title:'Estrasburgo',activities:[
+ {id:'similar',title:'Árbol de Navidad de Place Kléber',description:'Otra descripción para el mismo árbol',time:'17:00',duration:'45 min'},
+ {id:'new',title:'Catedral de Estrasburgo',description:'Nueva visita',time:'09:00',duration:'60 min'}
+]}],'Agregá la catedral y mantené el árbol');
+assert.deepEqual(enriched.itinerary[0].activities.map(a=>a.id),['train','new','tree']);
+assert.equal(enriched.addedActivities,1,'El árbol con otro nombre no se duplica');
+assert.equal(enriched.itinerary[0].activities[1].time,'09:55','La nueva catedral queda después del tren y el traslado');
+assert.equal(enriched.conflicts.length,0);
+assert.equal(enriched.itinerary[0].activities.some(a=>overlaps(a,enriched.itinerary[0].activities)),false);
+const moved=mergeRefinedItinerary(existing,[{id:'first',title:'Día 1',activities:[]},{id:'second',title:'Día 2',activities:[
+ {id:'moving',refinesId:'canal',title:'Pequeña Venecia',description:'Cambiamos de día',time:'14:00'}
+]}],'Mové Pequeña Venecia al día 2');
+assert.equal(moved.itinerary[0].activities.some(a=>a.id==='canal'),false);
+assert.equal(moved.itinerary[1].activities.some(a=>a.id==='canal'),true);
+const notMoved=mergeRefinedItinerary(existing,[{id:'first',title:'Día 1',activities:[]},{id:'second',title:'Día 2',activities:[
+ {id:'moving',refinesId:'canal',title:'Pequeña Venecia',description:'Cambiamos de día',time:'14:00'}
+]}],'Agregá detalles históricos');
+assert.equal(notMoved.itinerary[0].activities.some(a=>a.id==='canal'),true,'El modelo no puede mover una parada entre días sin que se le haya pedido');
 const validated=validateTrip({...trip,existingItinerary:context});
 assert.equal(validated.existingItinerary,context,'El contexto llega al proveedor de forma validada');
 assert.ok(JSON.stringify(geminiRequest(validated)).includes('Quiero mercados navideños'),'Gemini recibe el historial anterior');

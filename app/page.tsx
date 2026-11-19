@@ -14,6 +14,7 @@ import {TripDateRange} from '../components/trip-date-range';
 import {todayLocal,isoFromDate} from '../lib/date-range';
 import {newId,backup} from '../lib/travel';
 import {refinementContext,mergeRefinedItinerary} from '../lib/itinerary-refinement';
+import {reconcileItinerarySchedule} from '../lib/itinerary-schedule';
 import {lazy,Suspense,useEffect,useState,useRef,Fragment} from 'react';
 import {ArrowUpRight,ArrowRight,MapPin,Compass,CalendarDays,Users,Wallet,Bookmark,Globe,Check,Link2,ChevronRight,Download,LoaderCircle,Plus,TrainFront,BookOpen,Sparkles,RotateCcw,Ticket} from 'lucide-react';
 import {Trip,Plan,itineraryOf,daysCount} from '../lib/travel';
@@ -225,7 +226,9 @@ const performGeneration=async()=>{
  if(!refining){if(!save(draft))return;setResult(draft)}
  setBusy(true);
  const snapshot={...trip,sources:[...trip.sources]};
- const payload=refining&&original?{...snapshot,existingItinerary:refinementContext(original)}:snapshot;
+ let payload:typeof snapshot| (typeof snapshot & {existingItinerary:string})=snapshot;
+ try{if(refining&&original)payload={...snapshot,existingItinerary:refinementContext(original)}}
+ catch(e){setBusy(false);setError(e instanceof Error?e.message:'No se pudo preparar el contexto del viaje.');return}
  const controller=new AbortController();abortRef.current=controller;
  try{localStorage.setItem('viaja-ai-current',JSON.stringify(snapshot))}catch{}
  const timeout=setTimeout(()=>controller.abort(),165000);
@@ -234,12 +237,15 @@ const performGeneration=async()=>{
   const r=await requestAPI('/api/plan',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload),signal:controller.signal});
   const data=await r.json() as Plan & {error?:string;code?:string};
   if(!r.ok)throw Error((data.error||'No se pudo preparar el viaje.')+(data.code?' [Código: '+data.code+']':''));
-  const changes=refining&&original?mergeRefinedItinerary(itineraryOf(original),itineraryOf(data)):null;
+  const changes=refining&&original?mergeRefinedItinerary(itineraryOf(original),itineraryOf(data),trip.adjustment):null;
+  const firstSchedule=changes?null:reconcileItinerarySchedule(itineraryOf(data));
+  const schedule=changes||firstSchedule;
+  if(schedule?.conflicts.length)throw Error('No aplicamos los cambios porque existen horarios incompatibles: '+schedule.conflicts.slice(0,2).join(' ')+'. Tu viaje anterior sigue intacto.');
   const sources=new Map([...(draft.sources||[]),...(data.sources||[])].map(s=>[s.url,s]));
   const next:Plan={...draft,kind:draft.kind==='researched'?'researched':data.kind,
    trip:{...draft.trip,adjustment:''},
    expenses:draft.expenses,logistics:draft.logistics,collaboration:draft.collaboration,
-   itinerary:changes?.itinerary||data.itinerary,
+   itinerary:changes?.itinerary||firstSchedule?.days||data.itinerary,
    parts:[...(draft.parts||[]),...(data.parts||[])].slice(-12),
    sources:[...sources.values()],
    refinementHistory:changes?[...(original?.refinementHistory||[]),{requestedAt:new Date().toISOString(),prompt:trip.adjustment.trim(),addedActivities:changes.addedActivities,updatedActivities:changes.updatedActivities}].slice(-15):draft.refinementHistory
@@ -247,7 +253,7 @@ const performGeneration=async()=>{
   if(!itineraryOf(next).some(d=>d.activities.length))throw Error('La IA no devolvió actividades organizadas. Tu agenda anterior se conservó.');
   if(save(next)){
    clearPlannerDraft(window.localStorage);setPlannerDraft(null);openTrip(next);
-   setMessage(changes?`Viaje refinado: ${changes.addedActivities} actividades nuevas y ${changes.updatedActivities} mejoradas. Conservamos los días, los avances, las reservas y los gastos anteriores.`:
+   setMessage(changes?`Viaje refinado: ${changes.addedActivities} actividades nuevas, ${changes.updatedActivities} mejoradas y ${changes.rescheduledActivities} horarios ajustados. Se ordenaron las actividades sin perder gastos ni reservas.${changes.warnings.length?' Revisá: '+changes.warnings.slice(0,2).join(' '):''}`:
     data.kind==='draft'?'Ideas con Gemini guardadas. Verificá todos los datos antes de reservar.':'Investigación guardada. Revisá las fuentes antes de reservar.');
   }else{setResult(next);setTrip(next.trip);setTab('detail')}
  }catch(e){setError(e instanceof Error&&e.name==='AbortError'?'La investigación se interrumpió. Conservamos el viaje anterior sin cambios.':e instanceof Error?e.message:'No se pudo generar el plan.')}
