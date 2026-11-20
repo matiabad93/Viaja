@@ -2614,3 +2614,24 @@ html[data-theme="dark"] .ai-action-feedback .ai-action-feedback-hint{color:#e5ba
 html[data-theme="dark"] .ai-action-feedback .ai-action-feedback-safe{color:#b6e8c5}
 html[data-theme="dark"] .ai-action-feedback-action{color:#f9c3b6}
 @media(max-width:700px){.ai-action-feedback{padding:15px 14px;scroll-margin-top:85px}}
+
+/* PDF is a first-class trip action: reachable regardless of the current tab. */
+.trip-banner-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap;flex-shrink:0}
+.trip-banner-actions button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:45px;border-radius:11px;padding:10px 15px;white-space:nowrap;font-size:13px;font-weight:700;transition:background .18s,transform .18s,box-shadow .18s}
+.trip-banner-actions .trip-pdf-download{background:#f9f9ed;color:#183b30;border:1px solid #f9f9ed;box-shadow:0 2px 10px #061b1830}
+.trip-banner-actions .trip-pdf-download:hover:not(:disabled){background:#e4f0df;transform:translateY(-1px);box-shadow:0 4px 14px #061b1840}
+.trip-banner-actions .trip-pdf-share{background:#193d34a8;color:#fff;border:1px solid #ffffff85}
+.trip-banner-actions .trip-pdf-share:hover:not(:disabled),.trip-banner-actions .banner-edit:hover:not(:disabled){background:#254e40}
+.trip-banner-actions button:disabled{opacity:.65;cursor:wait}
+.trip-banner-actions button:focus-visible{outline:3px solid #ffc899;outline-offset:3px}
+.trip-pdf-notice{background:#e6f0e4;border:1px solid #b8cdb7;color:#234e3a;margin:12px 0;padding:12px 16px;border-radius:10px;font-size:13px}
+html[data-theme="dark"] .trip-pdf-notice{background:#21392e;border-color:#527361;color:#d4f1db}
+@media(max-width:850px){
+ .trip-banner-actions{justify-content:flex-start;width:100%}
+ .trip-banner-actions button{min-height:44px}
+}
+@media(max-width:520px){
+ .trip-banner-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+ .trip-banner-actions .trip-pdf-download{grid-column:1/-1}
+ .trip-banner-actions .trip-pdf-share,.trip-banner-actions .banner-edit{width:100%}
+}
