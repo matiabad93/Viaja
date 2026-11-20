@@ -12,6 +12,7 @@ export function CommunityTrips({onUse,initialId}:{onUse:(plan:Plan)=>void;initia
  const [items,setItems]=useState<CommunityTrip[]>([]);
  const [selected,setSelected]=useState<CommunityTrip|null>(null);
  const selectedRef=useRef<CommunityTrip|null>(null);
+ const dismissedSharedLinkRef=useRef(false);
  useEffect(()=>{selectedRef.current=selected},[selected]);
  const [search,setSearch]=useState('');
  const [pace,setPace]=useState('Todos');
@@ -30,7 +31,7 @@ export function CommunityTrips({onUse,initialId}:{onUse:(plan:Plan)=>void;initia
     if(!live||currentRequest!==requestNumber)return;
     setItems(trips);
     const previous=selectedRef.current;
-    const updated=previous?(trips.find(trip=>trip.id===previous.id)|| (focused?.id===previous.id?focused:null)):focused;
+    const updated=previous?(trips.find(trip=>trip.id===previous.id)|| (focused?.id===previous.id?focused:null)):(dismissedSharedLinkRef.current?null:focused);
     selectedRef.current=updated;
     setSelected(updated);
     if(previous&&!updated)setNotice('Este itinerario ya no está publicado por su autor.');
@@ -60,7 +61,7 @@ export function CommunityTrips({onUse,initialId}:{onUse:(plan:Plan)=>void;initia
  };
  const link=selected?typeof window==='undefined'?'/?viaje='+selected.id:window.location.origin+'/?viaje='+selected.id:'';
  if(selected)return <section className="community-explore">
-  <button className="backlink" type="button" onClick={()=>{setSelected(null);setShowLink(false);setNotice('')}}><ArrowLeft size={16}/>Todos los viajes compartidos</button>
+  <button className="backlink" type="button" onClick={()=>{dismissedSharedLinkRef.current=true;setSelected(null);setShowLink(false);setNotice('')}}><ArrowLeft size={16}/>Todos los viajes compartidos</button>
   <div className={"community-hero "+theme.hero}><span className="eyebrow"><Globe2 size={15}/> ITINERARIO COMPARTIDO</span>
    <h1>{selected.title}</h1>
    <p className={theme.liveNote}>Este itinerario se actualiza automáticamente cuando su autor guarda cambios. Las copias editables que guardes son independientes.{selected.updated_at&&<> Última actualización: {new Date(selected.updated_at).toLocaleString("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}.</>}</p>
