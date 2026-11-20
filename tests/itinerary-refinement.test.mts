@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 // @ts-ignore Node executes this suite with native TypeScript stripping.
 import {mergeRefinedItinerary,refinementContext,removeItineraryDay} from '../lib/itinerary-refinement.ts';
+import {synchronizeItineraryNarrative,currentItineraryReport,dayAdviceFromAgenda} from '../lib/itinerary-narrative.ts';
 import {validateTrip} from '../server/planner.ts';
 import {geminiRequest,geminiFreePlanner,GEMINI_TIMEOUT_MS,normalizeGeminiIdeas} from '../server/gemini-planner.ts';
 import {reconcileItinerarySchedule} from '../lib/itinerary-schedule.ts';
@@ -261,6 +262,46 @@ try{
  assert.equal(groundedPlan.itinerary?.[0].activities[0].scheduleStatus,'researched');
 }finally{globalThis.fetch=originalFetch}
 assert.equal(researchCalls,2,'Consulta fuentes antes de generar itinerario, sin combinar JSON y Search');
+
+/* Regression: a stale report claims a different order and times from the
+ * itinerary. The displayed and saved narrative must use the agenda instead. */
+const contradictorySource:Plan={...plan,itinerary:[{id:'strasbourg-day',title:'Estrasburgo',advice:'Primero cenar a las 08:00 y después tomar el tren de las 17:00.',activities:[
+ {id:'late-tree',title:'Árbol de Place Kléber',description:'Ver el árbol de Navidad.',time:'17:00',duration:'45 min',kind:'visit'},
+ {id:'morning-train',title:'Tren Mulhouse → Estrasburgo',description:'Ir a Estrasburgo.',time:'08:45',duration:'55 min',kind:'transfer'}
+]}],parts:[{text:'Tren 17:00; árbol 08:45; instrucciones anteriores.',annotations:[]}]};
+const correctedStory=synchronizeItineraryNarrative(contradictorySource);
+assert.equal(correctedStory.itinerary?.[0].activities[0].id,'late-tree','Actualizar texto no modifica actividades ni reservas');
+const correctedAdvice=correctedStory.itinerary?.[0].advice||'';
+assert.ok(correctedAdvice.indexOf('08:45') < correctedAdvice.indexOf('17:00'));
+assert.match(correctedStory.parts?.[0].text||'',/08:45 · Tren Mulhouse/);
+assert.match(correctedStory.parts?.[0].text||'',/17:00 · Árbol de Place/);
+assert.ok(!correctedStory.parts?.[0].text.includes('Tren 17:00'));
+assert.ok(!correctedStory.parts?.[0].text.includes('Primero cenar a las 08:00'));
+assert.equal(correctedStory.itinerary?.[0].activities.length,2);
+assert.ok(currentItineraryReport(contradictorySource).includes('08:45 · Tren'),'Viajes viejos también pueden mostrar informe coherente');
+assert.ok(dayAdviceFromAgenda(correctedStory.itinerary![0]).includes('Tren Mulhouse'));
+
+/* Regression: a prose-only Gemini response gets one automatic correction
+ * attempt before returning to the user, without asking for another prompt. */
+let editGenerationCalls=0;
+const mockedResearch={candidates:[{finishReason:'STOP',content:{parts:[{text:'Sin horarios oficiales verificables.'}]}}]};
+const textOnlyDays=providerDays.map((d,i)=>({...d,unchanged:i!==0,activities:[],removedActivityIds:[],advice:i===0?'Mové el museo por la mañana y quitá el canal.':''}));
+const priorFetch=globalThis.fetch;
+try{
+ globalThis.fetch=async (input:any)=>{
+  if(String(input).includes('gemini-2.5-flash-lite'))return Response.json(mockedResearch);
+  editGenerationCalls++;
+  const payload=editGenerationCalls===1?{summary:'Cambié el itinerario en el texto.',budgetNotes:'',days:textOnlyDays}:providerData;
+  return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(payload)}]}}]});
+ };
+ const response=await geminiFreePlanner(new Request('https://viaja.pages.dev/api/plan',{method:'POST',body:JSON.stringify({
+  ...trip,existingItinerary:context,adjustment:'Reorganizá las actividades del día uno y reemplazá el canal.'
+ })}),{GEMINI_API_KEY:'test-only'});
+ assert.equal(response.status,200,'La corrección estructurada se resuelve dentro de una sola acción del usuario');
+ assert.equal(editGenerationCalls,2,'Se permite un único reintento del proveedor cuando no edita actividades');
+ const revisedPlan=await response.json() as Plan&{itinerary:Day[]};
+ assert.ok(revisedPlan.itinerary?.[0].activities.length>0,'La IA corrige la agenda y no solo los consejos');
+}finally{globalThis.fetch=priorFetch}
 const compactPrompt=geminiRequest(validateTrip({...trip,existingItinerary:context})).systemInstruction.parts[0].text;
 assert.ok(compactPrompt.includes('REVISIÓN INCREMENTAL BREVE'));
 assert.ok(!compactPrompt.includes('Prepará un itinerario diario COMPLETO'),'Refinar no debe regenerar el plan completo y extenso');

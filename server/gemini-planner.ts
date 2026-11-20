@@ -277,6 +277,36 @@ export async function geminiFreePlanner(request:Request,env:GeminiEnv):Promise<R
   catch{return failure('GEMINI_INVALID_JSON','Gemini devolvió un JSON incompleto. Conservamos el borrador.',502)}
   try{parsed=normalizeGeminiIdeas(resultData,trip.start,trip.days,trip.pace,Boolean(trip.existingItinerary))}
   catch(e){return failure('GEMINI_INVALID_ITINERARY',e instanceof Error&&e.message.includes('cantidad anómala')?e.message+' No se aplicaron cambios.':'Gemini no devolvió actividades suficientes para organizar tu viaje. Conservamos el borrador; podés volver a generar sin cambiar las fechas.',502,{validation:e instanceof Error?e.message.slice(0,100):'invalid'})}
+  // A prose-only refinement is not a successful edit. Retry once, inside the
+  // same user action, asking Gemini for concrete structured activity changes.
+  // Do not change existing bookings or discard the previous saved itinerary.
+  const narrativeOnly=/(solo|solamente|únicamente|unicamente).{0,45}(consejos|resumen|descripci[oó]n|texto|c[oó]mo aprovechar)/i.test(trip.adjustment);
+  const agendaEmpty=(output:GeminiOutput)=>output.days.every(day=>day.unchanged||
+   (day.activities.length===0&&day.removedActivityIds.length===0));
+  if(trip.existingItinerary&&!narrativeOnly&&agendaEmpty(parsed)){
+   try{
+    const retry=geminiRequest(trip,research);
+    retry.systemInstruction.parts[0].text+='\\nREVISIÓN OBLIGATORIA: El intento anterior solo produjo consejos. Eso NO satisface al usuario. Devolvé cambios REALES a actividades existentes mediante refinesId exacto, incluyendo horas, duración y recorrido; si hacen falta traslados nuevos, devolvelos como kind=transfer. No inventes reservas ni suprimas actividades previas sin solicitud explícita. Cada consejo debe corresponder a la agenda estructurada.';
+    retry.generationConfig.maxOutputTokens=7000;
+    const second=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+FREE_GEMINI_MODEL+':generateContent',{
+     method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},
+     body:JSON.stringify(retry),signal:AbortSignal.timeout(45000),cache:'no-store'
+    });
+    if(second.ok){
+     const retried=await second.json();
+     const candidate=retried?.candidates?.[0];
+     if(candidate?.finishReason==='STOP'){
+      const text=(candidate.content?.parts||[]).filter((part:any)=>typeof part.text==='string').map((part:any)=>part.text).join('');
+      const candidateOutput=normalizeGeminiIdeas(JSON.parse(text),trip.start,trip.days,trip.pace,true);
+      if(!agendaEmpty(candidateOutput))parsed=candidateOutput;
+     }
+    }
+   }catch{
+    // The first response was not a valid edit either; fail closed below.
+   }
+   if(agendaEmpty(parsed))return failure('GEMINI_NO_ACTIVITY_CHANGES',
+    'La IA no consiguió modificar ninguna actividad, incluso tras corregir su respuesta. Tu viaje sigue intacto; no guardamos solo consejos.',422);
+  }
   const rawItinerary=parsed.days.map((d,i)=>({
    id:crypto.randomUUID(),title:d.unchanged?'':'Día '+(i+1)+' — '+d.date+' · '+d.title,advice:d.advice,removedActivityIds:d.removedActivityIds,unchanged:d.unchanged,
    activities:d.activities.map(a=>({

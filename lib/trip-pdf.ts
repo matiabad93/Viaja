@@ -1,3 +1,4 @@
+import {dayAdviceFromAgenda,currentItineraryReport} from './itinerary-narrative.ts';
 import {itineraryOf,money,spent,budgetSpent,extraSpent,photo,type Plan,type Activity} from './travel.ts';
 
 // Browser-friendly A4 PDF export. No PDF runtime or server is required.
@@ -178,10 +179,10 @@ export function buildTripPdf(plan:Plan,cover?:CoverImage):Uint8Array{
    if(activity.completed){paragraph('Completada',8.6,{indent:51,color:green,bold:true,leading:13})}
    y-=15;
   });
-  if(day.advice?.trim()){
+  if(day.activities.length>0){
    need(67);y-=5;rect(M,y-4,4,25,orange);
    at('CÓMO APROVECHAR ESTE DÍA',M+14,y+5,9.2,green,true);y-=21;
-   paragraph(day.advice,9.6,{indent:14,leading:15.5,after:15});
+   paragraph(dayAdviceFromAgenda(day),9.6,{indent:14,leading:15.5,after:15});
   }
   y-=10;
  });
@@ -220,7 +221,7 @@ export function buildTripPdf(plan:Plan,cover?:CoverImage):Uint8Array{
  }
  if(plan.parts?.length){
   section('Ideas y recomendaciones','INFORME');
-  for(const part of plan.parts){paragraph(part.text,9.2,{leading:15.4,after:13})}
+  paragraph(currentItineraryReport(plan),9.2,{leading:15.4,after:13})
  }
  if(plan.sources?.length||trip.links?.trim()){
   need(125);section('Fuentes y enlaces','PARA CONSULTAR');
