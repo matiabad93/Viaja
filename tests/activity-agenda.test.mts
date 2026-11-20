@@ -25,7 +25,9 @@ const mock={days:[{date:'2026-11-27',title:'Día completo',advice:'Organización
 const normalized=normalizeGeminiIdeas(mock,'2026-11-27',1);
 assert.equal(normalized.days[0].activities.length,15,'No silently discard the 13th or subsequent time blocks');
 assert.equal(normalized.days[0].activities[0].kind,'meal');
-assert.throws(()=>normalizeGeminiIdeas({days:[{...mock.days[0],activities:Array.from({length:25},(_,i)=>({...scheduled[i%15],title:'Parada extra '+i,time:String(6+Math.floor(i/3)).padStart(2,'0')+':'+String(i%3*20).padStart(2,'0') }))}]},'2026-11-27',1),/24 bloques/,'Excess should be surfaced, never truncated');
+const manyBlocks=Array.from({length:30},(_,i)=>({...scheduled[i%15],title:'Parada extra '+i,time:String(6+Math.floor(i/3)).padStart(2,'0')+':'+String(i%3*20).padStart(2,'0') }));
+assert.equal(normalizeGeminiIdeas({days:[{...mock.days[0],activities:manyBlocks}]},'2026-11-27',1).days[0].activities.length,30,'Transports, meals and walking legs must not hit an artificial sightseeing cap');
+assert.throws(()=>normalizeGeminiIdeas({days:[{...mock.days[0],activities:Array.from({length:49},(_,i)=>({...scheduled[i%15],title:'Bloque '+i}))}]},'2026-11-27',1),/cantidad anómala/,'Malformed excessive responses are rejected, never silently truncated');
 
 const base=[{id:'d1',title:'Día 1',activities:[{...item('Almuerzo','meal'),time:'12:00'}]},{id:'d2',title:'Día 2',activities:[]}];
 const proposal=[{id:'d1',title:'Día 1',activities:[]},{id:'d2',title:'Día 2',activities:[{...item('Almuerzo','meal'),id:'new-meal',time:'12:00'}]}];

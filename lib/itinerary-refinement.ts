@@ -13,12 +13,15 @@ export function refinementContext(plan:Plan):string{
  const days=itineraryOf(plan).map((day,index)=>({
   day:index+1,title:shorten(day.title,120),advice:shorten(day.advice,400),
   totalActivities:day.activities.length,
-  activities:day.activities.map(a=>({id:a.id,title:shorten(a.title,110),kind:activityKind(a),time:shorten(a.time,6),duration:shorten(a.duration,12),location:shorten(a.location,90),description:shorten(a.description,220),fixed:Boolean(a.completed||a.reservation==='Confirmada por mí')}))
+  activities:day.activities.map(a=>({id:a.id,title:shorten(a.title,110),kind:activityKind(a),time:shorten(a.time,6),duration:shorten(a.duration,12),location:shorten(a.location,90),description:shorten(a.description,220),
+   transport:activityKind(a)==='transfer'?shorten([a.transportDetails?.from,a.transportDetails?.to,a.transportDetails?.service,a.transportDetails?.boardingStop,a.transportDetails?.arrivalStop].filter(Boolean).join(' → '),160):undefined,
+   fixed:Boolean(a.completed||a.reservation==='Confirmada por mí')}))
  }));
  const context={previousRequests:(plan.refinementHistory||[]).slice(-4).map(r=>shorten(r.prompt,180)),days};
  // Never silently omit an existing activity: the model might contradict what it cannot see.
  if(JSON.stringify(context).length>7200)for(const day of days){day.advice=shorten(day.advice,120);for(const item of day.activities)item.description=shorten(item.description,90)}
  if(JSON.stringify(context).length>7200)for(const day of days){day.advice='';for(const item of day.activities)item.description=''}
+ if(JSON.stringify(context).length>7200)for(const day of days)for(const item of day.activities)item.transport=shorten(item.transport,35);
  if(JSON.stringify(context).length>7200)for(const day of days)for(const item of day.activities)item.location=shorten(item.location,35);
  if(JSON.stringify(context).length>7200)throw Error('Este itinerario es demasiado extenso para refinarlo de forma segura. Dividí el pedido por días o completá algunos cambios manualmente.');
  return JSON.stringify(context);
@@ -56,7 +59,12 @@ const updateExisting=(current:Activity,idea:Activity):Activity=>{
   endTime:locked?current.endTime:idea.endTime||current.endTime,
   estimatedCostEUR:locked?current.estimatedCostEUR:idea.estimatedCostEUR??current.estimatedCostEUR,
   costCategory:locked?current.costCategory:idea.costCategory||current.costCategory,
-  costNote:idea.costNote||current.costNote
+  costNote:idea.costNote||current.costNote,
+  scheduleStatus:locked?current.scheduleStatus:idea.scheduleStatus||'estimated',
+  transportDetails:locked?current.transportDetails:idea.transportDetails||(idea.time&&idea.time!==current.time?{
+   ...current.transportDetails,boardingTime:undefined,arrivalTime:undefined,sourceUrl:undefined,
+   verificationNote:'El horario cambió; volvé a consultar la conexión.'
+  }:current.transportDetails)
  };
 };
 

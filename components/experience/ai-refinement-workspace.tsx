@@ -25,6 +25,7 @@ type Props={
 
 const suggestions=[
  {label:'Ordenar horarios',text:'Reorganizá las actividades por horario, sin superposiciones, y considerá los tiempos de traslado.'},
+ {label:'Detallar transportes',text:'Investigá los trenes, autobuses y conexiones para cada día. Indicá cuándo salir, dónde subir y bajar, y el tiempo a pie hasta las visitas. Marcá lo no confirmado.'},
  {label:'Optimizar recorridos',text:'Agrupá las actividades cercanas, evitá traslados innecesarios y mantené las reservas confirmadas.'},
  {label:'Mejorar cada día',text:'Revisá el itinerario y las descripciones de cada día para aprovechar mejor el tiempo, sin duplicar actividades.'}
 ];
@@ -67,7 +68,7 @@ export function AIRefinementWorkspace({plan,trip,busy,aiReady,statusError,aiMode
      {(!trip.start||!trip.end)&&<div className="ai-refinement-unavailable" role="status">Este viaje todavía no tiene fechas completas. Volvé al itinerario y usá «Editar viaje» para indicarlas antes de pedir mejoras a la IA.</div>}
      {(aiReady===false||statusError)&&<div className="ai-refinement-unavailable" role="status">La IA no está disponible en este momento. Tu viaje sigue guardado. <button type="button" onClick={onRefresh}>Comprobar conexión <RotateCcw size={14}/></button></div>}
     </fieldset>
-    {busy&&<div className="ai-refinement-working" role="status"><LoaderCircle size={17} className="spin"/><span>{aiMode==='ideas_without_search'?'Gemini está revisando tu itinerario.':'Estamos preparando una nueva versión de tu itinerario.'}</span><button type="button" onClick={onCancel}>Cancelar</button></div>}
+    {busy&&<div className="ai-refinement-working" role="status"><LoaderCircle size={17} className="spin"/><span>{aiMode==='grounded_when_available'?'Buscando conexiones de transporte y organizando tu itinerario.':'Estamos preparando una nueva versión de tu itinerario.'}</span><button type="button" onClick={onCancel}>Cancelar</button></div>}
    </form>
    <aside className="ai-refinement-context" aria-label="Contexto del viaje que estás mejorando">
     <div className="ai-refinement-current"><span className="eyebrow">ESTÁS MEJORANDO ESTE VIAJE</span><h2>{trip.destination}</h2>{Boolean(trip.additionalDestinations?.length)&&<p className="ai-refinement-route"><MapPin size={15}/>{trip.additionalDestinations?.join(' · ')}</p>}<div className="ai-refinement-meta"><span><CalendarDays size={16}/>{dates}</span><span><Users size={16}/>{trip.travelers} {trip.travelers===1?'viajero':'viajeros'}</span>{trip.budget>0&&<span><Wallet size={16}/>{trip.budget} € para gastos diarios</span>}</div></div>

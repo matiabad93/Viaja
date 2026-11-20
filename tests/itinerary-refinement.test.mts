@@ -5,6 +5,7 @@ import {validateTrip} from '../server/planner.ts';
 import {geminiRequest,geminiFreePlanner,GEMINI_TIMEOUT_MS,normalizeGeminiIdeas} from '../server/gemini-planner.ts';
 import {reconcileItinerarySchedule} from '../lib/itinerary-schedule.ts';
 import {overlaps} from '../lib/agenda.ts';
+import {parseGroundedTransportResearch,GEMINI_RESEARCH_MODEL} from '../server/gemini-transport-research.ts';
 import type {Day,Plan} from '../lib/travel.ts';
 
 const existing:Day[]=[
@@ -91,6 +92,29 @@ const blocked=reconcileItinerarySchedule([{...unsorted[0],activities:[
  unsorted[0].activities[1],{id:'booked',title:'Actividad con entrada confirmada',description:'',time:'09:00',duration:'60 min',reservation:'Confirmada por mí'}
 ]}]);
 assert.ok(blocked.conflicts.length>0,'Rechaza reservas y transportes incompatibles sin cambiarlos silenciosamente');
+const noDropped=reconcileItinerarySchedule([{id:'late',title:'Jornada completa',activities:[
+ {id:'last',title:'Visita nocturna',description:'',time:'23:20',duration:'50 min'},
+ {id:'new-transfer',title:'Volver al hotel',kind:'transfer',description:'',time:'23:30',duration:'45 min'}
+]}],new Set(['new-transfer']));
+assert.equal(noDropped.days[0].activities.length,2,'No borra traslados nuevos por falta de espacio');
+assert.ok(noDropped.conflicts.length>0,'Las actividades imposibles se reportan como conflicto');
+const movedTrain=reconcileItinerarySchedule([{id:'d',title:'Prueba',activities:[
+ {id:'booked-breakfast',title:'Desayuno confirmado',description:'',time:'08:30',duration:'60 min',reservation:'Confirmada por mí'},
+ {id:'tentative-train',title:'Tren',description:'',kind:'transfer',time:'09:35',duration:'45 min',transportDetails:{boardingTime:'09:35',arrivalTime:'10:20',sourceUrl:'https://example.com/train'}}
+]}]);
+assert.equal(movedTrain.conflicts.length,0,'Un tren estimado sí se puede reacomodar después de una reserva confirmada');
+assert.equal(movedTrain.days[0].activities[1].time,'09:45');
+assert.equal(movedTrain.days[0].activities[1].transportDetails?.boardingTime,undefined,'No conserva una hora de tren obsoleta tras moverlo');
+assert.equal(movedTrain.days[0].activities[1].transportDetails?.sourceUrl,undefined,'No atribuye el nuevo horario a una fuente vieja');
+assert.equal(GEMINI_RESEARCH_MODEL,'gemini-2.5-flash-lite');
+const grounded=parseGroundedTransportResearch({candidates:[{finishReason:'STOP',content:{parts:[{text:'Tren TER: consultar horarios para la fecha.'}]},groundingMetadata:{groundingChunks:[{web:{uri:'https://www.sncf-connect.com/',title:'SNCF'}},{web:{uri:'javascript:alert(1)',title:'No seguro'}}]}}]});
+assert.equal(grounded.sources.length,1,'Solo conserva fuentes HTTPS devueltas por la API');
+assert.equal(grounded.sources[0].title,'SNCF');
+assert.equal(parseGroundedTransportResearch({candidates:[{finishReason:'STOP',content:{parts:[{text:'Horario a las 09:00'}]}}]}).sources.length,0,'Una respuesta sin citas no cuenta como investigación');
+const invalidTransport=normalizeGeminiIdeas({days:[{date:'2026-11-27',title:'Tren',advice:'',activities:[
+ {title:'Tren',kind:'transfer',description:'',time:'08:00',minutes:45,location:'Colmar',transportDetails:{from:'Mulhouse',to:'Colmar',boardingStop:'Mulhouse Ville',arrivalStop:'Colmar',boardingTime:'11:00',arrivalTime:'11:45'}}
+]}]},'2026-11-27',1);
+assert.equal(invalidTransport.days[0].activities[0].transportDetails?.boardingTime,undefined,'Corrige metadatos que contradicen el propio horario del bloque');
 const renamed=mergeRefinedItinerary(existing,[{id:'d',title:'Visitas',activities:[{id:'generated',refinesId:'museum',title:'Gran Museo de Unterlinden',description:'Historia ampliada',time:'12:00'}]}]);
 assert.equal(renamed.itinerary[0].activities.filter(a=>a.id==='museum').length,1);
 assert.equal(renamed.itinerary[0].activities[0].time,'09:00','Conserva reserva a pesar de propuesta de hora distinta');
@@ -206,6 +230,37 @@ assert.equal(checkedRequest,true,'La prueba ejercitó la llamada mock al proveed
 assert.ok(submittedPayload.includes('removedActivityIds'),'La API de Gemini conoce las eliminaciones explícitas');
 assert.ok(submittedPayload.includes('refinesId'),'La API conoce los IDs de actividades previas');
 assert.ok(submittedPayload.includes('existingItinerary'),'La IA recibe la agenda guardada');
+let researchCalls=0;
+try{
+ const itineraryWithLeg={summary:'Transporte para Estrasburgo',budgetNotes:'Billetes a verificar.',days:[
+  {date:'2026-11-27',title:'Traslado',advice:'Subir en Mulhouse Ville.',unchanged:false,removedActivityIds:[],activities:[{
+   title:'Tren a Colmar',description:'Tomar el tren regional hacia Colmar.',time:'09:00',minutes:45,location:'Mulhouse Ville',kind:'transfer',
+   transportDetails:{mode:'Tren',from:'Mulhouse',to:'Colmar',service:'TER',boardingStop:'Mulhouse Ville',arrivalStop:'Colmar Gare',boardingTime:'09:10',arrivalTime:'09:45',sourceUrl:'https://www.sncf-connect.com/horarios',verificationNote:'Confirmar servicio para este día'}
+  }]},
+  ...[28,29,30].map(d=>({date:'2026-11-'+d,title:'Salida',advice:'',unchanged:false,removedActivityIds:[],activities:[]}))
+ ]};
+ globalThis.fetch=async (_input:any,init:any)=>{
+  researchCalls++;
+  if(researchCalls===1){
+   assert.ok(String(_input).includes('gemini-2.5-flash-lite'),'La búsqueda usa un modelo con grounding disponible');
+   const body=JSON.parse(String(init.body));
+   assert.ok(body.tools?.[0]?.googleSearch,'La primera consulta habilita Google Search');
+   assert.ok(JSON.stringify(body).includes('Museo Unterlinden'),'La investigación conoce las paradas anteriores');
+   return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:'Trenes regionales: contrastar salidas en SNCF.'}]},groundingMetadata:{groundingChunks:[{web:{uri:'https://www.sncf-connect.com/horarios',title:'SNCF'} }]}}]});
+  }
+  const body=JSON.parse(String(init.body));
+  assert.ok(JSON.stringify(body).includes('https://www.sncf-connect.com/horarios'),'La generación estructurada recibe las fuentes reales');
+  return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(itineraryWithLeg)}]}}]});
+ };
+ const response=await geminiFreePlanner(new Request('https://viaja.pages.dev/api/plan',{method:'POST',body:JSON.stringify({...trip,existingItinerary:context})}),{GEMINI_API_KEY:'test-only'});
+ assert.equal(response.status,200);
+ const groundedPlan=await response.json() as Plan&{aiMode:string};
+ assert.equal(groundedPlan.aiMode,'web_search_grounded','Solo etiqueta búsqueda cuando recibió fuentes de grounding');
+ assert.equal(groundedPlan.sources?.length,1);
+ assert.equal(groundedPlan.itinerary?.[0].activities[0].transportDetails?.boardingStop,'Mulhouse Ville');
+ assert.equal(groundedPlan.itinerary?.[0].activities[0].scheduleStatus,'researched');
+}finally{globalThis.fetch=originalFetch}
+assert.equal(researchCalls,2,'Consulta fuentes antes de generar itinerario, sin combinar JSON y Search');
 const compactPrompt=geminiRequest(validateTrip({...trip,existingItinerary:context})).systemInstruction.parts[0].text;
 assert.ok(compactPrompt.includes('REVISIÓN INCREMENTAL BREVE'));
 assert.ok(!compactPrompt.includes('Prepará un itinerario diario COMPLETO'),'Refinar no debe regenerar el plan completo y extenso');

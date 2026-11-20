@@ -4,7 +4,9 @@ import {activityKind} from './activity-agenda.ts';
 
 const formatTime=(minutes:number)=>String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');
 const transport=(a:Activity)=>activityKind(a)==='transfer';
-const fixed=(a:Activity)=>Boolean(a.completed||a.reservation==='Confirmada por mí'||transport(a));
+// An AI-generated train is only a tentative proposal. It must NOT be treated as
+// an immutable booking; a user-confirmed reservation is immutable instead.
+const fixed=(a:Activity)=>Boolean(a.completed||a.reservation==='Confirmada por mí');
 const duration=(a:Activity)=>{
  const t=timing(a);
  if(t.duration&&t.duration>0)return t.duration;
@@ -40,7 +42,7 @@ export function reconcileItinerarySchedule(days:Day[],newActivityIds:ReadonlySet
    const start=startOf(activity)!;
    const end=start+duration(activity);
    if(end>=1440||occupied.some(slot=>start<slot.end+buffer(activity,slot.activity)&&slot.start<end+buffer(activity,slot.activity))){
-    conflicts.push(numbered+': los horarios fijos o traslados se superponen alrededor de «'+activity.title+'».');
+    conflicts.push(numbered+': dos compromisos confirmados se superponen alrededor de «'+activity.title+'».');
    }
    occupied.push({start,end,activity});
    chosen.set(activity.id,activity);
@@ -59,18 +61,31 @@ export function reconcileItinerarySchedule(days:Day[],newActivityIds:ReadonlySet
     if(next+length+margin<=slot.start)break;
     if(next<slot.end+margin)next=slot.end+margin;
    }
+   // A tentative transfer that originally preceded a confirmed appointment
+   // cannot be silently pushed to AFTER that appointment: the booked visit
+   // might be in the city the traveler was supposed to reach by train.
+   if(transport(activity)&&booked.some(({activity:commitment})=>{
+    const start=startOf(commitment);
+    return start!==null&&wanted<start&&next>=start;
+   })){
+    conflicts.push(numbered+': el traslado «'+activity.title+'» no llega antes de un compromiso confirmado; revisá la conexión.');
+    chosen.set(activity.id,activity);
+    continue;
+   }
    if(next+length>=1440){
-    if(newActivityIds.has(activity.id)){
-     warnings.push(numbered+': «'+activity.title+'» no se agregó porque no entra sin superponer actividades existentes.');
-     continue;
-    }
     conflicts.push(numbered+': no hay espacio libre para «'+activity.title+'» sin alterar compromisos.');
     chosen.set(activity.id,activity);
     continue;
    }
    const moved=next!==wanted;
    if(moved)adjustments++;
-   const corrected=moved?{...activity,time:formatTime(next),endTime:formatTime(next+length),duration:activity.duration||length+' min'}:activity;
+   const corrected=moved?{...activity,time:formatTime(next),endTime:formatTime(next+length),duration:activity.duration||length+' min',
+    // After adjusting the transfer start, a generated boarding/departure time
+    // is no longer valid. Force the traveler to verify the new connection.
+    ...(transport(activity)?{scheduleStatus:'estimated' as const,transportDetails:activity.transportDetails?{
+     ...activity.transportDetails,boardingTime:undefined,arrivalTime:undefined,sourceUrl:undefined,
+     verificationNote:'Horario reacomodado; verificá el servicio real antes de salir.'
+    }:undefined}:{} )}:activity;
    chosen.set(activity.id,corrected);
    occupied.push({start:next,end:next+length,activity:corrected});
   }

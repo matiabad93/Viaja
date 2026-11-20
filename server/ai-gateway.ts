@@ -75,9 +75,9 @@ export async function secureAIGateway(request:Request,env:ViajaAIEnv):Promise<Re
  if(path!=='/api/status'&&path!=='/api/plan')return response({error:'No encontrado'},404);
  if(path==='/api/status'){
   if(request.method!=='GET')return response({error:'Método no permitido'},405);
-  if(!configured(env))return response({ready:false,admin:false,restricted:true,reason:provider(env)==='unsupported'?'provider_unsupported':'configuration_incomplete',provider:providerLabel(env),mode:provider(env)==='gemini'?'ideas_without_search':provider(env)==='openai'?'researched':null});
+  if(!configured(env))return response({ready:false,admin:false,restricted:true,reason:provider(env)==='unsupported'?'provider_unsupported':'configuration_incomplete',provider:providerLabel(env),mode:provider(env)==='gemini'?'grounded_when_available':provider(env)==='openai'?'researched':null});
   const user=await resolveUser(request,env);
-  return response({ready:Boolean(user),admin:false,restricted:!user,reason:user?'ready':'authentication_required',loginRequired:!user,provider:providerLabel(env),search:provider(env)==='gemini'?'none':provider(env)==='openai'?'web_search':null,mode:provider(env)==='gemini'?'ideas_without_search':provider(env)==='openai'?'researched':null});
+  return response({ready:Boolean(user),admin:false,restricted:!user,reason:user?'ready':'authentication_required',loginRequired:!user,provider:providerLabel(env),search:provider(env)==='gemini'?'google_grounding_when_available':provider(env)==='openai'?'web_search':null,mode:provider(env)==='gemini'?'grounded_when_available':provider(env)==='openai'?'researched':null});
  }
  if(request.method!=='POST')return response({error:'Método no permitido'},405);
  if(!configured(env))return response({code:'AI_NOT_CONFIGURED',error:'La IA todavía está en preparación. Podés seguir guardando viajes.'},503);
