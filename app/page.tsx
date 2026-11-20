@@ -241,19 +241,23 @@ const performGeneration=async()=>{
   const firstSchedule=changes?null:reconcileItinerarySchedule(itineraryOf(data));
   const schedule=changes||firstSchedule;
   if(schedule?.conflicts.length)throw Error('No aplicamos los cambios porque existen horarios incompatibles: '+schedule.conflicts.slice(0,2).join(' ')+'. Tu viaje anterior sigue intacto.');
+  const onlyNarrative=/(solo|solamente|únicamente|unicamente).{0,45}(consejos|resumen|descripci[oó]n|texto|c[oó]mo aprovechar)/i.test(trip.adjustment);
+  if(changes&&!onlyNarrative&&!changes.addedActivities&&!changes.updatedActivities&&!changes.removedActivities&&!changes.rescheduledActivities)
+   throw Error('La IA solamente cambió la explicación del día, pero no mejoró ninguna actividad. No aplicamos ese resultado: tu itinerario sigue intacto. Intentá nuevamente indicando qué querés reorganizar.');
   const sources=new Map([...(draft.sources||[]),...(data.sources||[])].map(s=>[s.url,s]));
   const next:Plan={...draft,kind:draft.kind==='researched'?'researched':data.kind,
    trip:{...draft.trip,adjustment:''},
    expenses:draft.expenses,logistics:draft.logistics,collaboration:draft.collaboration,
    itinerary:changes?.itinerary||firstSchedule?.days||data.itinerary,
-   parts:[...(draft.parts||[]),...(data.parts||[])].slice(-12),
+   // The visible report must describe the latest revision, not a chain of obsolete plans.
+   parts:data.parts?.length?data.parts:draft.parts,
    sources:[...sources.values()],
    refinementHistory:changes?[...(original?.refinementHistory||[]),{requestedAt:new Date().toISOString(),prompt:trip.adjustment.trim(),addedActivities:changes.addedActivities,updatedActivities:changes.updatedActivities}].slice(-15):draft.refinementHistory
   };
   if(!itineraryOf(next).some(d=>d.activities.length))throw Error('La IA no devolvió actividades organizadas. Tu agenda anterior se conservó.');
   if(save(next)){
    clearPlannerDraft(window.localStorage);setPlannerDraft(null);openTrip(next);
-   setMessage(changes?`Viaje refinado: ${changes.addedActivities} actividades nuevas, ${changes.updatedActivities} mejoradas y ${changes.rescheduledActivities} horarios ajustados. Se ordenaron las actividades sin perder gastos ni reservas.${changes.warnings.length?' Revisá: '+changes.warnings.slice(0,2).join(' '):''}`:
+   setMessage(changes?`Viaje refinado: ${changes.updatedDays} días revisados, ${changes.updatedActivities} actividades mejoradas, ${changes.addedActivities} nuevas, ${changes.removedActivities} retiradas y ${changes.rescheduledActivities} horarios ajustados. Se actualizó la agenda y su explicación sin perder gastos ni reservas.${changes.warnings.length?' Revisá: '+changes.warnings.slice(0,2).join(' '):''}`:
     data.kind==='draft'?'Ideas con Gemini guardadas. Verificá todos los datos antes de reservar.':'Investigación guardada. Revisá las fuentes antes de reservar.');
   }else{setResult(next);setTrip(next.trip);setTab('detail')}
  }catch(e){setError(e instanceof Error&&e.name==='AbortError'?'La investigación se interrumpió. Conservamos el viaje anterior sin cambios.':e instanceof Error?e.message:'No se pudo generar el plan.')}

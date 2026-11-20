@@ -12,6 +12,9 @@ export function validateItinerary(raw:unknown,start:string,count:number){
  return {id:crypto.randomUUID(),refinesId:typeof a.refinesId==='string'&&a.refinesId.length<=80?a.refinesId:undefined,title:a.title,description:a.description,time:a.time,duration:a.minutes+' min',endTime:String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0'),source:a.source,location:typeof a.location==='string'?a.location:'',estimatedCostEUR:typeof a.estimatedCostEUR==='number'&&Number.isFinite(a.estimatedCostEUR)&&a.estimatedCostEUR>=0&&a.estimatedCostEUR<=1000000?a.estimatedCostEUR:undefined,costCategory:['Transporte','Actividades','Comida'].includes(a.costCategory)?a.costCategory:undefined,costNote:typeof a.costNote==='string'?a.costNote.slice(0,250):undefined,scheduleStatus:'estimated'};
  });
  if(!activities.length&&!d.limitation)throw Error('Día vacío sin explicación.');
- return {id:crypto.randomUUID(),title:d.limitation||date,activities};
+ const title=typeof d.title==='string'&&d.title.trim()?d.title.trim().slice(0,160):d.limitation||date;
+ const advice=typeof d.advice==='string'?d.advice.trim().slice(0,2000):'';
+ const removedActivityIds=Array.isArray(d.removedActivityIds)?d.removedActivityIds.filter((id:unknown):id is string=>typeof id==='string'&&id.length>0&&id.length<=80).slice(0,30):[];
+ return {id:crypto.randomUUID(),title,advice,removedActivityIds,activities};
  });
 }

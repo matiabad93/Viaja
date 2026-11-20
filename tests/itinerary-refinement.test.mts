@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 // @ts-ignore Node executes this suite with native TypeScript stripping.
 import {mergeRefinedItinerary,refinementContext,removeItineraryDay} from '../lib/itinerary-refinement.ts';
 import {validateTrip} from '../server/planner.ts';
-import {geminiRequest} from '../server/gemini-planner.ts';
+import {geminiRequest,geminiFreePlanner} from '../server/gemini-planner.ts';
 import {reconcileItinerarySchedule} from '../lib/itinerary-schedule.ts';
 import {overlaps} from '../lib/agenda.ts';
 import type {Day,Plan} from '../lib/travel.ts';
@@ -37,9 +37,9 @@ assert.equal(changed.itinerary.length,2,'La IA no puede resucitar días eliminad
 assert.equal(changed.addedActivities,1,'Solo incorpora actividades originales');
 assert.equal(changed.updatedActivities,3);
 assert.equal(changed.itinerary[0].id,'day-one');
-assert.equal(changed.itinerary[0].title,'Día 1 - Colmar');
-assert.ok(changed.itinerary[0].advice?.includes('Comenzar por el casco histórico.'));
-assert.ok(changed.itinerary[0].advice?.includes('Mejor recorrido con mercado navideño.'));
+assert.equal(changed.itinerary[0].title,'Otro día','La descripción del día también se puede reescribir');
+assert.equal(changed.itinerary[0].advice,'Mejor recorrido con mercado navideño.','Los consejos nuevos sustituyen los obsoletos');
+assert.equal(changed.updatedDays,2,'Se revisan los títulos y consejos de las jornadas');
 assert.equal(changed.itinerary[0].activities[0].id,'museum');
 assert.equal(changed.itinerary[0].activities[0].completed,true);
 assert.equal(changed.itinerary[0].activities[0].reservation,'Confirmada por mí');
@@ -117,9 +117,90 @@ const notMoved=mergeRefinedItinerary(existing,[{id:'first',title:'Día 1',activi
  {id:'moving',refinesId:'canal',title:'Pequeña Venecia',description:'Cambiamos de día',time:'14:00'}
 ]}],'Agregá detalles históricos');
 assert.equal(notMoved.itinerary[0].activities.some(a=>a.id==='canal'),true,'El modelo no puede mover una parada entre días sin que se le haya pedido');
+const optimized=mergeRefinedItinerary(existing,[{id:'first',title:'Día 1',activities:[]},{id:'second',title:'Día 2',activities:[
+ {id:'moving',refinesId:'canal',title:'Pequeña Venecia',description:'Ruta más práctica',time:'14:00'}
+]}],'Mejorá el viaje y optimizá la ruta entre días');
+assert.equal(optimized.itinerary[1].activities.some(a=>a.id==='canal'),true,'Una mejora general sí puede cambiar una visita de día para optimizar el recorrido');
+const protectedMove=mergeRefinedItinerary(existing,[{id:'first',title:'Día 1',activities:[]},{id:'second',title:'Día 2',activities:[
+ {id:'new-museum',refinesId:'museum',title:'Museo Unterlinden',description:'Nueva explicación',time:'18:00'}
+]}],'Mové todas las actividades del primer día al segundo');
+assert.equal(protectedMove.itinerary[0].activities.some(a=>a.id==='museum'),true,'No se mueve a otro día una actividad completada o con reserva');
+assert.equal(protectedMove.itinerary[0].activities.find(a=>a.id==='museum')?.time,'09:00');
+const progressive:Day[]=[{id:'journey',title:'Día 1 — Visitas rápidas',advice:'Caminar primero por el norte.',activities:[
+ {id:'old-square',title:'Plaza principal',description:'Visita breve',location:'Plaza Mayor',time:'10:00',duration:'30 min',estimatedCostEUR:0},
+ {id:'old-museum',title:'Museo pequeño',description:'Visita anterior',location:'Calle Antigua',time:'12:00',duration:'45 min'}
+]}];
+const revised=mergeRefinedItinerary(progressive,[{id:'proposal',title:'Día 1 — Arte y paseo por el centro',advice:'Primero el museo nuevo; luego la plaza junto al mercado.',activities:[
+ {id:'edited-museum',refinesId:'old-museum',title:'Museo de Historia Renovado',description:'Una visita de arte mucho más completa.',location:'Avenida Nueva',time:'09:00',duration:'90 min'},
+ {id:'edited-square',refinesId:'old-square',title:'Plaza Mayor y mercado artesanal',description:'Recorrer los puestos de artesanía.',location:'Plaza Mayor',time:'11:00',duration:'60 min'}
+]}],'Reorganizá las visitas y mejorá el museo antes de la plaza');
+assert.deepEqual(revised.itinerary[0].activities.map(a=>a.id),['old-museum','old-square'],'El recorrido entero cambia de orden y horarios manteniendo identidad');
+assert.equal(revised.itinerary[0].activities[0].title,'Museo de Historia Renovado','La IA puede renombrar una actividad editable');
+assert.equal(revised.itinerary[0].activities[0].location,'Avenida Nueva','La IA puede corregir una ubicación editable');
+assert.equal(revised.itinerary[0].activities[0].description,'Una visita de arte mucho más completa.','La IA puede reemplazar consejos de actividades');
+assert.equal(revised.itinerary[0].activities[0].duration,'90 min');
+assert.equal(revised.itinerary[0].advice,'Primero el museo nuevo; luego la plaza junto al mercado.');
+assert.equal(revised.itinerary[0].title,'Día 1 — Arte y paseo por el centro');
+assert.equal(revised.updatedActivities,2,'Las propuestas actualizan actividades anteriores en vez de agregarlas duplicadas');
+assert.equal(revised.addedActivities,0);
+const nextRevision=mergeRefinedItinerary(revised.itinerary,[{id:'new-proposal',title:'Día 1 — Ruta gastronómica y cultural',advice:'Revisar el recorrido a pie después de almorzar.',activities:[
+ {id:'updated-again',refinesId:'old-museum',title:'Museo de Historia Renovado',description:'Guía mejorada por segunda vez.',location:'Avenida Nueva',time:'13:00',duration:'60 min'}
+]}],'Volvé a organizar el museo por la tarde');
+assert.equal(nextRevision.itinerary[0].activities.find(a=>a.id==='old-museum')?.time,'13:00','Se puede refinar sucesivamente la misma actividad');
+assert.equal(nextRevision.itinerary[0].activities.length,2,'No pierde la visita existente omitida de la última propuesta');
+assert.equal(nextRevision.itinerary[0].advice,'Revisar el recorrido a pie después de almorzar.','Los consejos no acumulan instrucciones contradictorias');
+const removalProposal:Day[]=[{id:'replace',title:'Día 1 — Otro recorrido',advice:'El museo reemplaza la plaza.',removedActivityIds:['old-square'],activities:[
+ {id:'replacement',title:'Mercado histórico',description:'Alternativa',location:'Centro',time:'10:00',duration:'40 min'}
+]}];
+const replaced=mergeRefinedItinerary(progressive,removalProposal,'Reemplazá la Plaza principal por el mercado histórico');
+assert.equal(replaced.removedActivities,1,'Una solicitud explícita sí puede eliminar una parada flexible');
+assert.deepEqual(replaced.itinerary[0].activities.map(a=>a.id),['replacement','old-museum']);
+assert.equal(replaced.itinerary[0].removedActivityIds,undefined,'Los comandos de IA no se persisten como datos del usuario');
+const refusedRemoval=mergeRefinedItinerary(progressive,removalProposal,'Mejorá los horarios');
+assert.equal(refusedRemoval.removedActivities,0,'No se borran actividades si el usuario no lo autorizó');
+assert.equal(refusedRemoval.itinerary[0].activities.some(a=>a.id==='old-square'),true);
+const protectedRemoval=mergeRefinedItinerary(existing,[{id:'protect',title:'Colmar',removedActivityIds:['museum'],activities:[]}],'Quitá el Museo Unterlinden');
+assert.equal(protectedRemoval.removedActivities,0,'No se elimina una reserva confirmada ni una actividad completada');
+assert.ok(protectedRemoval.warnings.some(w=>w.includes('Museo Unterlinden')));
 const validated=validateTrip({...trip,existingItinerary:context});
 assert.equal(validated.existingItinerary,context,'El contexto llega al proveedor de forma validada');
 assert.ok(JSON.stringify(geminiRequest(validated)).includes('Quiero mercados navideños'),'Gemini recibe el historial anterior');
 assert.throws(()=>validateTrip({...trip,existingItinerary:'texto no estructurado'}),/contexto anterior/);
 assert.throws(()=>validateTrip({...trip,existingItinerary:'x'.repeat(7501)}),/demasiado extenso/);
+const entireDay={
+ date:'2026-11-27',title:'Colmar renovado con mercados',advice:'Visitar primero el museo reservado, luego el mercado navideño.',removedActivityIds:['canal'],
+ activities:[
+  {refinesId:'museum',title:'Museo Unterlinden',description:'Nueva guía cultural del museo.',time:'09:00',minutes:60,location:'Colmar'},
+  {title:'Mercado de Navidad de Colmar',description:'Puestos y comidas típicas.',time:'11:00',minutes:60,location:'Centro de Colmar'}
+ ]
+};
+const providerDays=[entireDay,...[28,29,30].map(date=>({date:`2026-11-${date}`,title:'Día tranquilo',advice:'Tarde libre.',removedActivityIds:[],activities:[]}))];
+const providerData={summary:'Ruta mejorada.',budgetNotes:'Comprobar entradas.',days:providerDays};
+const originalFetch=globalThis.fetch;
+let checkedRequest=false;
+let submittedPayload='';
+try{
+ globalThis.fetch=async (_input:any,init:any)=>{
+  submittedPayload=String(init.body);
+  checkedRequest=true;
+  return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(providerData)}]}}]});
+ };
+ const apiInput={...trip,existingItinerary:context,adjustment:'Reemplazá Pequeña Venecia por mercado y actualizá el itinerario'};
+ const response=await geminiFreePlanner(new Request('https://viaja.pages.dev/api/plan',{method:'POST',body:JSON.stringify(apiInput)}),{GEMINI_API_KEY:'test-only'});
+ assert.equal(response.status,200,'La API Gemini responde correctamente con revisiones estructuradas');
+ const generated=await response.json() as Plan & {itinerary:Day[]};
+ assert.equal(generated.itinerary[0].title,'Día 1 — 2026-11-27 · Colmar renovado con mercados');
+ assert.equal(generated.itinerary[0].removedActivityIds?.[0],'canal');
+ assert.equal(generated.itinerary[0].activities[0].refinesId,'museum');
+ const refinedByProvider=mergeRefinedItinerary(existing,generated.itinerary,apiInput.adjustment);
+ assert.equal(refinedByProvider.removedActivities,1,'La eliminación explícita atraviesa API y fusión');
+ assert.equal(refinedByProvider.itinerary[0].activities.some(a=>a.id==='canal'),false);
+ assert.equal(refinedByProvider.itinerary[0].activities.find(a=>a.id==='museum')?.description,'Nueva guía cultural del museo.');
+ assert.equal(refinedByProvider.itinerary[0].advice,'Visitar primero el museo reservado, luego el mercado navideño.');
+ assert.equal(refinedByProvider.addedActivities,1);
+}finally{globalThis.fetch=originalFetch}
+assert.equal(checkedRequest,true,'La prueba ejercitó la llamada mock al proveedor');
+assert.ok(submittedPayload.includes('removedActivityIds'),'La API de Gemini conoce las eliminaciones explícitas');
+assert.ok(submittedPayload.includes('refinesId'),'La API conoce los IDs de actividades previas');
+assert.ok(submittedPayload.includes('existingItinerary'),'La IA recibe la agenda guardada');
 console.log('Refinamiento iterativo: preservación de datos, cero duplicados, historial, privacidad y límite de contexto — OK');
