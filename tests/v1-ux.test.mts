@@ -42,16 +42,17 @@ assert.ok(css.includes('All route positions share identical input geometry'),'Al
 assert.ok(css.includes('.topbar nav:has(>button:nth-child(4))'),'Bottom nav supports 3 and 4 sections');
 assert.ok(css.includes('grid-template-columns:repeat(5,minmax(0,1fr))'),'Mobile navigation supports five main destinations');
 assert.ok(css.includes('env(safe-area-inset-bottom)'),'Bottom nav accommodates iPhone safe area');
-// AI regeneration must use Viaja's dialog, not window.confirm(), and must not
-// reserve the provider request before the user has actively confirmed.
+// Iterative AI improvements preserve the prior trip and reject scheduling
+// conflicts. The old confirmation modal was intentionally replaced by a
+// non-destructive refinement workflow.
 const dialog=readFileSync(new URL('../components/confirm-dialog.tsx',import.meta.url),'utf8');
 assert.ok(!/\b(?:window\.)?confirm\s*\(/.test(home),'AI regeneration must never show a browser-native confirm popup');
-assert.ok(home.includes('setPendingRegeneration(true)'),'Existing itinerary asks for confirmation');
-assert.ok(home.includes('onConfirm={confirmRegeneration}'),'Regeneration dialog has explicit confirmation');
-assert.ok(home.includes('onCancel={()=>setPendingRegeneration(false)}'),'Closing the dialog cancels regeneration');
-assert.ok(home.includes('danger={false}'),'Regeneration uses non-destructive dialog styling');
-assert.ok(home.indexOf('void performGeneration();};')<home.indexOf('const confirmRegeneration='),'Initial generation is independent of confirm callback');
+assert.ok(home.includes('const refining=Boolean(original&&itineraryOf(original)'),'Existing itinerary is refined instead of regenerated blindly');
+assert.ok(home.includes('mergeRefinedItinerary(itineraryOf(original),itineraryOf(data),trip.adjustment)'),'The new AI plan is merged into the previous itinerary');
+assert.ok(home.includes('if(schedule?.conflicts.length)'),'Incompatible times abort the refinement');
+assert.ok(home.includes('Tu viaje anterior sigue intacto.'),'An invalid refinement does not replace the current trip');
+assert.ok(home.includes('if(save(next))'),'A successful refinement is saved only after validation');
 assert.ok(home.includes('expenses:draft.expenses'),'AI response retains already recorded expenses');
 assert.ok(dialog.includes('role={danger?"alertdialog":"dialog"}'),'Non-destructive dialog uses the appropriate accessible role');
 assert.ok(css.includes('.viaja-confirm-neutral .viaja-confirm-icon'),'Regeneration has branded modal styling');
-console.log('PASS: Madrid navigation, sequential stops, mobile UX and branded AI regeneration confirmation');
+console.log('PASS: Madrid navigation, sequential stops, mobile UX and safe iterative AI refinement');
