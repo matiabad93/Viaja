@@ -1,0 +1,36 @@
+/* Community catalogue: scoped contrast protection so light backgrounds never inherit dark text. */
+:global(html[data-theme="dark"]) .hero {
+ background:linear-gradient(135deg,#253e32 0%,#1b2c26 100%);
+ border-color:#436454;
+ color:#f0f5ef;
+}
+:global(html[data-theme="dark"]) .hero h1,
+:global(html[data-theme="dark"]) .hero p { color:#f0f5ef; }
+:global(html[data-theme="dark"]) .hero :global(.eyebrow) {color:#b6d7c4;}
+:global(html[data-theme="dark"]) .hero :global(.community-tags) span {
+ background:#304f40;color:#f0f5ef;border:1px solid #577863;
+}
+:global(html[data-theme="dark"]) .day,
+:global(html[data-theme="dark"]) .card {
+ background:#1b2925;color:#f0f5ef;border-color:#435a4f;
+}
+:global(html[data-theme="dark"]) .day h2,
+:global(html[data-theme="dark"]) .card h2,
+:global(html[data-theme="dark"]) .day h3 {color:#f0f5ef;}
+:global(html[data-theme="dark"]) .advice {
+ background:#253d31;color:#e2f0e5;border-left-color:#82bb99;
+}
+:global(html[data-theme="dark"]) .disclaimer {
+ background:#253530;color:#e2f0e5;border-color:#466051;
+}
+:global(html[data-theme="dark"]) .day :global(.community-stop-meta) {
+ color:#b0cbbb;
+}
+:global(html[data-theme="dark"]) .day :global(.community-day-heading) span {
+ color:#a3d1b5;
+}
+:global(html[data-theme="dark"]) .day :global(.community-stop) {
+ border-bottom-color:#435a4f;
+}
+.liveNote { font-size:13px;line-height:1.6;opacity:.95;margin-top:8px; }
+:global(html[data-theme="dark"]) .hero .liveNote { color:#cde4d6; }

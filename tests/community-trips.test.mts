@@ -63,7 +63,18 @@ assert.match(sql,/user_id=\(select auth\.uid\(\)\)/);
 assert.match(sql,/published=true/);
 assert.match(sql,/jsonb_array_length/);
 const app=read('app/page.tsx');
-assert.ok(app.includes('description="Se compartirán el destino')&&app.includes('Revisá las descripciones'),
+const syncSql=read('supabase/migrations/20261120214735_viaja_auto_sync_published_itineraries.sql');
+assert.match(syncSql,/create trigger viaja_sync_published_trip_trigger/i);
+assert.match(syncSql,/after update of document on public.trips/i);
+assert.match(syncSql,/not exists\(select 1 from public.community_trips/i,'Only explicitly published trips sync');
+assert.match(syncSql,/v_activity:=pg_catalog.jsonb_build_object\(/i,'Public activity projection is whitelisted');
+assert.match(syncSql,/set published=false/i,'Invalid source cannot leave a stale public route');
+assert.ok(!syncSql.includes("'expenses'")&&!syncSql.includes("'logistics'")&&!syncSql.includes("'origin'"));
+const view=read('components/community-trips.tsx');
+assert.ok(view.includes('community-trips-theme.module.css'));
+assert.ok(view.includes('visibilitychange')&&view.includes('setInterval'));
+assert.ok(view.includes('Las copias editables'),'Downloaded copies remain independent');
+assert.ok(app.includes('description="Se compartirán destino')&&app.includes('actualizarán automáticamente'),
  'Publish requires explicit confirmation and warning about user-authored text');
 assert.ok(app.includes('onUnpublish={setPendingUnpublish}'),'Must support revocation');
 const supabase=read('lib/supabase-client.ts');

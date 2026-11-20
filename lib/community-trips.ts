@@ -6,7 +6,7 @@ export type CommunityDay={title:string;advice?:string;activities:CommunityActivi
 export type CommunityContent={route:string[];days:CommunityDay[]};
 export type CommunityTrip={
  id:string;title:string;destination:string;days_count:number;pace:string;transport:string;
- content:CommunityContent;published_at:string;
+ content:CommunityContent;published_at:string;updated_at?:string;
 };
 const trim=(input:unknown,limit:number)=>typeof input==='string'?input.trim().slice(0,limit):'';
 

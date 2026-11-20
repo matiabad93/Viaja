@@ -318,7 +318,7 @@ return <><a className="skip-link" href="#main-content">Saltar al contenido</a><h
 </aside></div></>}</>:<TripsDashboard plans={plans} cloud={Boolean(session)} onNew={newTrip} onOpen={openTrip} onDelete={deleteTrip} onPublish={requestPublish} onUnpublish={setPendingUnpublish} publications={publicationIds} busy={publicationBusy}/>}</Suspense>
 
 <ConfirmDialog open={!!pendingPublish} title={pendingPublish&&publicationIds[pendingPublish.id]?'¿Actualizar el itinerario público?':'¿Publicar este itinerario?'}
- description="Se compartirán el destino, la ruta, los títulos, descripciones y ubicaciones de las actividades, y los consejos de cada día. NO se publican gastos, reservas, fechas exactas, ciudad de salida, notas personales ni tu correo. Revisá las descripciones: podrían contener información que escribiste. Cualquier persona con el enlace podrá verlo y guardar una copia editable. Podés retirar la publicación cuando quieras."
+ description="Se compartirán destino, ruta, títulos, descripciones, ubicaciones de actividades y consejos diarios. Una vez publicado, estos datos se actualizarán automáticamente cada vez que vos u otro editor del viaje guarden cambios. NO se publican gastos, reservas, fechas exactas, ciudad de salida, notas personales ni correo. Revisá los textos: pueden contener datos personales que escribiste. Podés retirar la publicación cuando quieras. Las copias editables de otros viajeros no se modificarán."
  confirmLabel={pendingPublish&&publicationIds[pendingPublish.id]?'Actualizar itinerario público':'Sí, publicar itinerario'}
  busy={publicationBusy} onConfirm={confirmPublish} onCancel={()=>setPendingPublish(null)}/>
 <ConfirmDialog open={!!pendingUnpublish} title="¿Retirar este viaje de la comunidad?"

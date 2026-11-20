@@ -231,7 +231,7 @@ export async function publishCommunityTrip(plan:Plan):Promise<CommunityTrip>{
  const payload=publicTripSnapshot(plan);
  // Never race with a pending save or bump the shared-trip version while publishing.
  if(!plan.collaboration?.version)throw Error('Esperá a que el viaje termine de guardarse en tu cuenta antes de publicarlo.');
- const rows=await db<CommunityTrip[]>('community_trips?on_conflict=source_trip_id&select=id,title,destination,days_count,pace,transport,content,published_at',{
+ const rows=await db<CommunityTrip[]>('community_trips?on_conflict=source_trip_id&select=id,title,destination,days_count,pace,transport,content,published_at,updated_at',{
   method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},
   body:JSON.stringify({...payload,source_trip_id:plan.id,user_id:owner,published:true,published_at:new Date().toISOString()})
  });
@@ -254,13 +254,13 @@ export async function listMyCommunityTrips():Promise<Record<string,string>>{
 /** Public catalogue: never reads the private trips table or exposes account email. */
 export async function listCommunityTrips():Promise<CommunityTrip[]>{
  if(!cloudReady)return [];
- const cols='id,title,destination,days_count,pace,transport,content,published_at';
- const rows=await api<CommunityTrip[]>('/rest/v1/community_trips?select='+cols+'&published=eq.true&order=published_at.desc&limit=100');
+ const cols='id,title,destination,days_count,pace,transport,content,published_at,updated_at';
+ const rows=await api<CommunityTrip[]>('/rest/v1/community_trips?select='+cols+'&published=eq.true&order=updated_at.desc&limit=100');
  return Array.isArray(rows)?rows:[];
 }
 export async function getCommunityTrip(id:string):Promise<CommunityTrip|null>{
  if(!cloudReady||!/^[0-9a-f-]{36}$/i.test(id))return null;
- const cols='id,title,destination,days_count,pace,transport,content,published_at';
+ const cols='id,title,destination,days_count,pace,transport,content,published_at,updated_at';
  const rows=await api<CommunityTrip[]>('/rest/v1/community_trips?select='+cols+'&published=eq.true&id=eq.'+encodeURIComponent(id)+'&limit=1');
  return Array.isArray(rows)?rows[0]||null:null;
 }

@@ -1,15 +1,18 @@
 'use client';
-import {useEffect,useMemo,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {CalendarDays,Compass,Copy,ArrowLeft,ArrowRight,Search,MapPin,BookmarkPlus,Globe2,Clock3,TrainFront} from 'lucide-react';
 import {getCommunityTrip,listCommunityTrips} from '../lib/supabase-client';
 import {AppSelect} from './design/app-select';
 import {AppInput} from './design/app-input';
 import {communityTripToDraft,type CommunityTrip} from '../lib/community-trips';
 import type {Plan} from '../lib/travel';
+import theme from './community-trips-theme.module.css';
 
 export function CommunityTrips({onUse,initialId}:{onUse:(plan:Plan)=>void;initialId?:string}){
  const [items,setItems]=useState<CommunityTrip[]>([]);
  const [selected,setSelected]=useState<CommunityTrip|null>(null);
+ const selectedRef=useRef<CommunityTrip|null>(null);
+ useEffect(()=>{selectedRef.current=selected},[selected]);
  const [search,setSearch]=useState('');
  const [pace,setPace]=useState('Todos');
  const [length,setLength]=useState('Todos');
@@ -18,15 +21,31 @@ export function CommunityTrips({onUse,initialId}:{onUse:(plan:Plan)=>void;initia
  const [showLink,setShowLink]=useState(false);
  const [reload,setReload]=useState(0);
  useEffect(()=>{
-  let live=true;setLoading(true);setNotice('');
-  Promise.all([listCommunityTrips(),initialId?getCommunityTrip(initialId):Promise.resolve(null)]).then(([trips,focused])=>{
-   if(!live)return;
-   setItems(trips);if(focused)setSelected(focused);
-   else if(initialId)setNotice('Este enlace no corresponde a un viaje publicado o su autor lo retiró.');
-  }).catch(e=>{if(live)setNotice(e instanceof Error?e.message:'No se pudieron cargar los viajes públicos.')})
-    .finally(()=>{if(live)setLoading(false)});
-  return()=>{live=false};
+  let live=true,requestNumber=0;
+  const sync=async(initial=false)=>{
+   const currentRequest=++requestNumber;
+   if(initial){setLoading(true);setNotice('');}
+   try{
+    const [trips,focused]=await Promise.all([listCommunityTrips(),initialId?getCommunityTrip(initialId):Promise.resolve(null)]);
+    if(!live||currentRequest!==requestNumber)return;
+    setItems(trips);
+    const previous=selectedRef.current;
+    const updated=previous?(trips.find(trip=>trip.id===previous.id)|| (focused?.id===previous.id?focused:null)):focused;
+    selectedRef.current=updated;
+    setSelected(updated);
+    if(previous&&!updated)setNotice('Este itinerario ya no está publicado por su autor.');
+    else if(initialId&&!updated)setNotice('Este enlace no corresponde a un viaje publicado o su autor lo retiró.');
+   }catch(e){if(live&&currentRequest===requestNumber&&initial)setNotice(e instanceof Error?e.message:'No se pudieron cargar los viajes públicos.')}
+   finally{if(live&&currentRequest===requestNumber&&initial)setLoading(false);}
+  };
+  void sync(true);
+  const refresh=()=>{if(document.visibilityState==='visible')void sync(false)};
+  const timer=window.setInterval(refresh,60000);
+  window.addEventListener('focus',refresh);
+  document.addEventListener('visibilitychange',refresh);
+  return()=>{live=false;window.clearInterval(timer);window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh)};
  },[initialId,reload]);
+
  const visible=useMemo(()=>items.filter(p=>{
   const q=search.toLocaleLowerCase('es').trim();
   return (!q||[p.destination,...(p.content?.route||[])].join(' ').toLocaleLowerCase('es').includes(q))
@@ -42,8 +61,9 @@ export function CommunityTrips({onUse,initialId}:{onUse:(plan:Plan)=>void;initia
  const link=selected?typeof window==='undefined'?'/?viaje='+selected.id:window.location.origin+'/?viaje='+selected.id:'';
  if(selected)return <section className="community-explore">
   <button className="backlink" type="button" onClick={()=>{setSelected(null);setShowLink(false);setNotice('')}}><ArrowLeft size={16}/>Todos los viajes compartidos</button>
-  <div className="community-hero"><span className="eyebrow"><Globe2 size={15}/> ITINERARIO COMPARTIDO</span>
+  <div className={"community-hero "+theme.hero}><span className="eyebrow"><Globe2 size={15}/> ITINERARIO COMPARTIDO</span>
    <h1>{selected.title}</h1>
+   <p className={theme.liveNote}>Este itinerario se actualiza automáticamente cuando su autor guarda cambios. Las copias editables que guardes son independientes.{selected.updated_at&&<> Última actualización: {new Date(selected.updated_at).toLocaleString("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}.</>}</p>
    <p>Una ruta creada por otra persona y compartida voluntariamente. Podés explorarla o guardarte una copia para adaptarla a tu viaje.</p>
    <div className="community-tags"><span><CalendarDays size={15}/>{selected.days_count} días</span><span><Compass size={15}/>{selected.pace}</span><span><TrainFront size={15}/>{selected.transport}</span></div>
    <div className="community-actions">
@@ -53,10 +73,10 @@ export function CommunityTrips({onUse,initialId}:{onUse:(plan:Plan)=>void;initia
    {showLink&&<label className="community-link-label">Enlace para compartir<input readOnly onFocus={e=>e.currentTarget.select()} value={link}/></label>}
   </div>
   {notice&&<p role="status" className="message">{notice}</p>}
-  <p className="community-disclaimer">Las fechas, el alojamiento, los gastos y las reservas privadas del autor no están publicados. Este itinerario es orientativo; verificá horarios y disponibilidad.</p>
-  <div className="community-days">{(selected.content?.days||[]).map((day,i)=><section className="community-day" key={i}>
+  <p className={"community-disclaimer "+theme.disclaimer}>Las fechas, el alojamiento, los gastos y las reservas privadas del autor no están publicados. Este itinerario es orientativo; verificá horarios y disponibilidad.</p>
+  <div className="community-days">{(selected.content?.days||[]).map((day,i)=><section className={"community-day "+theme.day} key={i}>
    <div className="community-day-heading"><span>DÍA {i+1}</span><h2>{day.title}</h2></div>
-   {day.advice&&<p className="community-day-advice">{day.advice}</p>}
+   {day.advice&&<p className={"community-day-advice "+theme.advice}>{day.advice}</p>}
    <div className="community-stops">{day.activities.map((a,j)=><article key={j} className="community-stop">
     <span className="community-stop-count">{j+1}</span><div><h3>{a.title}</h3><div className="community-stop-meta">{a.time&&<span><Clock3 size={14}/>{a.time}</span>}{a.duration&&<span>{a.duration}</span>}{a.location&&<span><MapPin size={14}/>{a.location}</span>}</div>{a.description&&<p>{a.description}</p>}</div>
    </article>)}</div>
@@ -73,7 +93,7 @@ export function CommunityTrips({onUse,initialId}:{onUse:(plan:Plan)=>void;initia
   </div>
   <p className="subtle" role="status">{loading?'Buscando viajes compartidos…':visible.length+' viajes publicados'} {notice&&'· '+notice}</p>
   {!loading&&visible.length===0&&<div className="premium-empty"><Globe2 size={37}/><h2>{items.length?'No encontramos ese recorrido.':'La biblioteca está empezando.'}</h2><p>{items.length?'Probá otro destino o quitá los filtros.':'Cuando alguien publique su itinerario, aparecerá aquí. Desde «Mis viajes» podés compartir el tuyo.'}</p></div>}
-  <div className="community-grid">{visible.map(p=><article className="community-card" key={p.id}>
+  <div className="community-grid">{visible.map(p=><article className={"community-card "+theme.card} key={p.id}>
    <div className="community-card-cover"><Globe2 size={29}/><span>VIAJE COMPARTIDO</span></div>
    <div className="community-card-body"><h2>{p.title}</h2><p><MapPin size={15}/>{p.content?.route?.join(' → ')||p.destination}</p>
    <div className="community-tags"><span><CalendarDays size={15}/>{p.days_count} días</span><span>{p.pace}</span><span>{p.transport}</span></div>
