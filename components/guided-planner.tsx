@@ -10,6 +10,7 @@ import {todayLocal} from '../lib/date-range';
 import {daysCount,photo,type Trip} from '../lib/travel';
 import {resolvedTravelPreferences,interestOptions,minimumTravelers,fixedTravelers,travelerGroupError,type InterestKey,type TravelPreferences,type DayTimeWindow,type TravelWith,type BudgetStyle} from '../lib/travel-preferences';
 import {AIActionFeedback} from './experience/ai-action-feedback';
+import {CharacterCounter} from './character-counter';
 
 type Props={
  trip:Trip;onChange:(trip:Trip)=>void;onManual:()=>void;onGenerate:()=>void;
@@ -178,9 +179,10 @@ export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiRe
      <p><Settings2 size={19}/>{pref.budgetStyle} · {interestOptions.filter(i=>pref.interests[i.id]===3).map(i=>i.label).join(', ')||'Intereses equilibrados'}</p>
     </div>
     <label className="wizard-field">¿Querés contarnos algo más? <small>(opcional)</small>
-     <textarea rows={3} maxLength={2000} value={trip.notes}
+     <textarea rows={3} maxLength={2000} aria-describedby="guided-notes-counter" value={trip.notes}
       onChange={e=>update({notes:e.target.value})}
       placeholder="Por ejemplo: viajo con alguien que camina poco, quiero visitar el Coliseo..."/>
+     <CharacterCounter id="guided-notes-counter" value={trip.notes} max={2000}/>
     </label>
     <p className="wizard-info wizard-ai-preferences"><Sparkles size={17}/>
       La IA usará tus intereses, el tipo de viaje, el presupuesto orientativo y los horarios que elegiste. Tus notas son opcionales.

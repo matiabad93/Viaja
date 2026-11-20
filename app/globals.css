@@ -2635,3 +2635,12 @@ html[data-theme="dark"] .trip-pdf-notice{background:#21392e;border-color:#527361
  .trip-banner-actions .trip-pdf-download{grid-column:1/-1}
  .trip-banner-actions .trip-pdf-share,.trip-banner-actions .banner-edit{width:100%}
 }
+
+/* AI prompt fields: always-visible character allowance. */
+.character-counter{display:flex;align-items:baseline;justify-content:flex-end;gap:13px;flex-wrap:wrap;margin-top:7px;color:var(--muted);font-size:12px;font-weight:500;line-height:1.4}
+.character-counter span:first-child{font-variant-numeric:tabular-nums;font-weight:700}
+.character-counter-near{color:#a36224}
+.character-counter-full{color:#b03f37}
+html[data-theme="dark"] .character-counter-near{color:#f1bd7f}
+html[data-theme="dark"] .character-counter-full{color:#ffaaa1}
+@media(max-width:520px){.character-counter{font-size:11px;gap:8px}}
