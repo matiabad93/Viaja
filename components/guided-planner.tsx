@@ -9,10 +9,11 @@ import {cityLabel} from '../lib/city-suggestions';
 import {todayLocal} from '../lib/date-range';
 import {daysCount,photo,type Trip} from '../lib/travel';
 import {resolvedTravelPreferences,interestOptions,minimumTravelers,fixedTravelers,travelerGroupError,type InterestKey,type TravelPreferences,type DayTimeWindow,type TravelWith,type BudgetStyle} from '../lib/travel-preferences';
+import {AIActionFeedback} from './experience/ai-action-feedback';
 
 type Props={
  trip:Trip;onChange:(trip:Trip)=>void;onManual:()=>void;onGenerate:()=>void;
- onAdvanced:()=>void;aiReady:boolean;authenticated:boolean;busy:boolean;
+ onAdvanced:()=>void;aiReady:boolean;authenticated:boolean;busy:boolean;aiError?:string;
  aiStatusReason?:string;aiStatusLoading?:boolean;aiStatusError?:boolean;onRefreshAI?:()=>void;
  onCancel:()=>void;
  step:number;onStepChange:Dispatch<SetStateAction<number>>;canStartOver:boolean;onStartOver:()=>void;
@@ -28,7 +29,7 @@ const budgets:{name:BudgetStyle;hint:string}[]=[
  {name:'Intermedio',hint:'Equilibrar opciones gratuitas y de pago'},
  {name:'Cómodo',hint:'Más flexibilidad para experiencias'}
 ];
-export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiReady,authenticated,busy,onCancel,aiStatusReason,aiStatusLoading,aiStatusError,onRefreshAI,step,onStepChange:setStep,canStartOver,onStartOver}:Props){
+export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiReady,authenticated,busy,aiError='',onCancel,aiStatusReason,aiStatusLoading,aiStatusError,onRefreshAI,step,onStepChange:setStep,canStartOver,onStartOver}:Props){
  const [notice,setNotice]=useState('');
  const [extraInterests,setExtraInterests]=useState(false);
  const [timesOpen,setTimesOpen]=useState(false);
@@ -192,6 +193,7 @@ export function GuidedPlanner({trip,onChange,onManual,onGenerate,onAdvanced,aiRe
        {(aiStatusError||aiStatusReason==='authentication_required')&&onRefreshAI&&
         <button className="secondary" type="button" onClick={onRefreshAI} disabled={aiStatusLoading}>Volver a comprobar IA</button>}
       </div>}
+     <AIActionFeedback message={aiError}/>
      <button className={aiReady&&withDates?'secondary':'primary'} type="button"
       disabled={busy||hasInvalidTimes||Boolean(travelerError)} onClick={onManual}><Compass size={18}/>Crear mi viaje con guía o agenda</button>
      <p className="wizard-subtle">Para los destinos con guías editoriales, empezás con actividades sugeridas. En otros destinos podés organizar tu agenda desde cero. Las propuestas se pueden editar.</p>

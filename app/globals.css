@@ -2596,3 +2596,21 @@ html[data-theme] .experience-crash .experience-crash-help{font-size:14px;color:v
 .refinement-history ol{padding-left:22px;margin-top:10px}
 .refinement-history li{margin:8px 0;line-height:1.5}
 @media(max-width:700px){.day-heading .planbuttons{justify-content:flex-start}.refinement-box{padding:14px}}
+
+/* Contextual AI response: exactly one alert, directly beneath the request button. */
+.ai-action-feedback{scroll-margin-top:110px;background:#fff1ed;color:#683733;border:1px solid #d4a6a0;border-left:4px solid #b85d53;border-radius:12px;padding:17px 18px;display:grid;gap:10px;overflow-wrap:anywhere}
+.ai-action-feedback:focus{outline:none}
+.ai-action-feedback:focus-visible{outline:2px solid #b85d53;outline-offset:3px}
+.ai-action-feedback-heading{display:flex;align-items:center;gap:10px;font-size:15px;line-height:1.3;color:inherit}
+.ai-action-feedback-heading svg{flex-shrink:0}
+.ai-action-feedback p,.planning-actions .ai-action-feedback p{margin:0;font-size:13px;line-height:1.6;color:inherit}
+.ai-action-feedback .ai-action-feedback-hint{color:#78544d;line-height:1.55}
+.ai-action-feedback .ai-action-feedback-safe{display:flex;align-items:center;gap:8px;font-weight:600;color:#35674a}
+.ai-action-feedback .ai-action-feedback-safe svg{flex-shrink:0}
+.ai-action-feedback-action{justify-self:start;display:inline-flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid currentColor;color:#713b34;font-size:13px;font-weight:700}
+.ai-action-feedback-action:hover{text-decoration:underline}
+html[data-theme="dark"] .ai-action-feedback{background:#3b2929;border-color:#78504b;border-left-color:#e19589;color:#ffe1db}
+html[data-theme="dark"] .ai-action-feedback .ai-action-feedback-hint{color:#e5bab2}
+html[data-theme="dark"] .ai-action-feedback .ai-action-feedback-safe{color:#b6e8c5}
+html[data-theme="dark"] .ai-action-feedback-action{color:#f9c3b6}
+@media(max-width:700px){.ai-action-feedback{padding:15px 14px;scroll-margin-top:85px}}
