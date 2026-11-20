@@ -293,7 +293,7 @@ export async function geminiFreePlanner(request:Request,env:GeminiEnv):Promise<R
      body:JSON.stringify(retry),signal:AbortSignal.timeout(45000),cache:'no-store'
     });
     if(second.ok){
-     const retried=await second.json();
+     const retried:any=await second.json();
      const candidate=retried?.candidates?.[0];
      if(candidate?.finishReason==='STOP'){
       const text=(candidate.content?.parts||[]).filter((part:any)=>typeof part.text==='string').map((part:any)=>part.text).join('');
