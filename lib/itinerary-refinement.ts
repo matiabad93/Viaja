@@ -69,7 +69,7 @@ export function mergeRefinedItinerary(existing:Day[],proposal:Day[],userRequest=
  const newIds=new Set<string>();
  const seenOriginalIds=new Set<string>();
  const itinerary=existing.map((day,index)=>{
-  const next=proposal[index];
+  const next=proposal[index]?.unchanged?undefined:proposal[index];
   const title=revisedText(day.title,next?.title)||day.title;
   const advice=revisedText(day.advice,next?.advice);
   if(title!==day.title||advice!==day.advice)updatedDays++;
@@ -93,7 +93,7 @@ export function mergeRefinedItinerary(existing:Day[],proposal:Day[],userRequest=
  const removedIds=new Set(originals.filter(activity=>!itinerary.some(day=>day.activities.some(item=>item.id===activity.id))).map(activity=>activity.id));
  const addedTitles:string[]=[];
  for(let dayIndex=0;dayIndex<itinerary.length;dayIndex++){
-  const suggested=proposal[dayIndex];if(!suggested)continue;
+  const suggested=proposal[dayIndex];if(!suggested||suggested.unchanged)continue;
   for(const idea of suggested.activities){
    if(!idea.title.trim())continue;
    const byId=idea.refinesId?originalById.get(idea.refinesId):undefined;

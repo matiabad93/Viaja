@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 // @ts-ignore Node executes this suite with native TypeScript stripping.
 import {mergeRefinedItinerary,refinementContext,removeItineraryDay} from '../lib/itinerary-refinement.ts';
 import {validateTrip} from '../server/planner.ts';
-import {geminiRequest,geminiFreePlanner} from '../server/gemini-planner.ts';
+import {geminiRequest,geminiFreePlanner,GEMINI_TIMEOUT_MS,normalizeGeminiIdeas} from '../server/gemini-planner.ts';
 import {reconcileItinerarySchedule} from '../lib/itinerary-schedule.ts';
 import {overlaps} from '../lib/agenda.ts';
 import type {Day,Plan} from '../lib/travel.ts';
@@ -174,7 +174,7 @@ const entireDay={
   {title:'Mercado de Navidad de Colmar',description:'Puestos y comidas típicas.',time:'11:00',minutes:60,location:'Centro de Colmar'}
  ]
 };
-const providerDays=[entireDay,...[28,29,30].map(date=>({date:`2026-11-${date}`,title:'Día tranquilo',advice:'Tarde libre.',removedActivityIds:[],activities:[]}))];
+const providerDays=[{...entireDay,unchanged:false},...[28,29,30].map(date=>({date:`2026-11-${date}`,title:'Este texto no debe reemplazar el día anterior',advice:'Tarde libre.',unchanged:true,removedActivityIds:[],activities:[]}))];
 const providerData={summary:'Ruta mejorada.',budgetNotes:'Comprobar entradas.',days:providerDays};
 const originalFetch=globalThis.fetch;
 let checkedRequest=false;
@@ -192,15 +192,32 @@ try{
  assert.equal(generated.itinerary[0].title,'Día 1 — 2026-11-27 · Colmar renovado con mercados');
  assert.equal(generated.itinerary[0].removedActivityIds?.[0],'canal');
  assert.equal(generated.itinerary[0].activities[0].refinesId,'museum');
+ assert.equal(generated.itinerary[1].unchanged,true);
  const refinedByProvider=mergeRefinedItinerary(existing,generated.itinerary,apiInput.adjustment);
  assert.equal(refinedByProvider.removedActivities,1,'La eliminación explícita atraviesa API y fusión');
  assert.equal(refinedByProvider.itinerary[0].activities.some(a=>a.id==='canal'),false);
  assert.equal(refinedByProvider.itinerary[0].activities.find(a=>a.id==='museum')?.description,'Nueva guía cultural del museo.');
  assert.equal(refinedByProvider.itinerary[0].advice,'Visitar primero el museo reservado, luego el mercado navideño.');
+ assert.equal(refinedByProvider.itinerary[1].title,existing[1].title,'Un día sin cambios no pierde su título ni su agenda');
+ assert.equal(refinedByProvider.itinerary[1].activities[0].id,'cathedral');
  assert.equal(refinedByProvider.addedActivities,1);
 }finally{globalThis.fetch=originalFetch}
 assert.equal(checkedRequest,true,'La prueba ejercitó la llamada mock al proveedor');
 assert.ok(submittedPayload.includes('removedActivityIds'),'La API de Gemini conoce las eliminaciones explícitas');
 assert.ok(submittedPayload.includes('refinesId'),'La API conoce los IDs de actividades previas');
 assert.ok(submittedPayload.includes('existingItinerary'),'La IA recibe la agenda guardada');
+const compactPrompt=geminiRequest(validateTrip({...trip,existingItinerary:context})).systemInstruction.parts[0].text;
+assert.ok(compactPrompt.includes('REVISIÓN INCREMENTAL BREVE'));
+assert.ok(!compactPrompt.includes('Prepará un itinerario diario COMPLETO'),'Refinar no debe regenerar el plan completo y extenso');
+assert.ok(compactPrompt.length<4300,'Instrucciones de refinamiento más concisas para bajar latencia');
+assert.equal(GEMINI_TIMEOUT_MS,120000,'El proveedor tiene más tiempo que los antiguos 80 segundos');
+const emptyEdit=normalizeGeminiIdeas({days:providerDays.map(d=>({...d,activities:[]}))},trip.start,4,'Equilibrado',true);
+assert.equal(emptyEdit.days[1].unchanged,true);
+assert.equal(emptyEdit.days[0].activities.length,0,'Una edición puede consistir solo en quitar una actividad anterior');
+try{
+ globalThis.fetch=async()=>{throw new DOMException('Test de timeout, sin red','TimeoutError')};
+ const timeoutResponse=await geminiFreePlanner(new Request('https://viaja.pages.dev/api/plan',{method:'POST',body:JSON.stringify({...trip,existingItinerary:context})}),{GEMINI_API_KEY:'test-only'});
+ assert.equal(timeoutResponse.status,502);
+ assert.equal((await timeoutResponse.json() as {code:string}).code,'GEMINI_TIMEOUT');
+}finally{globalThis.fetch=originalFetch}
 console.log('Refinamiento iterativo: preservación de datos, cero duplicados, historial, privacidad y límite de contexto — OK');

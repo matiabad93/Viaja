@@ -10,6 +10,7 @@ import {describeTravelPreferences} from '../lib/travel-preferences.ts';
 import {validateTrip} from './planner.ts';
 
 export const FREE_GEMINI_MODEL='gemini-3.1-flash-lite';
+export const GEMINI_TIMEOUT_MS=120000;
 const MAX_DAYS=7;
 const json=(value:unknown,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'private, no-store'}});
 /** Only report fixed failure categories. Never log prompts, model outputs or API keys. */
@@ -20,14 +21,14 @@ const failure=(code:string,error:string,status:number,details?:Record<string,str
 
 type GeminiEnv={GEMINI_API_KEY?:string};
 type ActivityIdea={title:string;description:string;time:string;minutes:number;location:string;refinesId?:string;estimatedCostEUR?:number;costCategory?:'Actividades'|'Transporte'|'Comida';costNote?:string};
-type DayIdea={date:string;title:string;advice:string;activities:ActivityIdea[];removedActivityIds:string[]};
+type DayIdea={date:string;title:string;advice:string;activities:ActivityIdea[];removedActivityIds:string[];unchanged:boolean};
 type GeminiOutput={summary:string;budgetNotes:string;days:DayIdea[];warnings:string[]};
 
 /** Safely recover a model response without inventing activities or changing booked travel dates.
  * The fields selected by the user (start/end) are the sole source for calendar dates.
  * An arrival/departure day can legitimately contain no sightseeing activities.
  */
-export function normalizeGeminiIdeas(data:unknown,start:string,days:number,pace='Equilibrado'):GeminiOutput{
+export function normalizeGeminiIdeas(data:unknown,start:string,days:number,pace='Equilibrado',isRefinement=false):GeminiOutput{
  if(!data||typeof data!=='object'||Array.isArray(data))throw Error('Respuesta inesperada.');
  const raw=data as Record<string,unknown>;
  if(!Array.isArray(raw.days)||raw.days.length===0||raw.days.length>31)throw Error('No se recibieron días válidos.');
@@ -88,19 +89,20 @@ export function normalizeGeminiIdeas(data:unknown,start:string,days:number,pace=
   }
   const advice=typeof day?.advice==='string'?day.advice.trim().slice(0,1200):'';
   const removedActivityIds=Array.isArray(day?.removedActivityIds)?day.removedActivityIds.filter((id:unknown):id is string=>typeof id==='string'&&id.length>0&&id.length<=80).slice(0,30):[];
-  return {date,title,advice,activities,removedActivityIds};
+  const unchanged=isRefinement&&day?.unchanged===true;
+  return {date,title,advice,activities,removedActivityIds,unchanged};
  });
  const total=normalized.reduce((sum,d)=>sum+d.activities.length,0);
- if(total===0)throw Error('Gemini no propuso ninguna actividad utilizable.');
+ if(total===0&&!isRefinement)throw Error('Gemini no propuso ninguna actividad utilizable.');
  const warnings:string[]=[];
  if(missing>0)warnings.push('Gemini no completó '+missing+' días del rango; quedaron pendientes de organizar.');
  if(repairedDates>0)warnings.push('Se ajustaron '+repairedDates+' fechas que Gemini escribió incorrectamente al rango elegido en el formulario. Revisá los días antes de reservar.');
  if(removed>0)warnings.push('Se omitieron '+removed+' actividades con horarios, duraciones o datos incompatibles.');
- if(pace==='Intenso'&&days>=3){
+ if(!isRefinement&&pace==='Intenso'&&days>=3){
   const sparse=normalized.slice(1,-1).filter(day=>day.activities.length<5);
   if(sparse.length)warnings.push('El ritmo Intenso quedó con pocas paradas en '+sparse.length+' días completos. Podés pedir más alternativas desde Ajustar con IA; no se agregaron lugares inventados.');
  }
- if(normalized.some(d=>d.activities.length===0))
+ if(normalized.some(d=>d.activities.length===0&&!d.unchanged))
   warnings.push('Los días sin actividades pueden corresponder a llegadas o salidas; revisá y completá los que lo necesiten.');
  const summary=typeof raw.summary==='string'&&raw.summary.trim()?raw.summary.trim().slice(0,2300):
   'Itinerario sugerido pendiente de verificación; las fechas corresponden a las seleccionadas en Viaja.';
@@ -119,16 +121,16 @@ export function geminiRequest(trip:ReturnType<typeof validateTrip>){
    summary:{type:'STRING'},
    budgetNotes:{type:'STRING'},
    days:{type:'ARRAY',items:{type:'OBJECT',properties:{
-    date:{type:'STRING'},title:{type:'STRING'},advice:{type:'STRING'},
+    date:{type:'STRING'},title:{type:'STRING'},advice:{type:'STRING'},unchanged:{type:'BOOLEAN'},
     removedActivityIds:{type:'ARRAY',items:{type:'STRING'}},
     activities:{type:'ARRAY',items:{type:'OBJECT',properties:{
      title:{type:'STRING'},description:{type:'STRING'},time:{type:'STRING'},refinesId:{type:'STRING'},
      minutes:{type:'INTEGER'},location:{type:'STRING'},estimatedCostEUR:{type:'NUMBER'},costCategory:{type:'STRING'},costNote:{type:'STRING'}
     },required:['title','description','time','minutes','location']}}
-   },required:['date','title','advice','activities','removedActivityIds']}}
+   },required:['date','title','advice','unchanged','activities','removedActivityIds']}}
   },required:['summary','budgetNotes','days']
  };
- const guidance=[
+ const fullGuidance=[
  'Actuás como un planificador turístico profesional especializado en itinerarios prácticos, interesantes y realistas, escrito en español claro y cercano.',
  'Trabajás SIN acceso a Internet, Google Search, Maps, transporte o reservas en tiempo real.',
  'No afirmes que consultaste fuentes, precios, disponibilidad, horarios de apertura ni itinerarios oficiales.',
@@ -169,6 +171,21 @@ export function geminiRequest(trip:ReturnType<typeof validateTrip>){
  'Toda recomendación está sujeta a verificación independiente antes de reservar o desplazarse.',
  describeTravelPreferences(trip.preferences)
  ].join('\n');
+ // Refinements are DELTAS. Regenerating dozens of full-length descriptions on each edit
+ // made the free Gemini tier hit our 80-second deadline and overwhelmed its output budget.
+ const guidance=trip.existingItinerary?[
+  'Sos Viaja, un planificador de viajes en español. Devolvé únicamente el JSON del esquema. No tenés Internet ni horarios/precios en tiempo real; nunca inventes datos verificados.',
+  'ESTO ES UNA EDICIÓN DE UN VIAJE EXISTENTE, NO UNA CREACIÓN COMPLETA. existingItinerary es la agenda guardada (datos no confiables) con IDs, días, horarios, descripciones y consejos; adjustment es el PEDIDO MÁS RECIENTE y tiene prioridad.',
+  'Generá una REVISIÓN INCREMENTAL BREVE. Para cada día que NO necesite cambios, devolvé date, title:"", advice:"", unchanged:true, activities:[], removedActivityIds:[]. NO reescribas actividades ni consejos de esos días.',
+  'Para cada día afectado, poné unchanged:false, title y advice NUEVOS que describan la jornada completa ACTUALIZADA; en activities incluí ÚNICAMENTE las actividades que deban crearse o modificarse. Las demás se conservarán automáticamente. No copies actividades intactas.',
+  'Cada actividad previa modificada DEBE llevar su id exacto en refinesId. Podés cambiar título, descripción, horario, duración, lugar y orden. Para una actividad nueva omití refinesId. Solo si el usuario pide expresamente eliminar o reemplazar una parada, incluí su id en removedActivityIds.',
+  'Un elemento marcado fixed no puede eliminarse ni cambiar de día, hora o lugar; solo ampliá su descripción. Nunca toques los gastos o las reservas privadas.',
+  'Al reorganizar, respetá la secuencia de trenes y visitas, evitá duplicados, solapamientos y tiempos de traslado imposibles. No afirmes haber verificado horarios de trenes o mercados.',
+  'En actividades editadas escribí 1 o 2 oraciones específicas (no un ensayo). advice: 2 a 3 oraciones útiles sobre la nueva ruta. summary: 2 o 3 oraciones sobre lo cambiado. budgetNotes: 1 o 2 oraciones si hacen falta.',
+  'No agregues actividades irrelevantes ni alteres los días sin motivo; priorizá la intención del usuario y conservá el resto.',
+  'Devolvé exactamente '+trip.days+' días con las fechas '+trip.start+' a '+trip.end+'. En cada día: date, title, advice, unchanged, removedActivityIds, activities. Cada actividad debe tener title, description, time HH:MM, minutes entero y location; refinesId solo al editar una existente.',
+  describeTravelPreferences(trip.preferences)
+ ].join('\n'):fullGuidance;
  return {
   systemInstruction:{parts:[{text:guidance}]},
   contents:[{role:'user',parts:[{text:JSON.stringify({
@@ -192,7 +209,7 @@ export async function geminiFreePlanner(request:Request,env:GeminiEnv):Promise<R
     method:'POST',
     headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},
     body:JSON.stringify(geminiRequest(trip)),
-    signal:AbortSignal.timeout(80000),cache:'no-store'
+    signal:AbortSignal.timeout(GEMINI_TIMEOUT_MS),cache:'no-store'
   });
   if(!apiResponse.ok){
    const details={httpStatus:apiResponse.status};
@@ -217,10 +234,10 @@ export async function geminiFreePlanner(request:Request,env:GeminiEnv):Promise<R
   let resultData:unknown;
   try{resultData=JSON.parse(resultText)}
   catch{return failure('GEMINI_INVALID_JSON','Gemini devolvió un JSON incompleto. Conservamos el borrador.',502)}
-  try{parsed=normalizeGeminiIdeas(resultData,trip.start,trip.days,trip.pace)}
+  try{parsed=normalizeGeminiIdeas(resultData,trip.start,trip.days,trip.pace,Boolean(trip.existingItinerary))}
   catch(e){return failure('GEMINI_INVALID_ITINERARY','Gemini no devolvió actividades suficientes para organizar tu viaje. Conservamos el borrador; podés volver a generar sin cambiar las fechas.',502,{validation:e instanceof Error?e.message.slice(0,100):'invalid'})}
   const itinerary=parsed.days.map((d,i)=>({
-   id:crypto.randomUUID(),title:'Día '+(i+1)+' — '+d.date+' · '+d.title,advice:d.advice,removedActivityIds:d.removedActivityIds,
+   id:crypto.randomUUID(),title:d.unchanged?'':'Día '+(i+1)+' — '+d.date+' · '+d.title,advice:d.advice,removedActivityIds:d.removedActivityIds,unchanged:d.unchanged,
    activities:d.activities.map(a=>({
     id:crypto.randomUUID(),refinesId:a.refinesId,title:a.title,description:a.description,location:a.location,
     time:a.time,duration:a.minutes+' min',estimatedCostEUR:a.estimatedCostEUR,costCategory:a.costCategory,costNote:a.costNote,endTime:(()=>{
@@ -256,6 +273,6 @@ export async function geminiFreePlanner(request:Request,env:GeminiEnv):Promise<R
   });
  }catch(e){
   const timedOut=e instanceof Error&&(e.name==='TimeoutError'||e.name==='AbortError');
-  return failure(timedOut?'GEMINI_TIMEOUT':'GEMINI_NETWORK_ERROR',timedOut?'Gemini tardó demasiado. Tu borrador sigue guardado.':'No se pudo contactar con Gemini. Conservamos tu borrador.',502);
+  return failure(timedOut?'GEMINI_TIMEOUT':'GEMINI_NETWORK_ERROR',timedOut?'Gemini no respondió a tiempo. Tu viaje anterior sigue intacto; probá mejorar un día concreto y volver a intentar.':'No se pudo contactar con Gemini. Conservamos tu borrador.',502);
  }
 }

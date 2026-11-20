@@ -231,7 +231,8 @@ const performGeneration=async()=>{
  catch(e){setBusy(false);setError(e instanceof Error?e.message:'No se pudo preparar el contexto del viaje.');return}
  const controller=new AbortController();abortRef.current=controller;
  try{localStorage.setItem('viaja-ai-current',JSON.stringify(snapshot))}catch{}
- const timeout=setTimeout(()=>controller.abort(),165000);
+ // Provider may need additional time to finish a detailed refinement; the server has its own deadline.
+ const timeout=setTimeout(()=>controller.abort(),180000);
  try{
   const token=await accessToken();if(!token)throw Error('Iniciá sesión para investigar tu viaje con IA.');
   const r=await requestAPI('/api/plan',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload),signal:controller.signal});
