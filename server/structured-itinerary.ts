@@ -1,15 +1,19 @@
+import {activityKind,validActivityKind} from '../lib/activity-agenda.ts';
+
 export function validateItinerary(raw:unknown,start:string,count:number){
  if(!Array.isArray(raw)||raw.length!==count)throw Error('El itinerario no contiene todos los días solicitados.');
  const seen=new Set<string>();
  return raw.map((d:any,i:number)=>{
  const date=new Date(Date.parse(start)+i*86400000).toISOString().slice(0,10);
- if(d.date!==date||!Array.isArray(d.activities)||d.activities.length>12)throw Error('Fecha o actividades inválidas.');
+ if(d.date!==date||!Array.isArray(d.activities))throw Error('Fecha o actividades inválidas.');
+ if(d.activities.length>24)throw Error('La propuesta tiene más de 24 bloques en un día; pedí ajustar ese día por separado.');
  const activities=d.activities.map((a:any)=>{
  if(typeof a.title!=='string'||!a.title.trim()||typeof a.description!=='string'||!/^([01]\d|2[0-3]):[0-5]\d$/.test(a.time)||!Number.isInteger(a.minutes)||a.minutes<15||a.minutes>720)throw Error('Actividad sin nombre, horario o duración válida.');
- const key=a.title.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();if(seen.has(key))throw Error('Actividad duplicada.');seen.add(key);
+ const kind=validActivityKind(a.kind)?a.kind:activityKind({id:'',title:a.title,description:a.description,costCategory:a.costCategory});
+ const key=(kind==='visit'?a.title:a.title+'|'+date+'|'+a.time).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();if(seen.has(key))throw Error('Actividad duplicada.');seen.add(key);
  const u=new URL(a.source);if(u.protocol!=='https:')throw Error('Fuente inválida.');
  const n=Number(a.time.slice(0,2))*60+Number(a.time.slice(3))+a.minutes;if(n>=1440)throw Error('La actividad excede el día.');
- return {id:crypto.randomUUID(),refinesId:typeof a.refinesId==='string'&&a.refinesId.length<=80?a.refinesId:undefined,title:a.title,description:a.description,time:a.time,duration:a.minutes+' min',endTime:String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0'),source:a.source,location:typeof a.location==='string'?a.location:'',estimatedCostEUR:typeof a.estimatedCostEUR==='number'&&Number.isFinite(a.estimatedCostEUR)&&a.estimatedCostEUR>=0&&a.estimatedCostEUR<=1000000?a.estimatedCostEUR:undefined,costCategory:['Transporte','Actividades','Comida'].includes(a.costCategory)?a.costCategory:undefined,costNote:typeof a.costNote==='string'?a.costNote.slice(0,250):undefined,scheduleStatus:'estimated'};
+ return {id:crypto.randomUUID(),refinesId:typeof a.refinesId==='string'&&a.refinesId.length<=80?a.refinesId:undefined,title:a.title,description:a.description,kind,time:a.time,duration:a.minutes+' min',endTime:String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0'),source:a.source,location:typeof a.location==='string'?a.location:'',estimatedCostEUR:typeof a.estimatedCostEUR==='number'&&Number.isFinite(a.estimatedCostEUR)&&a.estimatedCostEUR>=0&&a.estimatedCostEUR<=1000000?a.estimatedCostEUR:undefined,costCategory:['Transporte','Actividades','Comida'].includes(a.costCategory)?a.costCategory:undefined,costNote:typeof a.costNote==='string'?a.costNote.slice(0,250):undefined,scheduleStatus:'estimated'};
  });
  if(!activities.length&&!d.limitation)throw Error('Día vacío sin explicación.');
  const title=typeof d.title==='string'&&d.title.trim()?d.title.trim().slice(0,160):d.limitation||date;

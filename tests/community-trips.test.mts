@@ -34,7 +34,8 @@ assert.equal(shared.destination,'Colmar, Francia');
 assert.deepEqual(shared.content.route,['Colmar, Francia','Estrasburgo, Francia']);
 assert.equal(shared.days_count,2);
 assert.equal(shared.content.days[0].activities[0].title,'Petite Venise');
-assert.deepEqual(Object.keys(shared.content.days[0].activities[0]).sort(),['description','duration','location','time','title']);
+assert.deepEqual(Object.keys(shared.content.days[0].activities[0]).sort(),['description','duration','kind','location','time','title']);
+assert.equal(shared.content.days[0].activities[0].kind,'visit','Only the safe agenda category is public');
 assert.ok(shared.content.days[0].advice?.includes('SECRET-HOTEL-ADDRESS'),
  'Day descriptions can contain user-written details; a consent preview is mandatory');
 const fakeCommunity={id:'abcdef12-1234-4123-9123-abcdefabcdef',published_at:'2026-11-02',...shared};

@@ -1,6 +1,7 @@
 import type {Activity,Day,Plan} from './travel.ts';
 import {itineraryOf} from './travel.ts';
 import {reconcileItinerarySchedule} from './itinerary-schedule.ts';
+import {activityKind} from './activity-agenda.ts';
 
 const normalizeTitle=(title:string)=>title.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const shorten=(value:string|undefined,length:number)=>(value||'').slice(0,length);
@@ -12,7 +13,7 @@ export function refinementContext(plan:Plan):string{
  const days=itineraryOf(plan).map((day,index)=>({
   day:index+1,title:shorten(day.title,120),advice:shorten(day.advice,400),
   totalActivities:day.activities.length,
-  activities:day.activities.map(a=>({id:a.id,title:shorten(a.title,110),time:shorten(a.time,6),duration:shorten(a.duration,12),location:shorten(a.location,90),description:shorten(a.description,220),fixed:Boolean(a.completed||a.reservation==='Confirmada por mí')}))
+  activities:day.activities.map(a=>({id:a.id,title:shorten(a.title,110),kind:activityKind(a),time:shorten(a.time,6),duration:shorten(a.duration,12),location:shorten(a.location,90),description:shorten(a.description,220),fixed:Boolean(a.completed||a.reservation==='Confirmada por mí')}))
  }));
  const context={previousRequests:(plan.refinementHistory||[]).slice(-4).map(r=>shorten(r.prompt,180)),days};
  // Never silently omit an existing activity: the model might contradict what it cannot see.
@@ -46,6 +47,7 @@ const updateExisting=(current:Activity,idea:Activity):Activity=>{
  return {...current,
   title:locked?current.title:idea.title||current.title,
   description:idea.description||current.description,
+  kind:current.completed||current.reservation==='Confirmada por mí'?activityKind(current):idea.kind||activityKind(idea),
   location:locked?current.location:idea.location||current.location,
   // Never keep a citation about the old destination if the AI changes the stop's identity.
   source:idea.source||(normalizeTitle(idea.title)===normalizeTitle(current.title)?current.source:undefined),
@@ -91,13 +93,14 @@ export function mergeRefinedItinerary(existing:Day[],proposal:Day[],userRequest=
   }
  }
  const removedIds=new Set(originals.filter(activity=>!itinerary.some(day=>day.activities.some(item=>item.id===activity.id))).map(activity=>activity.id));
- const addedTitles:string[]=[];
+ const addedTitles:{title:string;kind:string;day:number;time:string|undefined}[]=[];
  for(let dayIndex=0;dayIndex<itinerary.length;dayIndex++){
   const suggested=proposal[dayIndex];if(!suggested||suggested.unchanged)continue;
   for(const idea of suggested.activities){
    if(!idea.title.trim())continue;
    const byId=idea.refinesId?originalById.get(idea.refinesId):undefined;
-   const sameDay=existing[dayIndex].activities.find(a=>samePlace(a.title,idea.title));
+   const ideaKind=activityKind(idea);
+   const sameDay=existing[dayIndex].activities.find(a=>activityKind(a)===ideaKind&&samePlace(a.title,idea.title)&&(ideaKind==='visit'||a.time===idea.time));
    const match=byId|| (sameDay?{activity:sameDay,day:dayIndex}:undefined);
    if(match){
     const {activity:current,day:oldDay}=match;
@@ -114,10 +117,10 @@ export function mergeRefinedItinerary(existing:Day[],proposal:Day[],userRequest=
     continue;
    }
    // Model proposals that resemble a stop already scheduled on another day aren't new visits.
-   if(originals.some(a=>!removedIds.has(a.id)&&samePlace(a.title,idea.title))||addedTitles.some(title=>samePlace(title,idea.title)))continue;
+   if(originals.some(a=>!removedIds.has(a.id)&&activityKind(a)===ideaKind&&samePlace(a.title,idea.title)&&(ideaKind==='visit'||(existing[dayIndex].activities.some(other=>other.id===a.id)&&a.time===idea.time)))||addedTitles.some(entry=>entry.kind===ideaKind&&samePlace(entry.title,idea.title)&&(ideaKind==='visit'||(entry.day===dayIndex&&entry.time===idea.time))))continue;
    itinerary[dayIndex].activities.push({...idea,refinesId:undefined});
    newIds.add(idea.id);
-   addedTitles.push(idea.title);
+   addedTitles.push({title:idea.title,kind:ideaKind,day:dayIndex,time:idea.time});
   }
  }
  const reconciled=reconcileItinerarySchedule(itinerary,newIds);

@@ -1,8 +1,9 @@
 import type {Activity,Day} from './travel.ts';
 import {timing} from './agenda.ts';
+import {activityKind} from './activity-agenda.ts';
 
 const formatTime=(minutes:number)=>String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');
-const transport=(a:Activity)=>a.costCategory==='Transporte'||/^(tren|train|tgv|ter|vuelo|avi[oó]n|bus|autob[uú]s|traslado|transfer|ferry)\b/i.test(a.title);
+const transport=(a:Activity)=>activityKind(a)==='transfer';
 const fixed=(a:Activity)=>Boolean(a.completed||a.reservation==='Confirmada por mí'||transport(a));
 const duration=(a:Activity)=>{
  const t=timing(a);

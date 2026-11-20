@@ -1,6 +1,7 @@
-import {itineraryOf,newId,type Plan,type Trip,type Day} from './travel.ts';
+import {itineraryOf,newId,type Plan,type Trip,type Day,type ActivityKind} from './travel.ts';
+import {activityKind,validActivityKind} from './activity-agenda.ts';
 
-export type CommunityActivity={title:string;description:string;time?:string;duration?:string;location?:string};
+export type CommunityActivity={title:string;description:string;kind?:ActivityKind;time?:string;duration?:string;location?:string};
 export type CommunityDay={title:string;advice?:string;activities:CommunityActivity[]};
 export type CommunityContent={route:string[];days:CommunityDay[]};
 export type CommunityTrip={
@@ -23,7 +24,7 @@ export function publicTripSnapshot(plan:Plan):{
  if(!itinerary.some(d=>d.activities.length>0))throw Error('Agregá alguna actividad antes de publicar el recorrido.');
  const days:CommunityDay[]=itinerary.map((day,i)=>{
   const activities:CommunityActivity[]=day.activities.slice(0,25).map(a=>({
-   title:trim(a.title,150),description:trim(a.description,1500),
+   title:trim(a.title,150),description:trim(a.description,1500),kind:activityKind(a),
    ...(trim(a.time,12)?{time:trim(a.time,12)}:{}),
    ...(trim(a.duration,60)?{duration:trim(a.duration,60)}:{}),
    ...(trim(a.location,200)?{location:trim(a.location,200)}:{})
@@ -47,6 +48,7 @@ export function communityTripToDraft(item:CommunityTrip):Plan{
   ...(trim(day.advice,1500)?{advice:trim(day.advice,1500)}:{}),
   activities:(Array.isArray(day.activities)?day.activities:[]).slice(0,25).map(a=>({
    id:newId(),title:trim(a.title,150),description:trim(a.description,1500),
+   ...(validActivityKind(a.kind)?{kind:a.kind}:{}),
    ...(a.time?{time:trim(a.time,12)}:{}),...(a.duration?{duration:trim(a.duration,60)}:{}),
    ...(a.location?{location:trim(a.location,200)}:{})
   })).filter(a=>a.title)

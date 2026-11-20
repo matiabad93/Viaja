@@ -4,6 +4,7 @@ import type {FormEventHandler} from 'react';
 import {ArrowLeft,ArrowRight,CalendarDays,CheckCircle2,Clock3,Compass,LoaderCircle,MapPin,RotateCcw,ShieldCheck,Sparkles,Users,Wallet} from 'lucide-react';
 import type {Plan,Trip} from '../../lib/travel';
 import {itineraryOf} from '../../lib/travel';
+import {agendaSummary} from '../../lib/activity-agenda';
 import {CharacterCounter} from '../character-counter';
 import {AIActionFeedback} from './ai-action-feedback';
 
@@ -31,6 +32,7 @@ const suggestions=[
 export function AIRefinementWorkspace({plan,trip,busy,aiReady,statusError,aiMode,aiError,onChange,onSubmit,onBack,onRefresh,onCancel}:Props){
  const days=itineraryOf(plan);
  const activities=days.reduce((count,day)=>count+day.activities.length,0);
+ const visits=days.reduce((count,day)=>count+agendaSummary(day.activities).visit,0);
  const history=plan.refinementHistory||[];
  const dates=trip.start&&trip.end?`${trip.start} → ${trip.end}`:'Fechas por definir';
  const addSuggestion=(text:string)=>{
@@ -48,7 +50,7 @@ export function AIRefinementWorkspace({plan,trip,busy,aiReady,statusError,aiMode
     <h1>Tu viaje, <em>cada vez mejor.</em></h1>
     <p>Contale a la IA qué querés cambiar. Va a revisar tu agenda actual para reorganizar actividades, horarios y consejos del día, teniendo en cuenta tu pedido.</p>
    </div>
-   <div className="ai-refinement-hero-stats" aria-label="Resumen del viaje actual"><span><CalendarDays size={16}/>{days.length} {days.length===1?'día':'días'}</span><span><Compass size={16}/>{activities} actividades</span></div>
+   <div className="ai-refinement-hero-stats" aria-label="Resumen del viaje actual"><span><CalendarDays size={16}/>{days.length} {days.length===1?'día':'días'}</span><span><Compass size={16}/>{visits} visitas · {activities} bloques</span></div>
   </header>
   <div className="ai-refinement-layout">
    <form className="ai-refinement-composer" aria-label="Mejorar el itinerario actual con IA" onSubmit={onSubmit}>
@@ -69,7 +71,7 @@ export function AIRefinementWorkspace({plan,trip,busy,aiReady,statusError,aiMode
    </form>
    <aside className="ai-refinement-context" aria-label="Contexto del viaje que estás mejorando">
     <div className="ai-refinement-current"><span className="eyebrow">ESTÁS MEJORANDO ESTE VIAJE</span><h2>{trip.destination}</h2>{Boolean(trip.additionalDestinations?.length)&&<p className="ai-refinement-route"><MapPin size={15}/>{trip.additionalDestinations?.join(' · ')}</p>}<div className="ai-refinement-meta"><span><CalendarDays size={16}/>{dates}</span><span><Users size={16}/>{trip.travelers} {trip.travelers===1?'viajero':'viajeros'}</span>{trip.budget>0&&<span><Wallet size={16}/>{trip.budget} € para gastos diarios</span>}</div></div>
-    <div className="ai-refinement-days"><div className="ai-refinement-days-heading"><span className="eyebrow">TU AGENDA ACTUAL</span><span>{activities} actividades</span></div><ol>{days.slice(0,4).map((day,i)=><li key={day.id}><span>{i+1}</span><div><strong>{day.title}</strong><small>{day.activities.length} {day.activities.length===1?'actividad':'actividades'}{day.activities[0]?' · '+day.activities[0].title:''}</small></div></li>)}</ol>{days.length>4&&<details><summary>Ver los {days.length-4} días restantes</summary><ol start={5}>{days.slice(4).map((day,i)=><li key={day.id}><span>{i+5}</span><div><strong>{day.title}</strong><small>{day.activities.length} {day.activities.length===1?'actividad':'actividades'}</small></div></li>)}</ol></details>}</div>
+    <div className="ai-refinement-days"><div className="ai-refinement-days-heading"><span className="eyebrow">TU AGENDA ACTUAL</span><span>{visits} visitas · {activities} bloques</span></div><ol>{days.slice(0,4).map((day,i)=><li key={day.id}><span>{i+1}</span><div><strong>{day.title}</strong><small>{agendaSummary(day.activities).visit} visitas · {day.activities.length} bloques{day.activities[0]?' · '+day.activities[0].title:''}</small></div></li>)}</ol>{days.length>4&&<details><summary>Ver los {days.length-4} días restantes</summary><ol start={5}>{days.slice(4).map((day,i)=><li key={day.id}><span>{i+5}</span><div><strong>{day.title}</strong><small>{agendaSummary(day.activities).visit} visitas · {day.activities.length} bloques</small></div></li>)}</ol></details>}</div>
     <div className="ai-refinement-assurance"><ShieldCheck size={20}/><div><strong>Tu viaje está protegido</strong><p>Las reservas, los gastos y las actividades realizadas se conservan. La IA puede reorganizar la agenda propuesta, pero los cambios se validan antes de guardarse.</p></div></div>
     {history.length>0&&<details className="ai-refinement-history"><summary><Clock3 size={16}/> Mejoras anteriores ({history.length})</summary><ol>{history.slice(-5).reverse().map((item,i)=><li key={i}>{item.prompt}</li>)}</ol></details>}
     <button type="button" className="ai-refinement-view-trip" onClick={onBack}>Ver mi itinerario actual <ArrowRight size={16}/></button>

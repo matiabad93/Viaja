@@ -2738,5 +2738,35 @@ html[data-theme="dark"] .ai-refinement-step{background:#314d3d;color:#d9f5e5}
 html[data-theme="dark"] .ai-refinement-submit .primary{background:#357456;border-color:#357456;color:#fff}
 html[data-theme="dark"] .ai-refinement-submit .primary:hover:not(:disabled){background:#2b6147}
 html[data-theme="dark"] .ai-refinement-suggestions button:hover{border-color:#83bc98}
+/* A travel day is a timeline, not a quota of tourist attractions. */
+.agenda-day-overview{display:flex;align-items:center;flex-wrap:wrap;gap:12px 18px;margin:18px 0 20px;padding:18px 20px;border:1px solid var(--line);border-radius:17px;background:var(--surface-muted,#f0f5ed)}
+.agenda-overview-title{font-size:12px;font-weight:800;letter-spacing:.02em;color:var(--ink)}
+.agenda-day-counts{display:flex;flex-wrap:wrap;gap:7px;margin-right:auto}
+.agenda-day-counts>span{display:flex;align-items:center;gap:5px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;font-size:11px;color:var(--ink);background:var(--surface,#fff)}
+.agenda-day-counts strong{font-size:13px;color:var(--ink)}
+.agenda-pace{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:9px;background:#d9ebe0;color:#245b43;font-size:11px;white-space:nowrap}
+.agenda-day-overview>p{flex-basis:100%;font-size:11px;line-height:1.5;margin:0}
+.agenda-kind-tag{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;margin:0 0 8px;border-radius:7px;font-size:10px;font-weight:800;letter-spacing:.02em;line-height:1.4}
+.agenda-kind-tag--visit{color:#256347;background:#e2f1e7}
+.agenda-kind-tag--transfer{color:#245e88;background:#e2eef9}
+.agenda-kind-tag--meal{color:#995b24;background:#fff0dc}
+.agenda-kind-tag--break{color:#586778;background:#eef0f4}
+.agenda .activity-card.activity-kind-visit{border-left:4px solid #69a787}
+.agenda .activity-card.activity-kind-transfer{border-left:4px solid #78aacd;background:color-mix(in srgb,var(--surface,#fff) 94%,#78aacd)}
+.agenda .activity-card.activity-kind-meal{border-left:4px solid #dda76e;background:color-mix(in srgb,var(--surface,#fff) 95%,#dda76e)}
+.agenda .activity-card.activity-kind-break{border-left:4px solid #a7b2bf;background:color-mix(in srgb,var(--surface,#fff) 94%,#a7b2bf)}
+.agenda .activity-card.activity-kind-transfer .activity-body h3,.agenda .activity-card.activity-kind-meal .activity-body h3,.agenda .activity-card.activity-kind-break .activity-body h3{font-size:clamp(16px,2vw,19px)}
+.calendar-slot.calendar-slot--transfer{border-left-color:#548cb2;background:#e4eff7}
+.calendar-slot.calendar-slot--meal{border-left-color:#c58b50;background:#fff1df}
+.calendar-slot.calendar-slot--break{border-left-color:#8b9aab;background:#eef0f4}
+html[data-theme="dark"] .agenda-pace{background:#31563f;color:#d9f2df}
+html[data-theme="dark"] .agenda-kind-tag--visit{background:#254b38;color:#bde8cb}
+html[data-theme="dark"] .agenda-kind-tag--transfer{background:#274759;color:#c2e4ff}
+html[data-theme="dark"] .agenda-kind-tag--meal{background:#513e2d;color:#ffdfb5}
+html[data-theme="dark"] .agenda-kind-tag--break{background:#3b4853;color:#e0eaf3}
+html[data-theme="dark"] .calendar-slot.calendar-slot--transfer{background:#274759;color:#eff7ff}
+html[data-theme="dark"] .calendar-slot.calendar-slot--meal{background:#513e2d;color:#fff5e6}
+html[data-theme="dark"] .calendar-slot.calendar-slot--break{background:#3b4853;color:#f4f5f7}
+@media(max-width:650px){.agenda-day-overview{padding:15px;gap:10px}.agenda-overview-title{width:100%}.agenda-day-counts{width:100%}.agenda-pace{white-space:normal}}
 @media(max-width:930px){.ai-refinement-layout{grid-template-columns:minmax(0,1fr)}.ai-refinement-context{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ai-refinement-current,.ai-refinement-days{min-width:0}.ai-refinement-assurance,.ai-refinement-history,.ai-refinement-view-trip,.ai-refinement-connection{grid-column:1/-1}.ai-refinement-hero-stats{display:none}}
 @media(max-width:650px){.ai-refinement-page{gap:16px}.ai-refinement-hero{padding:27px 22px;border-radius:16px}.ai-refinement-hero h1{font-size:37px}.ai-refinement-hero p{font-size:13px}.ai-refinement-layout{gap:16px}.ai-refinement-composer{padding:22px 17px}.ai-refinement-composer-heading{gap:11px}.ai-refinement-composer-heading h2{font-size:27px}.ai-refinement-step{width:35px;height:35px}.ai-refinement-composer #trip-adjustment{min-height:170px}.ai-refinement-suggestions>div{gap:7px}.ai-refinement-suggestions button{min-height:42px}.ai-refinement-preferences-fields{grid-template-columns:minmax(0,1fr)}.ai-refinement-context{display:block}.ai-refinement-current,.ai-refinement-days{padding-left:21px;padding-right:21px}.ai-refinement-assurance{margin-left:21px;margin-right:21px}.ai-refinement-history{margin-left:21px;margin-right:21px}.ai-refinement-view-trip{margin-left:21px;margin-right:21px;width:calc(100% - 42px)}.ai-refinement-connection{padding-left:21px;padding-right:21px}}

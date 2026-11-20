@@ -1,4 +1,6 @@
 import {describeTravelPreferences} from '../lib/travel-preferences.ts';
+import {activityKind,validActivityKind} from '../lib/activity-agenda.ts';
+import type {ActivityKind} from '../lib/travel.ts';
 /**
  * Gemini Free Tier adapter for Viaja 1.0 staging.
  *
@@ -12,6 +14,7 @@ import {validateTrip} from './planner.ts';
 export const FREE_GEMINI_MODEL='gemini-3.1-flash-lite';
 export const GEMINI_TIMEOUT_MS=120000;
 const MAX_DAYS=7;
+const MAX_AGENDA_ITEMS_PER_DAY=24;
 const json=(value:unknown,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'private, no-store'}});
 /** Only report fixed failure categories. Never log prompts, model outputs or API keys. */
 const failure=(code:string,error:string,status:number,details?:Record<string,string|number>)=>{
@@ -20,7 +23,7 @@ const failure=(code:string,error:string,status:number,details?:Record<string,str
 };
 
 type GeminiEnv={GEMINI_API_KEY?:string};
-type ActivityIdea={title:string;description:string;time:string;minutes:number;location:string;refinesId?:string;estimatedCostEUR?:number;costCategory?:'Actividades'|'Transporte'|'Comida';costNote?:string};
+type ActivityIdea={title:string;description:string;time:string;minutes:number;location:string;kind:ActivityKind;refinesId?:string;estimatedCostEUR?:number;costCategory?:'Actividades'|'Transporte'|'Comida';costNote?:string};
 type DayIdea={date:string;title:string;advice:string;activities:ActivityIdea[];removedActivityIds:string[];unchanged:boolean};
 type GeminiOutput={summary:string;budgetNotes:string;days:DayIdea[];warnings:string[]};
 
@@ -71,11 +74,15 @@ export function normalizeGeminiIdeas(data:unknown,start:string,days:number,pace=
    const minutes=Math.min(duration,remaining);
    if(minutes<15){removed++;continue;}
    const location=typeof value.location==='string'&&value.location.trim()?value.location.trim().slice(0,150):'Ubicación por confirmar';
-   const fingerprint=(name+'|'+location).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es');
+   const costHint=['Actividades','Transporte','Comida'].includes(String(value.costCategory))?value.costCategory as ActivityIdea['costCategory']:undefined;
+   const kind=validActivityKind(value.kind)?value.kind:activityKind({id:'',title:name,description:'',costCategory:costHint});
+   const fingerprint=(name+'|'+location+(kind==='visit'?'':'|'+clock)).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es');
    // Repeated generic activity titles on DIFFERENT days are valid (e.g. train).
    if(unique.has(fingerprint)){removed++;continue;}
    unique.add(fingerprint);
-   if(activities.length>=12){removed++;continue;}
+   // An overlong AI response is rejected, never silently cropped: that would
+   // make a transfer or a meal disappear from the traveler's actual schedule.
+   if(activities.length>=MAX_AGENDA_ITEMS_PER_DAY)throw Error('Gemini propuso más de 24 bloques en un día. Pedí ajustar ese día por separado.');
    const description=typeof value.description==='string'&&value.description.trim()
     ?value.description.trim().slice(0,1100):'Sugerencia pendiente de detallar; comprobá los horarios y la ubicación.';
    const amount=value.estimatedCostEUR;
@@ -85,7 +92,7 @@ export function normalizeGeminiIdeas(data:unknown,start:string,days:number,pace=
    const costNote=typeof value.costNote==='string'?value.costNote.slice(0,250):undefined;
    const refinesId=typeof value.refinesId==='string'&&value.refinesId.length<=80?value.refinesId:undefined;
    activities.push({title:name,description,time:match[1].padStart(2,'0')+':'+match[2],refinesId,
-    minutes,location,estimatedCostEUR,costCategory,costNote});
+    minutes,location,kind,estimatedCostEUR,costCategory,costNote});
   }
   const advice=typeof day?.advice==='string'?day.advice.trim().slice(0,1200):'';
   const removedActivityIds=Array.isArray(day?.removedActivityIds)?day.removedActivityIds.filter((id:unknown):id is string=>typeof id==='string'&&id.length>0&&id.length<=80).slice(0,30):[];
@@ -99,7 +106,7 @@ export function normalizeGeminiIdeas(data:unknown,start:string,days:number,pace=
  if(repairedDates>0)warnings.push('Se ajustaron '+repairedDates+' fechas que Gemini escribió incorrectamente al rango elegido en el formulario. Revisá los días antes de reservar.');
  if(removed>0)warnings.push('Se omitieron '+removed+' actividades con horarios, duraciones o datos incompatibles.');
  if(!isRefinement&&pace==='Intenso'&&days>=3){
-  const sparse=normalized.slice(1,-1).filter(day=>day.activities.length<5);
+  const sparse=normalized.slice(1,-1).filter(day=>day.activities.filter(item=>item.kind==='visit').length<5);
   if(sparse.length)warnings.push('El ritmo Intenso quedó con pocas paradas en '+sparse.length+' días completos. Podés pedir más alternativas desde Ajustar con IA; no se agregaron lugares inventados.');
  }
  if(normalized.some(d=>d.activities.length===0&&!d.unchanged))
@@ -125,7 +132,7 @@ export function geminiRequest(trip:ReturnType<typeof validateTrip>){
     removedActivityIds:{type:'ARRAY',items:{type:'STRING'}},
     activities:{type:'ARRAY',items:{type:'OBJECT',properties:{
      title:{type:'STRING'},description:{type:'STRING'},time:{type:'STRING'},refinesId:{type:'STRING'},
-     minutes:{type:'INTEGER'},location:{type:'STRING'},estimatedCostEUR:{type:'NUMBER'},costCategory:{type:'STRING'},costNote:{type:'STRING'}
+     minutes:{type:'INTEGER'},location:{type:'STRING'},kind:{type:'STRING',enum:['visit','transfer','meal','break']},estimatedCostEUR:{type:'NUMBER'},costCategory:{type:'STRING'},costNote:{type:'STRING'}
     },required:['title','description','time','minutes','location']}}
    },required:['date','title','advice','unchanged','activities','removedActivityIds']}}
   },required:['summary','budgetNotes','days']
@@ -145,14 +152,15 @@ export function geminiRequest(trip:ReturnType<typeof validateTrip>){
   'Los compromisos marcados fixed en existingItinerary NO se borran ni se mueven de hora: actividades ya realizadas y reservas confirmadas. Se pueden enriquecer sus descripciones, pero no cambiar su identidad, hora o lugar. La aplicación conserva los gastos, reservas y datos privados fuera del alcance de la IA.',
   'Trabajá con los horarios de inicio y las DURACIONES ya registradas. Devolvé los días con actividades en orden cronológico, sin solapamientos, respetando viajes interurbanos ANTES de las visitas a destino. Considerá los desplazamientos, la zona y las visitas ya anotadas; nunca programes un lugar al mismo tiempo que un tren. Si el pedido nuevo genera un conflicto, proponé un cambio de horario viable y explicalo en advice. No inventes horarios ferroviarios confirmados.'
  ]:[]),
- 'Prepará un itinerario diario COMPLETO, no una lista corta de ideas. Para ritmo Equilibrado normalmente 4 a 6 paradas; para Tranquilo 2 a 4. Adaptá cantidad y duración al ritmo, la luz del día y los traslados. No rellenes con atractivos irrelevantes.',
- 'El usuario eligió ritmo '+trip.pace+'. En cada DÍA COMPLETO intentá incluir '+suggestedStops+' actividades ÚTILES, concretas y diferenciadas, no solo 2 o 3 monumentos conocidos. Contá como paradas visitas cortas relevantes, miradores, calles históricas, mercados, experiencias, gastronomía o traslados importantes. Un día de llegada tarde o vuelo temprano NO es un día completo: puede requerir 0 a 3 actividades. La viabilidad y los horarios del viajero siempre tienen prioridad sobre la cantidad.',
+ 'Prepará una agenda diaria COMPLETA, no una lista corta de ideas. El ritmo se mide por las VISITAS reales y sus duraciones, nunca por la cantidad total de bloques. Para ritmo Equilibrado normalmente 4 a 6 visitas; para Tranquilo 2 a 4. Adaptá cantidad y duración al ritmo, la luz del día y los traslados. No rellenes con atractivos irrelevantes.',
+ 'El usuario eligió ritmo '+trip.pace+'. En cada DÍA COMPLETO intentá incluir '+suggestedStops+' VISITAS ÚTILES, concretas y diferenciadas, no solo 2 o 3 monumentos conocidos. Además agregá los bloques de traslados, desayuno/almuerzo/merienda/cena y descansos que hagan falta; esos NO cuentan como visitas ni vuelven el día intenso. Un día de llegada tarde o vuelo temprano NO es un día completo: puede requerir 0 a 3 visitas. La viabilidad y los horarios del viajero siempre tienen prioridad sobre la cantidad.',
  'Para ritmo Intenso, proponé una ruta rica, desde mañana hasta tarde cuando sea viable, agrupando 7 a 10 paradas en viajes cortos y 6 a 8 en viajes de 5 a 7 días. Las paradas breves pueden durar 15 a 40 minutos y los monumentos principales más. Prevé pausas, alimentación, trenes y tiempos razonables de traslado. NO fuerces 10 actividades si los lugares están lejos, cierran temprano o el viajero llega tarde.',
  'Priorizá los imperdibles del destino y completalos con barrios característicos, miradores, paseos, museos, gastronomía o experiencias locales de interés. Evitá omisiones obvias y lugares de otra ciudad. No dupliques atractivos en días distintos.',
  'Para CADA actividad escribí una descripción informativa de '+detailLevel+' oraciones concretas (no una sola frase), especialmente para ritmo Intenso. Incluí cuando corresponda: qué es el sitio, su valor cultural o histórico conocido, qué ver exactamente allí (fachada, plaza, museo, mirador, barrio o rincón), cómo recorrerlo, tiempo recomendado, consejo práctico y conexión con la siguiente parada. Evitá frases de relleno como “disfrutá del lugar”, datos históricos específicos inciertos o atracciones inventadas.',
  'Cada jornada debe incluir advice con una guía logística de 3 a 6 oraciones: orden de barrios o pueblos, desplazamiento sugerido (a pie, tren, autobús, lanzadera o coche), qué conexiones o reservas conviene comprobar, margen de traslado y una alternativa razonable si no alcanza el tiempo. Podés incluir datos generales estables sobre lugares conocidos, pero NUNCA afirmes horarios, frecuencias, tarifas ni disponibilidad actual sin verificarlos.',
  'Cuando el usuario menciona mercados navideños o eventos estacionales, explicá qué lugares emblemáticos merecen la pena y cómo organizar el recorrido. La apertura de mercados, días de funcionamiento y lanzaderas deben marcarse como “consultar horarios oficiales” sin inventar fechas ni frecuencias.',
  'Agrupá cada día por áreas próximas y ordená las visitas para evitar idas y vueltas innecesarias. Incorporá pausas para comer, caminar y desplazamientos razonables entre lugares, sin afirmar tiempos exactos de trayecto que no podés verificar. Si una zona queda lejos, asignala a otro día o avisá.',
+ 'La agenda tiene CUATRO tipos de elemento: kind="visit" para lugares o experiencias turísticas, kind="transfer" para desplazamientos, kind="meal" para desayuno/almuerzo/merienda/cena, kind="break" para descanso o tiempo libre. Asigná kind a CADA bloque. No juntes un tren y una visita en un solo bloque. Las comidas y traslados tienen su horario y duración propia. Si un día tiene 4 visitas, 3 comidas, 2 traslados y 1 pausa, sigue siendo ritmo Equilibrado; NO es un día de 10 visitas.',
  'Proponé horarios tentativos cronológicos sin solapamientos y con transiciones plausibles; indicá claramente en summary que no son horarios de apertura confirmados ni rutas optimizadas con datos de mapas en tiempo real.',
  'La descripción de cada día debe mencionar la zona geográfica y la lógica del paseo. El resumen general debe explicar las prioridades, el ritmo y los traslados principales. Si el viaje es de varios días, distribuí equilibradamente las visitas para aprovecharlos.',
  'Respetá TODAS las horas que el usuario indique en las notas, especialmente vuelos, llegada al aeropuerto, última salida y noches de alojamiento. Si llega a las 18:30, no programés visitas anteriores a esa hora; si sale en avión a las 06:30, no propongas actividades turísticas esa mañana. Tené en cuenta el tiempo de traslado, equipaje y controles, sin inventar duración de conexiones.',
@@ -166,7 +174,7 @@ export function geminiRequest(trip:ReturnType<typeof validateTrip>){
  'Antes de elegir opciones de pago, compará la suma de gastos estimados con el presupuesto indicado. Si es ajustado, elegí alternativas gratuitas y explicá el riesgo en budgetNotes. Las entradas estimadas no están compradas y no son un gasto realizado.',
  'El presupuesto debe ser orientativo, sin cantidades inventadas ni supuestos de cotizaciones actuales.',
  'Respondé SOLAMENTE un objeto JSON válido con los campos summary, budgetNotes y days.',
- 'Cada día debe contener date (YYYY-MM-DD), title (síntesis del día), advice (ruta y consejos logísticos actualizados), activities (array, que puede estar vacía si es un día exclusivamente de llegada o salida), y removedActivityIds (array de IDs para eliminar SOLO cuando el usuario lo pidió). En cada actividad: title, description, time HH:MM, minutes entero, location, refinesId (id exacto de actividad previa, si la mejora), y opcionalmente estimatedCostEUR, costCategory y costNote. Las actividades con el mismo título en días distintos son válidas; no repitas el mismo monumento sin motivo.',
+ 'Cada día debe contener date (YYYY-MM-DD), title (síntesis del día), advice (ruta y consejos logísticos actualizados), activities (array, que puede estar vacía si es un día exclusivamente de llegada o salida), y removedActivityIds (array de IDs para eliminar SOLO cuando el usuario lo pidió). En cada elemento: title, description, time HH:MM, minutes entero, location, kind (visit/transfer/meal/break), refinesId (id exacto de actividad previa, si la mejora), y opcionalmente estimatedCostEUR, costCategory y costNote. Los bloques repetidos de comidas y transportes en días distintos son válidos; no repitas el mismo monumento sin motivo.',
  'Devuelve exactamente '+trip.days+' días, de '+trip.start+' a '+trip.end+'.',
  'Toda recomendación está sujeta a verificación independiente antes de reservar o desplazarse.',
  describeTravelPreferences(trip.preferences)
@@ -181,9 +189,10 @@ export function geminiRequest(trip:ReturnType<typeof validateTrip>){
   'Cada actividad previa modificada DEBE llevar su id exacto en refinesId. Podés cambiar título, descripción, horario, duración, lugar y orden. Para una actividad nueva omití refinesId. Solo si el usuario pide expresamente eliminar o reemplazar una parada, incluí su id en removedActivityIds.',
   'Un elemento marcado fixed no puede eliminarse ni cambiar de día, hora o lugar; solo ampliá su descripción. Nunca toques los gastos o las reservas privadas.',
   'Al reorganizar, respetá la secuencia de trenes y visitas, evitá duplicados, solapamientos y tiempos de traslado imposibles. No afirmes haber verificado horarios de trenes o mercados.',
+  'En cada bloque indicá kind: visit (visita turística), transfer (transporte), meal (comida), break (descanso). Las comidas, pausas y traslados NO cuentan como intensidad turística; no elimines bloques de comida para cumplir un máximo de visitas. Si el usuario pide agregar una merienda o un tren, creá ese bloque independiente.',
   'En actividades editadas escribí 1 o 2 oraciones específicas (no un ensayo). advice: 2 a 3 oraciones útiles sobre la nueva ruta. summary: 2 o 3 oraciones sobre lo cambiado. budgetNotes: 1 o 2 oraciones si hacen falta.',
   'No agregues actividades irrelevantes ni alteres los días sin motivo; priorizá la intención del usuario y conservá el resto.',
-  'Devolvé exactamente '+trip.days+' días con las fechas '+trip.start+' a '+trip.end+'. En cada día: date, title, advice, unchanged, removedActivityIds, activities. Cada actividad debe tener title, description, time HH:MM, minutes entero y location; refinesId solo al editar una existente.',
+  'Devolvé exactamente '+trip.days+' días con las fechas '+trip.start+' a '+trip.end+'. En cada día: date, title, advice, unchanged, removedActivityIds, activities. Cada bloque debe tener title, description, time HH:MM, minutes entero, location y kind; refinesId solo al editar uno existente.',
   describeTravelPreferences(trip.preferences)
  ].join('\n'):fullGuidance;
  return {
@@ -235,11 +244,11 @@ export async function geminiFreePlanner(request:Request,env:GeminiEnv):Promise<R
   try{resultData=JSON.parse(resultText)}
   catch{return failure('GEMINI_INVALID_JSON','Gemini devolvió un JSON incompleto. Conservamos el borrador.',502)}
   try{parsed=normalizeGeminiIdeas(resultData,trip.start,trip.days,trip.pace,Boolean(trip.existingItinerary))}
-  catch(e){return failure('GEMINI_INVALID_ITINERARY','Gemini no devolvió actividades suficientes para organizar tu viaje. Conservamos el borrador; podés volver a generar sin cambiar las fechas.',502,{validation:e instanceof Error?e.message.slice(0,100):'invalid'})}
+  catch(e){return failure('GEMINI_INVALID_ITINERARY',e instanceof Error&&e.message.includes('24 bloques')?e.message+' No se aplicaron cambios.':'Gemini no devolvió actividades suficientes para organizar tu viaje. Conservamos el borrador; podés volver a generar sin cambiar las fechas.',502,{validation:e instanceof Error?e.message.slice(0,100):'invalid'})}
   const itinerary=parsed.days.map((d,i)=>({
    id:crypto.randomUUID(),title:d.unchanged?'':'Día '+(i+1)+' — '+d.date+' · '+d.title,advice:d.advice,removedActivityIds:d.removedActivityIds,unchanged:d.unchanged,
    activities:d.activities.map(a=>({
-    id:crypto.randomUUID(),refinesId:a.refinesId,title:a.title,description:a.description,location:a.location,
+    id:crypto.randomUUID(),refinesId:a.refinesId,title:a.title,description:a.description,location:a.location,kind:a.kind,
     time:a.time,duration:a.minutes+' min',estimatedCostEUR:a.estimatedCostEUR,costCategory:a.costCategory,costNote:a.costNote,endTime:(()=>{
      const minutes=Number(a.time.slice(0,2))*60+Number(a.time.slice(3))+a.minutes;
      return String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');
