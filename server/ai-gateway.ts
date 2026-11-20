@@ -97,7 +97,7 @@ export async function secureAIGateway(request:Request,env:ViajaAIEnv):Promise<Re
  try{admission=await invokeQuota(env,'viaja_reserve_ai_request',{p_user_id:user.id,p_request_id:requestId})}
  catch{return response({error:'El control de uso no está disponible. No se realizó ninguna consulta de IA.'},503)}
  if(!admission?.allowed){
-  const reason=admission?.reason==='user_daily_limit'?'Alcanzaste las 10 generaciones de IA permitidas cada 24 horas.':
+  const reason=admission?.reason==='user_daily_limit'?'El control de consultas de IA todavía está actualizado parcialmente. Intentá nuevamente más tarde.':
     admission?.reason==='global_daily_limit'?'Viaja alcanzó su límite diario de investigaciones.':
     admission?.reason==='request_in_progress'?'Ya hay una investigación reciente en curso.':
     'No se pudo habilitar esta investigación.';
