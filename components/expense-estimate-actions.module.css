@@ -1,14 +1,49 @@
-.actions{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:flex-end;gap:6px;margin-left:auto;min-width:0}
-.iconAction{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;width:44px;height:44px;padding:0;border:1px solid var(--line,#dfe5da);border-radius:12px;background:var(--surface-muted,#edf2e9);color:var(--ink,#1b3e32);cursor:pointer;transition:background-color .15s ease,border-color .15s ease,transform .15s ease}
-.iconAction:hover{background:var(--surface-raised,#dce9df);border-color:var(--green,#224d3b)}
-.iconAction:active{transform:scale(.96)}
-.iconAction:focus-visible{outline:2px solid var(--orange,#d77a53);outline-offset:2px}
-.iconAction:disabled{cursor:not-allowed;opacity:.5}
-.registered{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;color:var(--green,#224d3b)}
-.edit{display:flex;flex-basis:100%;width:100%;flex-wrap:wrap;gap:12px;padding:12px;border:1px solid var(--line,#d9e3dc);border-radius:12px}
-.edit label{display:flex;flex-direction:column;gap:6px;font-size:13px;flex:1 1 190px;min-width:0}
-.edit input{min-height:44px;width:100%;font-size:16px}
-.editButtons{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px}
-.editButtons button{min-height:44px}
-@media(max-width:600px){.editButtons,.editButtons button{width:100%}.actions{margin-left:auto;gap:5px}}
-@media(prefers-reduced-motion:reduce){.iconAction{transition:none}}
+.panel{display:grid;gap:16px;min-width:0}
+.heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.heading h2,.editorHeader h3,.empty h3{margin:0}
+.summary{display:grid;gap:12px;padding:20px;border:1px solid var(--line);border-radius:20px;background:var(--surface);color:var(--ink)}
+.balance{display:grid;gap:6px}
+.balance>span,.stats span,.summary small,.lineText small,.listHeader,.editorHeader small{font-size:13px;color:var(--muted);line-height:1.45}
+.balance strong{font-size:clamp(28px,5vw,38px);font-weight:750;letter-spacing:-.04em;line-height:1.15;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.balance progress{width:100%;height:8px;accent-color:var(--green)}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;border-top:1px solid var(--line);padding-top:12px}
+.stats>div{display:grid;gap:4px;min-width:0}
+.stats b{font-size:20px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:4px;gap:4px;border:1px solid var(--line);border-radius:14px;background:var(--surface-muted)}
+.tabs button{min-height:44px;display:flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:10px;background:transparent;color:var(--ink);font:inherit;font-weight:600;cursor:pointer;padding:6px}
+.tabs button.active{background:var(--surface);box-shadow:0 1px 4px #0002}
+.tabs span{font-size:12px;font-variant-numeric:tabular-nums}
+.listHeader{margin-bottom:-10px}
+.filters,.breakdown{border:1px solid var(--line);border-radius:14px;padding:0 12px;background:var(--surface)}
+.filters summary,.breakdown summary{cursor:pointer;min-height:44px;display:list-item;align-content:center;font-weight:600;font-size:14px}
+.filters[open],.breakdown[open]{padding-bottom:12px}
+.list{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface)}
+.line{display:grid;grid-template-columns:36px minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:12px;border-bottom:1px solid var(--line)}
+.line:last-child{border-bottom:0}
+.categoryIcon{display:grid;place-items:center;width:36px;height:36px;border-radius:12px;background:var(--surface-muted);color:var(--ink)}
+.lineText{display:grid;gap:3px;min-width:0;overflow-wrap:anywhere}
+.lineText strong{font-size:14px;line-height:1.35}
+.amount{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:15px}
+.actions{display:flex;align-items:center;justify-content:flex-end;gap:2px}
+.iconAction,.confirmAction{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;width:44px;height:44px;padding:0;border:0;border-radius:12px;background:transparent;color:var(--ink);cursor:pointer;transition:background-color .15s ease,transform .15s ease}
+.confirmAction{background:var(--surface-muted);color:var(--ink)}
+.iconAction:hover,.confirmAction:hover{background:var(--surface-raised,var(--surface-muted))}
+.iconAction:active,.confirmAction:active{transform:scale(.96)}
+.iconAction:focus-visible,.confirmAction:focus-visible,.tabs button:focus-visible{outline:2px solid var(--orange);outline-offset:-2px}
+.editor{display:grid;gap:16px;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+.editorHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.editorHeader small{display:block;margin-top:4px}
+.editor input,.editor select{font-size:16px;min-height:44px}
+.editorActions{display:flex;justify-content:flex-end;align-items:center;gap:8px}
+.editorActions>button:last-child{flex:1;min-height:44px}
+.empty{display:grid;justify-items:center;text-align:center;padding:30px 16px;gap:8px}
+.empty p{margin:0;color:var(--muted);font-size:14px}
+@media(max-width:480px){.heading h2{font-size:24px}.heading button{padding-inline:10px;white-space:nowrap}.summary{padding:16px}.line{grid-template-columns:32px minmax(0,1fr) auto;gap:6px 8px;padding:10px}.categoryIcon{width:32px;height:32px}.actions{grid-column:2/-1}.lineText strong{font-size:14px}.editorHeader{flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){.iconAction,.confirmAction{transition:none}}
+
+.filterGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:end;gap:12px}
+.filterGrid label{display:grid;gap:6px;min-width:0}
+.filterGrid input,.filterGrid select{width:100%;min-width:0;min-height:44px;font-size:16px}
+.filterGrid button{min-width:96px;min-height:44px;justify-self:end}
+@media(max-width:1100px){.filterGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.filterGrid button{grid-column:1/-1}}
+@media(max-width:430px){.filterGrid{grid-template-columns:minmax(0,1fr)}}

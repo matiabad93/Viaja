@@ -29,13 +29,27 @@ for(const invalid of [-1,Number.NaN,Number.POSITIVE_INFINITY,1000001])assert.equ
 assert.equal(JSON.stringify(plan),source,'No muta el plan original');
 console.log('Edición y eliminación de estimaciones: preservación de actividades y pagos, totales y validación — OK');
 
+const renamed=editProjectedCost(plan,'bus',39.90,'Lanzadera navideña','Transporte')!;
+assert.equal(renamed.itinerary?.[0].activities[1].title,'Lanzadera','El concepto del gasto no cambia el título de la actividad');
+assert.equal(projectedCosts(renamed).find(p=>p.activityId==='bus')?.label,'Lanzadera navideña');
+assert.equal(projectedCosts(renamed).find(p=>p.activityId==='bus')?.amount,39.9);
+assert.equal(editProjectedCost(plan,'bus',30,'   '),null);
+assert.equal(removed.itinerary?.[0].activities[0].costEstimateDismissed,true);
+const restored=editProjectedCost(removed,'train',15,'Billete de tren')!;
+assert.equal(projectedCosts(restored).find(p=>p.activityId==='train')?.amount,15);
+assert.deepEqual(renamed.expenses,plan.expenses);
+assert.equal(JSON.stringify(plan),source);
+console.log('Concepto independiente y eliminación persistente — OK');
+
 import {readFileSync} from 'node:fs';
 const forecastUI=readFileSync(new URL('../components/expense-panel.tsx',import.meta.url),'utf8');
 const actionsCSS=readFileSync(new URL('../components/expense-estimate-actions.module.css',import.meta.url),'utf8');
-assert.match(forecastUI,/aria-label=\{'Editar estimación de '\+item.label\}/,'El icono editar tiene nombre accesible');
-assert.match(forecastUI,/aria-label=\{'Quitar estimación de '\+item.label\}/,'El icono quitar tiene nombre accesible');
-assert.match(forecastUI,/aria-label=\{'Registrar pago de '\+item.label\}/,'El icono de pago tiene nombre accesible');
-assert.match(forecastUI,/title="Registrar pago"/,'El icono tiene pista en escritorio');
-assert.doesNotMatch(forecastUI,/>Editar importe<|>Quitar estimación<|>Registrar pago<\/button>/,'No reaparecen botones de texto repetidos');
+assert.ok(forecastUI.includes("aria-label={'Editar pendiente de '+item.label}"));
+assert.ok(forecastUI.includes("aria-label={'Registrar gasto de '+item.label}"));
+assert.ok(forecastUI.includes("onClick={()=>openPending(item,'register')}"),'Registrar abre primero el formulario');
+assert.ok(forecastUI.includes("filter(item=>!paidIds.has(item.activityId))"),'Los pagos registrados salen de Pendientes');
+assert.ok(forecastUI.includes("paidIds.has(value.linkedActivityId)"),'Evita registrar dos veces');
+assert.ok(forecastUI.includes("Confirmar gasto"));
+assert.ok(forecastUI.includes("role=\"alert\""));
 assert.match(actionsCSS,/width:44px;height:44px/,'Acciones táctiles de al menos 44 píxeles');
-console.log('Acciones compactas: nombres accesibles, iconos sin texto y área táctil adecuada — OK');
+console.log('Flujo de revisión y acciones accesibles — OK');

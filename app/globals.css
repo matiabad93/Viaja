@@ -2770,3 +2770,20 @@ html[data-theme="dark"] .calendar-slot.calendar-slot--break{background:#3b4853;c
 @media(max-width:650px){.agenda-day-overview{padding:15px;gap:10px}.agenda-overview-title{width:100%}.agenda-day-counts{width:100%}.agenda-pace{white-space:normal}}
 @media(max-width:930px){.ai-refinement-layout{grid-template-columns:minmax(0,1fr)}.ai-refinement-context{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ai-refinement-current,.ai-refinement-days{min-width:0}.ai-refinement-assurance,.ai-refinement-history,.ai-refinement-view-trip,.ai-refinement-connection{grid-column:1/-1}.ai-refinement-hero-stats{display:none}}
 @media(max-width:650px){.ai-refinement-page{gap:16px}.ai-refinement-hero{padding:27px 22px;border-radius:16px}.ai-refinement-hero h1{font-size:37px}.ai-refinement-hero p{font-size:13px}.ai-refinement-layout{gap:16px}.ai-refinement-composer{padding:22px 17px}.ai-refinement-composer-heading{gap:11px}.ai-refinement-composer-heading h2{font-size:27px}.ai-refinement-step{width:35px;height:35px}.ai-refinement-composer #trip-adjustment{min-height:170px}.ai-refinement-suggestions>div{gap:7px}.ai-refinement-suggestions button{min-height:42px}.ai-refinement-preferences-fields{grid-template-columns:minmax(0,1fr)}.ai-refinement-context{display:block}.ai-refinement-current,.ai-refinement-days{padding-left:21px;padding-right:21px}.ai-refinement-assurance{margin-left:21px;margin-right:21px}.ai-refinement-history{margin-left:21px;margin-right:21px}.ai-refinement-view-trip{margin-left:21px;margin-right:21px;width:calc(100% - 42px)}.ai-refinement-connection{padding-left:21px;padding-right:21px}}
+
+/* Tablet layout: constrain intrinsic grid widths without hiding overflow. */
+html[data-theme] .trip-detail,html[data-theme] .trip-logistics{min-width:0;max-width:100%;box-sizing:border-box}
+html[data-theme] .trip-logistics,html[data-theme] .logistics-block{grid-template-columns:minmax(0,1fr)}
+html[data-theme] .trip-logistics :is(.section-heading,.document-uploader,.document-list,.logistics-empty){min-width:0;max-width:100%;overflow-wrap:anywhere}
+html[data-theme] .trip-logistics .section-heading>div{min-width:0;max-width:100%}
+@media(min-width:701px) and (max-width:1024px){html[data-theme] .trip-detail .detail-tabs{display:flex;flex-wrap:wrap;min-width:0;max-width:100%;gap:6px}html[data-theme] .trip-detail .detail-tabs button{flex:1 1 auto;min-width:0;white-space:normal}html[data-theme] .trip-logistics .section-heading{flex-direction:column;align-items:flex-start}html[data-theme] .trip-logistics .logistics-form-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Trip header actions must wrap within the banner, including tablet widths. */
+.trip-banner > div:first-child{min-width:0;max-width:100%}
+.trip-banner > div:first-child h1{overflow-wrap:anywhere}
+.trip-banner .trip-banner-actions{min-width:0;max-width:100%;flex-shrink:1}
+@media(min-width:701px) and (max-width:1100px){
+ .trip-detail .trip-banner{flex-direction:column;align-items:flex-start;gap:16px}
+ .trip-detail .trip-banner .trip-banner-actions{width:100%;justify-content:flex-start;flex:0 1 auto;flex-wrap:wrap}
+ .trip-detail .trip-banner .trip-banner-actions button{max-width:100%;white-space:normal}
+}

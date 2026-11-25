@@ -59,11 +59,12 @@ try{
  assert.match(result.parts[0].text,/Cómo organizar este día/,'The long report includes daily travel guidance');
  assert.match(prompt,/7 a 10/,'Short intense trips target more than eight activities');
  assert.match(prompt,/4 a 6.*oraciones/,'Intense trip activities require real explanatory prose');
- assert.match(prompt,/SIN acceso a Internet|SIN acceso a Internet/i,'No false claims to current data');
+ assert.match(prompt,/No hay datos de búsquedas web comprobables para este viaje/i,'Disclose absence of verifiable research');
+ assert.match(prompt,/No afirmes que verificaste transportes, precios, horarios de apertura ni itinerarios oficiales/i,'No false claims to current data');
  assert.match(prompt,/18:30/,'Arrival constraints are preserved');
  assert.match(prompt,/06:30/,'Return flight constraints are preserved');
  const detail=readFileSync(new URL('../components/trip-detail.tsx',import.meta.url),'utf8');
- assert.ok(detail.includes('selected.advice')&&detail.includes('day-practical-guide'),'Detail screen shows daily advice');
+ assert.ok(detail.includes('dayAdviceFromAgenda(selected)')&&detail.includes('day-practical-guide'),'Detail screen shows daily advice');
  assert.ok(detail.includes("plan.trip.pace==='Intenso'")&&detail.includes('activity-expanded-guide'),'Intense activity descriptions are visible without manually opening each one');
  console.log('PASS: 10 rich Alsace activities, daily logistics, 11-stop normalization, realistic arrival/departure, and visible detail UI');
 }finally{globalThis.fetch=original;}

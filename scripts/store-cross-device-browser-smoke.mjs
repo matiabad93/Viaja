@@ -83,7 +83,8 @@ try{
   assert.equal(focus.innerRadius,'0px','Explore search has a nested rounded rectangle');
   assert.notEqual(focus.outerShadow,'none','Explore search must retain accessible outer focus');
   await exploreSearch.fill('Roma');
-  await page.getByText('1 guía disponible').waitFor();
+  await page.getByText(/^[1-9]\d* guías? disponibles?$/).waitFor();
+  await page.locator('.visualguides .explore-card').filter({hasText:/Roma/i}).first().waitFor();
   await assertNoOverflow(page,device.name+' explore');
   await page.screenshot({path:out+'/'+(isSafari?'safari':'chrome')+'-'+device.name+'-explore.png',fullPage:true});
   await nav.getByRole('button',{name:/Planificar/}).click();
