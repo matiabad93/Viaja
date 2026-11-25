@@ -1,0 +1,9 @@
+.actions{display:flex;flex-basis:100%;width:100%;gap:8px;flex-wrap:wrap;align-items:center}
+.actions button{flex:1 1 145px;min-height:42px;display:inline-flex;gap:6px;align-items:center;justify-content:center;white-space:normal}
+.registered{font-size:12px;font-weight:600;color:var(--muted,#63756c)}
+.edit{display:flex;flex-basis:100%;width:100%;flex-wrap:wrap;gap:12px;padding:12px;border:1px solid var(--line,#d9e3dc);border-radius:12px}
+.edit label{display:flex;flex-direction:column;gap:6px;font-size:13px;flex:1 1 190px;min-width:0}
+.edit input{min-height:44px;width:100%;font-size:16px}
+.editButtons{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px}
+.editButtons button{min-height:44px}
+@media(max-width:600px){.editButtons,.editButtons button{width:100%}.actions button{flex-basis:calc(50% - 4px)}}
