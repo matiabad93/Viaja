@@ -1,6 +1,6 @@
 'use client';
 import {useState} from 'react';
-import {Plus,Wallet,Trash2,Pencil,Check,Plane,Hotel,Utensils,Bus,Ticket,ShoppingBag,MoreHorizontal} from 'lucide-react';
+import {Plus,Wallet,Trash2,Pencil,Check,Undo2,Plane,Hotel,Utensils,Bus,Ticket,ShoppingBag,MoreHorizontal} from 'lucide-react';
 import {newId,money,spent,budgetSpent,extraSpent,dateLabel} from '../lib/travel';
 import type {Plan,Expense} from '../lib/travel';
 import {projectedCosts} from '../lib/trip-feasibility';
@@ -35,6 +35,17 @@ export function ExpensePanel({plan,onChange,readOnly=false}:{plan:Plan;onChange:
  const open=(mode:Editor['mode'],value:Expense)=>{setError('');setEditor({mode,value,amount:mode==='new'?'':String(value.originalAmount??value.amount)})};
  const close=()=>{setEditor(null);setError('')};
  const openPending=(item:ProjectedCost,mode:'pending'|'register')=>open(mode,{id:'',label:item.label,category:item.category,date:mode==='register'?today():item.date,amount:item.amount,originalAmount:item.amount,currency:'EUR',rate:1,linkedActivityId:item.activityId});
+ const registerDirect=(item:ProjectedCost)=>{
+  if(readOnly||paidIds.has(item.activityId)||!pending.some(p=>p.activityId===item.activityId)||!Number.isFinite(item.amount)||item.amount<=0||item.amount>1000000)return;
+  const expense:Expense={id:newId(),label:item.label,category:item.category,date:today(),amount:item.amount,originalAmount:item.amount,currency:'EUR',rate:1,linkedActivityId:item.activityId};
+  if(onChange({...plan,expenses:[...expenses,expense]})){close()}else setError('No se pudo registrar el gasto.');
+ };
+ const undoRecorded=(item:Expense)=>{
+  if(readOnly||!item.linkedActivityId)return;
+  const next=editProjectedCost(plan,item.linkedActivityId,item.amount,item.label,pendingCategories.find(c=>c===item.category));
+  if(!next){setError('No se pudo recuperar la actividad vinculada.');return}
+  if(onChange({...next,expenses:expenses.filter(e=>e.id!==item.id)})){close()}else setError('No se pudo devolver el gasto a pendientes.');
+ };
  const changeTab=(next:'pending'|'recorded')=>{setTab(next);setCategory('Todas');setDate('');close()};
  const patch=(value:Partial<Expense>)=>setEditor(current=>current?{...current,value:{...current.value,...value}}:current);
  const submit=(event:React.FormEvent)=>{
@@ -99,13 +110,13 @@ export function ExpensePanel({plan,onChange,readOnly=false}:{plan:Plan;onChange:
     <span className={styles.categoryIcon}><Icon size={20} aria-hidden="true"/></span>
     <div className={styles.lineText}><strong>{item.label}</strong><small>{dateLabel(item.date)} · {item.category}</small></div>
     <b className={styles.amount}>{money(item.amount)}</b>
-    {!readOnly&&<div className={styles.actions}><button type="button" className={styles.iconAction} title="Editar pendiente" aria-label={'Editar pendiente de '+item.label} onClick={()=>openPending(item,'pending')}><Pencil size={18} aria-hidden="true"/></button>{item.amount>0&&<button type="button" className={styles.confirmAction} title="Registrar gasto" aria-label={'Registrar gasto de '+item.label} onClick={()=>openPending(item,'register')}><Check size={20} aria-hidden="true"/></button>}</div>}
+    {!readOnly&&<div className={styles.actions}><button type="button" className={styles.iconAction} title="Editar pendiente" aria-label={'Editar pendiente de '+item.label} onClick={()=>openPending(item,'pending')}><Pencil size={18} aria-hidden="true"/></button>{<button type="button" className={styles.confirmAction} title={item.amount>0?"Registrar gasto":"Editá el importe para registrar"} aria-label={'Registrar gasto de '+item.label} disabled={item.amount<=0} onClick={()=>registerDirect(item)}><Check size={20} aria-hidden="true"/></button>}</div>}
    </div>})}
    {active==='recorded'&&filteredRecorded.map(item=>{const Icon=icons[item.category]||Wallet;return <div className={styles.line} key={item.id}>
     <span className={styles.categoryIcon}><Icon size={20} aria-hidden="true"/></span>
     <div className={styles.lineText}><strong>{item.label}</strong><small>{dateLabel(item.date)} · {item.category}{item.currency&&item.currency!=='EUR'?' · '+item.originalAmount+' '+item.currency:''}</small></div>
     <b className={styles.amount}>{money(item.amount)}</b>
-    {!readOnly&&<div className={styles.actions}><button type="button" className={styles.iconAction} title="Editar gasto" aria-label={'Editar gasto '+item.label} onClick={()=>open('edit',{...item,currency:item.currency||'EUR',originalAmount:item.originalAmount??item.amount,rate:item.rate??1})}><Pencil size={18} aria-hidden="true"/></button></div>}
+    {!readOnly&&<div className={styles.actions}><button type="button" className={styles.iconAction} title="Editar gasto" aria-label={'Editar gasto '+item.label} onClick={()=>open('edit',{...item,currency:item.currency||'EUR',originalAmount:item.originalAmount??item.amount,rate:item.rate??1})}><Pencil size={18} aria-hidden="true"/></button>{item.linkedActivityId?<button type="button" className={styles.iconAction} title="Volver a pendientes" aria-label={'Volver a pendientes: '+item.label} onClick={()=>undoRecorded(item)}><Undo2 size={18} aria-hidden="true"/></button>:<span className={styles.actionSpacer} aria-hidden="true"/>}</div>}
    </div>})}
    {((active==='pending'&&!filteredPending.length)||(active==='recorded'&&!filteredRecorded.length))&&<div className={styles.empty}><Wallet size={28} aria-hidden="true"/><h3>{category!=='Todas'||date?'No hay gastos con estos filtros':active==='pending'?'Todo al día':'Todavía no hay gastos registrados'}</h3><p>{category!=='Todas'||date?'Probá con otros filtros.':active==='pending'?'Los gastos que todavía no confirmaste aparecen acá.':'Agregá un gasto o confirmá uno pendiente.'}</p></div>}
   </div>
