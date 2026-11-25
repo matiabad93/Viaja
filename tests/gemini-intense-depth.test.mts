@@ -64,7 +64,7 @@ try{
  assert.match(prompt,/18:30/,'Arrival constraints are preserved');
  assert.match(prompt,/06:30/,'Return flight constraints are preserved');
  const detail=readFileSync(new URL('../components/trip-detail.tsx',import.meta.url),'utf8');
- assert.ok(detail.includes('selected.advice')&&detail.includes('day-practical-guide'),'Detail screen shows daily advice');
+ assert.ok(detail.includes('dayAdviceFromAgenda(selected)')&&detail.includes('day-practical-guide'),'Detail screen shows daily advice');
  assert.ok(detail.includes("plan.trip.pace==='Intenso'")&&detail.includes('activity-expanded-guide'),'Intense activity descriptions are visible without manually opening each one');
  console.log('PASS: 10 rich Alsace activities, daily logistics, 11-stop normalization, realistic arrival/departure, and visible detail UI');
 }finally{globalThis.fetch=original;}
