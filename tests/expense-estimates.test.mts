@@ -28,3 +28,14 @@ assert.equal(editProjectedCost(plan,'missing',null),null);
 for(const invalid of [-1,Number.NaN,Number.POSITIVE_INFINITY,1000001])assert.equal(editProjectedCost(plan,'bus',invalid),null);
 assert.equal(JSON.stringify(plan),source,'No muta el plan original');
 console.log('Edición y eliminación de estimaciones: preservación de actividades y pagos, totales y validación — OK');
+
+import {readFileSync} from 'node:fs';
+const forecastUI=readFileSync(new URL('../components/expense-panel.tsx',import.meta.url),'utf8');
+const actionsCSS=readFileSync(new URL('../components/expense-estimate-actions.module.css',import.meta.url),'utf8');
+assert.match(forecastUI,/aria-label=\{'Editar estimación de '\+item.label\}/,'El icono editar tiene nombre accesible');
+assert.match(forecastUI,/aria-label=\{'Quitar estimación de '\+item.label\}/,'El icono quitar tiene nombre accesible');
+assert.match(forecastUI,/aria-label=\{'Registrar pago de '\+item.label\}/,'El icono de pago tiene nombre accesible');
+assert.match(forecastUI,/title="Registrar pago"/,'El icono tiene pista en escritorio');
+assert.doesNotMatch(forecastUI,/>Editar importe<|>Quitar estimación<|>Registrar pago<\/button>/,'No reaparecen botones de texto repetidos');
+assert.match(actionsCSS,/width:44px;height:44px/,'Acciones táctiles de al menos 44 píxeles');
+console.log('Acciones compactas: nombres accesibles, iconos sin texto y área táctil adecuada — OK');
