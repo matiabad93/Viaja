@@ -93,7 +93,7 @@ export function ExpensePanel({plan,onChange,readOnly=false}:{plan:Plan;onChange:
   </div>
   {editor&&!readOnly&&showEditor(editor)}
   <div className={styles.listHeader}><small>{active==='pending'?'Revisá los importes sugeridos y confirmalos cuando pagues.':'Tus gastos confirmados, incluidos vuelos y alojamiento.'}</small></div>
-  <details className={styles.filters}><summary>Filtrar gastos{category!=='Todas'||date?' · activos':''}</summary><div className="input-grid"><label>Categoría<select value={category} onChange={e=>setCategory(e.target.value)}><option>Todas</option>{categories.map(c=><option key={c}>{c}</option>)}</select></label><label>Fecha<input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><button type="button" className="secondary" onClick={()=>{setCategory('Todas');setDate('')}}>Limpiar filtros</button></div></details>
+  <details className={styles.filters} aria-label="Filtros de gastos"><summary>Filtrar gastos{category!=='Todas'||date?' · activos':''}</summary><div className={styles.filterGrid}><label>Categoría<select value={category} onChange={e=>setCategory(e.target.value)}><option>Todas</option>{categories.map(c=><option key={c}>{c}</option>)}</select></label><label>Fecha<input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><button type="button" className="secondary" aria-label="Limpiar filtros de gastos" onClick={()=>{setCategory('Todas');setDate('')}}>Limpiar filtros</button></div></details>
   <div className={styles.list}>
    {active==='pending'&&filteredPending.map(item=>{const Icon=icons[item.category]||Wallet;return <div className={styles.line} key={item.activityId}>
     <span className={styles.categoryIcon}><Icon size={20} aria-hidden="true"/></span>
