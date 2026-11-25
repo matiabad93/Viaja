@@ -1,3 +1,4 @@
+import {projectedCosts,projectedCostTotal} from '../lib/trip-feasibility.ts';
 import assert from 'node:assert/strict';
 import {activityKind,agendaSummary} from '../lib/activity-agenda.ts';
 import {normalizeGeminiIdeas,geminiRequest} from '../server/gemini-planner.ts';
@@ -40,3 +41,12 @@ const text=guidance.systemInstruction.parts[0].text;
 assert.match(text,/kind="transfer"/);
 assert.match(text,/NO cuentan como visitas/);
 console.log('agenda inteligente: clasificaciones, ritmo, IA y repeticiones correctas');
+
+const estimatePlan:any={trip:{start:'2026-11-28'},itinerary:[{id:'d',title:'Día',activities:[
+ {id:'bus',title:'Lanzadera',description:'',costCategory:'Transporte',estimatedCostEUR:45},
+ {id:'train',title:'Tren',description:'',costCategory:'Transporte',estimatedCostEUR:20,costEstimateDismissed:true}
+]}]};
+assert.equal(projectedCostTotal(estimatePlan),45,'Una estimación eliminada no cuenta para el total');
+assert.deepEqual(projectedCosts(estimatePlan).map(x=>x.activityId),['bus'],'Los gastos previstos excluyen actividades marcadas como descartadas');
+estimatePlan.itinerary[0].activities[1].costEstimateDismissed=false;
+assert.equal(projectedCostTotal(estimatePlan),65,'Restaurar una estimación la reincorpora sin crear un pago');

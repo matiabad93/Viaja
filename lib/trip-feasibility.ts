@@ -35,7 +35,7 @@ export function projectedCosts(plan:Plan):ProjectedCost[]{
  for(const [i,day] of days.entries()){
   const date=plan.trip.start?new Date(Date.parse(plan.trip.start)+i*86400000).toISOString().slice(0,10):'';
   for(const a of day.activities){
-   if(a.estimatedCostEUR===undefined||a.estimatedCostEUR===null||!Number.isFinite(a.estimatedCostEUR)||a.estimatedCostEUR<0)continue;
+   if(a.costEstimateDismissed===true||a.estimatedCostEUR===undefined||a.estimatedCostEUR===null||!Number.isFinite(a.estimatedCostEUR)||a.estimatedCostEUR<0)continue;
    results.push({activityId:a.id,date,label:a.title,category:a.costCategory||'Actividades',amount:Math.round(a.estimatedCostEUR*100)/100,description:a.costNote||'Importe orientativo para el grupo, no verificado'});
   }
  }
