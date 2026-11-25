@@ -66,7 +66,7 @@ try{
     const plan={id:'ui-polish-colmar',kind:'draft',createdAt:'2026-11-03T00:00:00Z',
      trip,itinerary:[{id:'d1',title:'Colmar a pie',advice:'Pasear',
       activities:[{id:'a1',title:'Casco antiguo',description:'Paseo por Colmar',
-       time:'10:00',duration:'1 h',location:'Colmar'}]}],
+       time:'10:00',duration:'1 h',location:'Colmar',estimatedCostEUR:20,costCategory:'Actividades'}]}],
      expenses:[{id:'e1',label:'Café',category:'Comida',date:'2026-11-28',
       amount:8,currency:'EUR',originalAmount:8,rate:1}]};
     localStorage.setItem('viaja-ai-trips-v1',JSON.stringify([plan]));
@@ -121,7 +121,8 @@ try{
    await take(page,device.name,theme,'calendar-tabs');
    await detailTabs.getByRole('button',{name:'Gastos'}).click();
    await selected(detailTabs.locator('[aria-current="page"]'),'Trip expenses tab',theme);
-   const filters=page.locator('.expense-filters');
+   await page.getByText('Filtrar gastos',{exact:true}).click();
+   const filters=page.locator('details[aria-label="Filtros de gastos"] > div');
    const clear=filters.getByRole('button',{name:'Limpiar filtros de gastos'});
    const category=filters.locator('select');
    const date=filters.locator('input[type="date"]');
@@ -151,6 +152,17 @@ try{
    assert.equal(await category.inputValue(),'Todas','Clear resets category');
    assert.equal(await date.inputValue(),'','Clear resets date');
    await take(page,device.name,theme,'expenses-clear');
+   await page.getByRole('button',{name:'Registrar gasto de Casco antiguo'}).click();
+   await page.getByLabel('Concepto').fill('Entrada al casco antiguo');
+   await page.getByLabel('Importe',{exact:true}).fill('12,50');
+   await page.getByRole('button',{name:'Confirmar gasto'}).click();
+   await page.getByText('Entrada al casco antiguo',{exact:true}).waitFor();
+   assert.equal(await page.getByRole('button',{name:'Registrar gasto de Casco antiguo'}).count(),0,'Paid item disappears from pending');
+   await page.getByRole('button',{name:/^Pendientes/}).click();
+   assert.equal(await page.getByRole('button',{name:'Registrar gasto de Casco antiguo'}).count(),0,'No duplicate registration');
+   await page.getByRole('button',{name:/^Registrados/}).click();
+   await page.getByText('Entrada al casco antiguo',{exact:true}).waitFor();
+   await take(page,device.name,theme,'expenses-recorded');
    assert.deepEqual(errors,[],device.name+' '+theme+' has runtime errors');
    await ctx.close();
    console.log('PASS '+device.name+' '+theme+' nav/guide/trip/calendar selections, expense clear layout and reset, no overflow');
