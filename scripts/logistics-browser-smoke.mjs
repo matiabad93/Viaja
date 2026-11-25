@@ -16,6 +16,10 @@ const sample={
 };
 const overflow=async page=>{
  const scroll=await page.evaluate(()=>({client:document.documentElement.clientWidth,content:document.documentElement.scrollWidth}));
+ if(scroll.content>scroll.client+1){
+  const offenders=await page.evaluate(()=>Array.from(document.querySelectorAll('body *')).filter(el=>{const r=el.getBoundingClientRect();return r.width>0&&r.right>document.documentElement.clientWidth+1}).map(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return {tag:el.tagName,cls:el.getAttribute('class'),left:Math.round(r.left),right:Math.round(r.right),width:Math.round(r.width),display:s.display,minWidth:s.minWidth,overflowX:s.overflowX,parent:el.parentElement?.getAttribute('class')}}).slice(0,40));
+  console.error('Overflow elements:',JSON.stringify(offenders));
+ }
  assert.ok(scroll.content<=scroll.client+1,'Page overflows: '+JSON.stringify(scroll));
 };
 try{
