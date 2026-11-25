@@ -195,7 +195,7 @@ try{
   const stats=await summary.boundingBox();
   assert.ok(stats.x-card.x>=14,'Expense summary needs a gutter inside the trip card');
   await page.getByRole('button',{name:'Agregar gasto'}).click();
-  const amountField=await page.getByRole('spinbutton').first().evaluate(paint);
+  const amountField=await page.getByLabel(/Importe/i).first().evaluate(paint);
   assert.ok(contrast(amountField.fg,amountField.bg)>=4.5);
   assert.equal(amountField.bg,colors.darkField);
   await page.screenshot({path:'artifacts/ui-delivery-a/dark-fixes/'+device.label+'-expenses.png'});
